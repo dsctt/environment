@@ -82,7 +82,7 @@ class Env:
 
       return obs
 
-   def step(self, actions, omitDead=False, preprocessActions=True):
+   def step(self, actions, preprocess=set(), omitDead=True):
       '''OpenAI Gym API step function simulating one game tick or timestep
 
       Args:
@@ -114,12 +114,13 @@ class Env:
             Perform this conditional processing to make batched action
             computation easier.
 
+         preprocess: set of agent IDs for which actions are returned as raw
+            indices and need to be preprocessed. Typically this should only
+            include IDs of agents controlled by neural models and exclude IDs
+            of scripted agents
+
          omitDead: Whether to omit dead agents observations from the returned
             obs. Provided for conformity with some optimizer APIs
-
-         preprocessActions: Whether to treat actions as raw indices or
-            as game objects. Typically, this value should be True for
-            neural models and false for scripted baselines.
 
       Returns:
          (dict, dict, dict, None):
@@ -178,24 +179,21 @@ class Env:
             An empty dictionary provided only for conformity with OpenAI Gym.
       '''
       #Preprocess actions
-      if preprocessActions:
-         for entID in list(actions.keys()):
-            ent = self.realm.players[entID]
-            if not ent.alive:
-               continue
+      for entID in preprocess:
+         ent = self.realm.players[entID]
+         if not ent.alive:
+            continue
 
-            for atn, args in actions[entID].items():
-               for arg, val in args.items():
-                  obj = None
-                  if len(arg.edges) > 0:
-                     obj = arg.edges[val]
-                  else:
-                     objs = arg.gameObjects(self.realm, ent, val)
-                     if val < len(objs):
-                        obj = objs[val]
+         for atn, args in actions[entID].items():
+            for arg, val in args.items():
+               if len(arg.edges) > 0:
+                  actions[entID][atn][arg] = arg.edges[val]
+               elif val < len(ent.targets):
+                  targ                     = ent.targets[val]
+                  actions[entID][atn][arg] = self.realm.entity(targ)
+               else: #Need to fix -inf in classifier before removing this
+                  actions[entID][atn][arg] = ent
 
-                  actions[entID][atn][arg] = obj
-               
       #Step: Realm, Observations, Logs
       self.dead = self.realm.step(actions)
       obs, rewards, dones, self.raw = {}, {}, {}, {}

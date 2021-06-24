@@ -25,15 +25,7 @@ def vacant(tile):
    occupied = io.Observation.attribute(tile, Tile.NEnts)
    matl     = io.Observation.attribute(tile, Tile.Index)
 
-   grass   = material.Grass.index
-   scrub   = material.Scrub.index
-   forest  = material.Forest.index
-   crystal = material.Crystal.index
-   fragment= material.Fragment.index
-   weeds   = material.Weeds.index
-   herb    = material.Herb.index
-
-   return matl in (grass, scrub, forest, crystal, fragment, weeds, herb) and not occupied
+   return matl in material.Habitable and not occupied
 
 def random(config, ob, actions):
    direction = rand.choice(Action.Direction.edges)
@@ -147,10 +139,7 @@ def forageDijkstra(config, ob, actions, food_max, water_max, cutoff=100):
          matl     = io.Observation.attribute(tile, Tile.Index)
          occupied = io.Observation.attribute(tile, Tile.NEnts)
 
-         if occupied:
-            continue
-
-         if matl in (material.Lava.index, material.Water.index, material.Stone.index):
+         if not vacant(tile):
             continue
 
          food, water = reward[cur]
@@ -229,13 +218,15 @@ def aStar(config, ob, actions, rr, cc, cutoff=100):
          matl     = io.Observation.attribute(tile, Tile.Index)
          occupied = io.Observation.attribute(tile, Tile.NEnts)
 
+         #if not vacant(tile):
+         #   continue
+
          if occupied:
             continue
 
          #Omitted water from the original implementation. Seems key
          if matl in (material.Lava.index, material.Stone.index):
             continue
-
 
          newCost = cost[cur] + 1
          if nxt not in cost or newCost < cost[nxt]:
