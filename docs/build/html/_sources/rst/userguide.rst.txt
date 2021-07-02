@@ -18,27 +18,31 @@ Neural MMO is a platform for agent-based intelligence research featuring hundred
 |icon| Installation
 ###################
 
-.. code-block:: python
-   :caption: Ubuntu (20.04 preferred)
-
-   git clone --single-branch --depth=1 --branch master https://github.com/jsuarez5341/neural-mmo
-   git clone --single-branch --depth=1 --branch v1.5.1 https://github.com/jsuarez5341/neural-mmo-client neural-mmo/forge/embyr
-
-   cd neural-mmo && bash scripts/setup.sh
+Tested on Ubuntu 20.04, Windows 10 + WSL, and MacOS
 
 .. code-block:: python
-   :caption: Windows 10 + WSL Ubuntu
+   :caption: Competition setup
 
-   #Execute in WSL Ubuntu
+   git clone https://gitlab.aicrowd.com/jyotish/neuralmmo-starter-kit
+   pip install neural-mmo
+
+.. code-block:: python
+   :caption: Environment source. Setup with --CORE_ONLY to omit RLlib requirements
+
    git clone --single-branch --depth=1 --branch master https://github.com/jsuarez5341/neural-mmo
-   cd neural-mmo && bash scripts/setup.sh
+   cd neural-mmo && bash scripts/setup.sh 
 
-   #Execute in Windows 10
+.. code-block:: python
+   :caption: Download the UnityClient client
+ 
    git clone --single-branch --depth=1 --branch v1.5.1 https://github.com/jsuarez5341/neural-mmo-client
+   
+   #If not on WSL:
+   mv neural-mmo-client neural-mmo/forge/embyr
 
 **Troubleshooting:**
   - Post installation errors in #support on the `[Discord] <https://discord.gg/BkMmFUC>`_
-  - If you are training on GPU and get an IndexError error on self.device, set gpu_ids=[0] in ray/rllib/policy/rotch_policy.py:150 (typically in ~/anaconda3/lib/python3.8/site-packages)
+  - If you are training on GPU and get an IndexError error on self.device, set gpu_ids=[0] in ray/rllib/policy/torch_policy.py:150 (typically in ~/anaconda3/lib/python3.8/site-packages)
   - Most compatibility issues with the client and unsupported operating systems can be resolved by opening the project in the Unity Editor
   - If you want full commit history, clone without ``--depth=1`` (including in scripts/setup.sh for the client). This flag is only included to cut down on download time
   - The master branch will always contain the latest stable version. Each previous version release is archived in a separate branch. Dev branches are not nightly builds and may be flammable.
@@ -47,7 +51,7 @@ Neural MMO is a platform for agent-based intelligence research featuring hundred
 |icon| CLI
 ##########
 
-Forge.py is the main file for the included demo and starter project (/projekt). It includes commands for map generation, training, evaluation, visualization, and rendering. To view documentation:
+Forge is the main file for the included demo and starter project (/projekt). It includes commands for map generation, training, evaluation, visualization, and rendering. To view documentation:
 
 .. code-block:: python
 
@@ -56,10 +60,10 @@ Forge.py is the main file for the included demo and starter project (/projekt). 
 .. code-block:: text
 
   NAME
-      Forge.py --help - Neural MMO CLI powered by Google Fire
+      python Forge.py --help - Neural MMO CLI powered by Google Fire
 
   SYNOPSIS
-      Forge.py --help - GROUP | COMMAND
+      python Forge.py --help - GROUP | COMMAND
 
   DESCRIPTION
       Main file for the RLlib demo included with Neural MMO.
@@ -126,7 +130,7 @@ Generating small maps without rendering takes 5-10 seconds on a modern CPU.
 
    Example map from resource/maps/procedural-small/map1/map.png
 
-Terrain generation is controlled by a number of parameters prefixed with TERRAIN_. The config documentation details them all, and you can experiment with larger modifications to the procedural generation source in forge/blade/core/terrain.py.
+Terrain generation is controlled by a number of parameters prefixed with TERRAIN_. The config documentation details them all, and you can experiment with larger modifications to the procedural generation source in neural_mmo/forgeblade/core/terrain.py.
 
 |icon| Rendering and Overlays
 #############################
@@ -137,7 +141,7 @@ Rendering the environment requires launching both a server and a client. To laun
 
   python Forge.py render --config=SmallMultimodalSkills
 
-| **Linux:** Launch *client.sh* in a separate shell or click the associated executable
+| **Linux/MacOS:** Launch *client.sh* in a separate shell or click the associated executable
 | **Windows:** Launch neural-mmo-client/UnityClient/neural-mmo.exe from Windows 10
 
 The server will take a few seconds to load the pretrained policy and connect to the client.
@@ -152,7 +156,7 @@ The on-screen instructions demonstrate how to pan and zoom in the environment. Y
 
 The counts (exploration) overlay is computed by splatting the agent's current position to a counts map. Most other overlays are computed analogously. However, you can also do more impressive things with a bit more compute. For example, the tileValues and entityValues overlays simulate an agent on every tile and computes the value function with respect to local tiles/entities. Note that some overlays, such as counts and skills, are well-defined for all models. Others, such as value function and attention, do not exist for scripted baselines.
 
-Writing your own overlays is simple. You can find the source code for general overlays (those computable by scripted baselines) in forge/trinity/overlay.py. RLlib-specific overlays that require access to the trainer/model are included in projekt/rllib_wrapper.py. Details are also included in the User API.
+Writing your own overlays is simple. You can find the source code for general overlays (those computable by scripted baselines) in neural_mmo/forgetrinity/overlay.py. RLlib-specific overlays that require access to the trainer/model are included in projekt/rllib_wrapper.py. Details are also included in the User API.
 
 |icon| Training
 ###############
@@ -163,7 +167,7 @@ Evaluating on canonical configs will load the associated pretrained baseline by 
   :caption: Train on small and large game maps
 
   python Forge.py train --config=SmallMultimodalSkills --LOAD=False
-  python Forge.py train --config=LargeMultimodalSkills --LOAD=False
+  python Forge.py --config=LargeMultimodalSkills --LOAD=False
 
 .. code-block:: text
 
@@ -258,8 +262,8 @@ The "visualize" command creates summary tables and figures using the results of 
 .. code-block:: python
    :caption: Visualize evaluation results for pretrained and scripted baselines
 
-   python Forge.py visualize --config=SmallMultimodalSkills --MODEL=small-maps
-   python Forge.py visualize --config=SmallMultimodalSkills --MODEL=scripted-combat
+   python Forge.py visualize --config=SmallMultimodalSkills
+   python Forge.py visualize --config=SmallMultimodalSkills SCRIPTED=CombatTribrid
 
 ============ ============ ============ ============ ============
 Metric       Min          Max          Mean         Std
@@ -297,7 +301,7 @@ Each row of the dashboard contains multiple visualization styles for one row of 
 
 So, why do we need 15 plots when only one turned out to be important? First of all, we didn't know which plot would highlight an interesting difference ahead of time. Second, there are some smaller observations we can make, such as the pretrained model obtaining significantly more equipment pickups while the scripted model obtained fewer and better pickups (Equipment scatter plots). Or that the pretrained model has a slightly heavier Lifetime right tail, as seen in the Lifetime Gantt plot. Many of our most successful experiments (and worst bug fixes) were motivated by an unusual disparity in the dashboard.
 
-And before you ask, yes: there's a boring publication theme: specify --VIS_THEME=publication. In fact, you can create custom logging with a highly configurable dashboard to go with it in only a few lines of code -- just override the log method of forge/trinity/env.py to specify your own data tracks and plot styles.
+And before you ask, yes: there's a boring publication theme: specify --VIS_THEME=publication. In fact, you can create custom logging with a highly configurable dashboard to go with it in only a few lines of code -- just override the log method of neural_mmo/forgetrinity/env.py to specify your own data tracks and plot styles.
 
 .. figure:: /resource/image/publication_theme.png
 

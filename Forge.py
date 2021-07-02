@@ -11,13 +11,13 @@ import numpy as np
 
 from fire import Fire
 
-from forge.ethyr.torch import utils
-from forge.trinity.scripted import baselines
-from forge.trinity.visualize import BokehServer
-from forge.trinity.evaluator import Evaluator
-
 import projekt
-from forge.blade.core import terrain
+from neural_mmo.forge.blade.core import terrain
+
+from neural_mmo.forge.trinity.scripted import baselines
+from neural_mmo.forge.trinity.visualize import BokehServer
+from neural_mmo.forge.trinity.evaluator import Evaluator
+
 
 def createPolicies(config, mapPolicy):
    '''Generate RLlib policies'''
@@ -103,11 +103,11 @@ class Anvil():
       python Forge.py <COMMAND> --config=<CONFIG> --ARG1=<ARG1> ...
 
    The User API documents core env flags. Additional config options specific
-   to this demo are available in projekt/config.py. 
+   to this demo are available in projekt. 
 
    The --config flag may be used to load an entire group of options at once.
    The Debug, SmallMaps, and LargeMaps options are included in this demo with
-   the latter being the default -- or write your own in projekt/config.py
+   the latter being the default -- or write your own in projekt
    '''
    def __init__(self, **kwargs):
       if 'help' in kwargs:
@@ -120,25 +120,32 @@ class Anvil():
       config.override(**kwargs)
       self.config = config
 
-      if not config.SCRIPTED:
-         global torch, ray, rllib, wrapper
-         import torch
-         import ray
-         from ray import rllib
-         from projekt import rllib_wrapper as wrapper
+   def imports(self):
+      '''conditional rl imports'''
+      global torch, ray, rllib, wrapper, utils
+      from neural_mmo.forge.ethyr.torch import utils
+      import torch
+      import ray
+      from ray import rllib
+      from projekt import rllib_wrapper as wrapper
 
    def train(self, **kwargs):
       '''Train a model starting with the current value of --MODEL'''
+      self.imports()
       loadModel(self.config).train()
 
    def evaluate(self, **kwargs):
       '''Evaluate a model on --EVAL_MAPS maps'''
       self.config.EVALUATE = True
+      if not self.config.SCRIPTED:
+         self.imports()
       loadEvaluator(self.config).evaluate(self.config.GENERALIZE)
 
    def render(self, **kwargs):
       '''Start a WebSocket server that autoconnects to the 3D Unity client'''
       self.config.RENDER = True
+      if not self.config.SCRIPTED:
+         self.imports()
       loadEvaluator(self.config).render()
 
    def generate(self, **kwargs):
@@ -148,8 +155,9 @@ class Anvil():
    def visualize(self, **kwargs):
       '''Training/Evaluation results Web dashboard'''
       BokehServer(self.config)
-     
-if __name__ == '__main__':
+
+
+def main():
    def Display(lines, out):
         text = "\n".join(lines) + "\n"
         out.write(text)
@@ -157,3 +165,7 @@ if __name__ == '__main__':
    from fire import core
    core.Display = Display
    Fire(Anvil)
+
+
+if __name__ == "__main__":
+    main()

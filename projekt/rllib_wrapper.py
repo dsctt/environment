@@ -1,20 +1,19 @@
-from pdb import set_trace as T
+from pdb import set_trace as TT
 
 from collections import defaultdict
 from itertools import chain
 import shutil
-import contextlib
 import time
 import os
 import re
 
 from tqdm import tqdm
 import numpy as np
-
 import gym
 
 import torch
 from torch import nn
+from torch.nn.utils import rnn
 
 from ray import rllib
 import ray.rllib.agents.ppo.ppo as ppo
@@ -23,113 +22,259 @@ from ray.rllib.agents.callbacks import DefaultCallbacks
 from ray.rllib.utils.spaces.flexdict import FlexDict
 from ray.rllib.models.torch.recurrent_net import RecurrentNetwork
 
-from forge.blade.io.stimulus.static import Stimulus
-from forge.blade.io.action.static import Action
-from forge.blade.lib import overlay
-from forge.blade.systems import ai
+from neural_mmo.forge.blade.io.stimulus.static import Stimulus
+from neural_mmo.forge.blade.io.action.static import Action, Fixed
+from neural_mmo.forge.blade.lib import overlay
+from neural_mmo.forge.blade.systems import ai
 
-from forge.ethyr.torch.policy import baseline
+from neural_mmo.forge.ethyr.torch import policy
+from neural_mmo.forge.ethyr.torch.policy import attention
 
-from forge.trinity import Env, evaluator, formatting
-from forge.trinity.dataframe import DataType
-from forge.trinity.overlay import Overlay, OverlayRegistry
+from neural_mmo.forge.trinity import Env, evaluator, formatting
+from neural_mmo.forge.trinity.dataframe import DataType
+from neural_mmo.forge.trinity.overlay import Overlay, OverlayRegistry
+
 
 ###############################################################################
-### RLlib Env Wrapper
-class RLlibEnv(Env, rllib.MultiAgentEnv):
+### Pytorch model + IO. The pip package contains some submodules
+class Input(nn.Module):
+   def __init__(self, config, embeddings, attributes):
+      '''Network responsible for processing observations
+
+      Args:
+         config     : A configuration object
+         embeddings : An attribute embedding module
+         attributes : An attribute attention module
+      '''
+      super().__init__()
+
+      self.embeddings = nn.ModuleDict()
+      self.attributes = nn.ModuleDict()
+
+      for _, entity in Stimulus:
+         continuous = len([e for e in entity if e[1].CONTINUOUS])
+         discrete   = len([e for e in entity if e[1].DISCRETE])
+         self.attributes[entity.__name__] = nn.Linear(
+               (continuous+discrete)*config.HIDDEN, config.HIDDEN)
+         self.embeddings[entity.__name__] = embeddings(
+               continuous=continuous, discrete=4096, config=config)
+
+      #Hackey obs scaling
+      self.tileWeight = torch.Tensor([1.0, 0.0, 0.02, 0.02])
+      self.entWeight  = torch.Tensor([1.0, 0.0, 0.0, 0.05, 0.00, 0.02, 0.02, 0.1, 0.01, 0.1, 0.1, 0.1, 0.3])
+      if torch.cuda.is_available():
+         self.tileWeight = self.tileWeight.cuda()
+         self.entWeight  = self.entWeight.cuda()
+
+   def forward(self, inp):
+      '''Produces tensor representations from an IO object
+
+      Args:                                                                   
+         inp: An IO object specifying observations                      
+         
+      Returns:
+         entityLookup: A fixed size representation of each entity
+      ''' 
+      #Pack entities of each attribute set
+      entityLookup = {}
+
+      inp['Tile']['Continuous']   *= self.tileWeight
+      inp['Entity']['Continuous'] *= self.entWeight
+ 
+      entityLookup['N'] = inp['Entity'].pop('N')
+      for name, entities in inp.items():
+         #Construct: Batch, ents, nattrs, hidden
+         embeddings = self.embeddings[name](entities)
+         B, N, _, _ = embeddings.shape
+         embeddings = embeddings.view(B, N, -1)
+
+         #Construct: Batch, ents, hidden
+         entityLookup[name] = self.attributes[name](embeddings)
+
+      return entityLookup
+
+class Output(nn.Module):
    def __init__(self, config):
-      self.config = config['config']
-      super().__init__(self.config)
+      '''Network responsible for selecting actions
 
-   def reward(self, ent):
-      config      = self.config
+      Args:
+         config: A Config object
+      '''
+      super().__init__()
+      self.config = config
+      self.h = config.HIDDEN
 
-      ACHIEVEMENT = config.REWARD_ACHIEVEMENT
-      SCALE       = config.ACHIEVEMENT_SCALE
-      COOP        = config.COOP
+      self.net = DiscreteAction(self.config, self.h, self.h)
+      self.arg = nn.Embedding(Action.n, self.h)
 
-      individual  = 0 if ent.entID in self.realm.players else -1
-      team        = 0
+   def names(self, nameMap, args):
+      '''Lookup argument indices from name mapping'''
+      return np.array([nameMap.get(e) for e in args])
 
-      if ACHIEVEMENT:
-         individual += SCALE*ent.achievements.update(self.realm, ent, dry=True)
-      if COOP:
-         nDead = len([p for p in self.dead.values() if p.population == ent.pop])
-         team  = -nDead / config.TEAM_SIZE
-      if COOP and ACHIEVEMENT:
-         pre, post = [], []
-         for p in self.realm.players.corporeal.values():
-            if p.population == ent.pop:
-               pre.append(p.achievements.score(aggregate=False))
-               post.append(p.achievements.update(
-                     self.realm, ent, aggregate=False, dry=True))
-        
-         pre   = np.array(pre).max(0)
-         post  = np.array(post).max(0)
-         team += SCALE*(post - pre).sum()
+   def forward(self, obs, lookup):
+      '''Populates an IO object with actions in-place                         
+                                                                              
+      Args:                                                                   
+         obs     : An IO object specifying observations
+         lookup  : A fixed size representation of each entity
+      ''' 
+      rets = defaultdict(dict)
+      for atn in Action.edges:
+         for arg in atn.edges:
+            lens  = None
+            if arg.argType == Fixed:
+               batch = obs.shape[0]
+               idxs  = [e.idx for e in arg.edges]
+               cands = self.arg.weight[idxs]
+               cands = cands.repeat(batch, 1, 1)
+            else:
+               cands = lookup['Entity']
+               lens  = lookup['N']
 
-      ent.achievements.update(self.realm, ent)
+            logits = self.net(obs, cands, lens)
+            rets[atn][arg] = logits
 
-      alpha  = config.TEAM_SPIRIT
-      return alpha*team + (1.0-alpha)*individual
-
-   def step(self, decisions, preprocess=None, omitDead=False):
-      preprocess = {entID for entID in decisions}
-      obs, rewards, dones, infos = super().step(decisions, preprocess, omitDead)
-
-      config = self.config
-      dones['__all__'] = False
-      test = config.EVALUATE or config.RENDER
+      return rets
       
-      horizon    = self.realm.tick >= config.TRAIN_HORIZON
-      population = len(self.realm.players) == 0
-      if not test and (horizon or population):
-         dones['__all__'] = True
+class DiscreteAction(nn.Module):
+   '''Head for making a discrete selection from
+   a variable number of candidate actions'''
+   def __init__(self, config, xdim, h):
+      super().__init__()
+      self.net = attention.DotReluBlock(h)
 
-      return obs, rewards, dones, infos
+   def forward(self, stim, args, lens):
+      x = self.net(stim, args)
 
-def observationSpace(config):
-   obs = FlexDict(defaultdict(FlexDict))
-   for entity in sorted(Stimulus.values()):
-      nRows       = entity.N(config)
-      nContinuous = 0
-      nDiscrete   = 0
+      if lens is not None:
+         mask = torch.arange(x.shape[-1]).to(x.device).expand_as(x)
+         x[mask >= lens] = 0
 
-      for _, attr in entity:
-         if attr.DISCRETE:
-            nDiscrete += 1
-         if attr.CONTINUOUS:
-            nContinuous += 1
+      return x
 
-      obs[entity.__name__]['Continuous'] = gym.spaces.Box(
-            low=-2**20, high=2**20, shape=(nRows, nContinuous),
-            dtype=DataType.CONTINUOUS)
+class Base(nn.Module):
+   def __init__(self, config):
+      '''Base class for baseline policies
 
-      obs[entity.__name__]['Discrete']   = gym.spaces.Box(
-            low=0, high=4096, shape=(nRows, nDiscrete),
-            dtype=DataType.DISCRETE)
+      Args:
+         config: A Configuration object
+      '''
+      super().__init__()
+      self.embed  = config.EMBED
+      self.config = config
 
-   obs['Entity']['N']   = gym.spaces.Box(
-         low=0, high=config.N_AGENT_OBS, shape=(1,),
-         dtype=DataType.DISCRETE)
+      self.output = Output(config)
+      self.input  = Input(config,
+            embeddings=policy.MixedDTypeInput,
+            attributes=policy.SelfAttention)
 
-   obs['Item']['N']   = gym.spaces.Box(
-         high=config.N_AMMUNITION + config.N_CONSUMABLES + config.N_LOOT + 1,
-         dtype=DataType.DISCRETE,
-         low=0, shape=(1,))
+      self.valueF = nn.Linear(config.HIDDEN, 1)
 
-   return obs
+   def hidden(self, obs, state=None, lens=None):
+      '''Abstract method for hidden state processing, recurrent or otherwise,
+      applied between the input and output modules
 
-def actionSpace(config):
-   atns = FlexDict(defaultdict(FlexDict))
-   for atn in sorted(Action.edges):
-      for arg in sorted(atn.edges):
-         n              = arg.N(config)
-         atns[atn][arg] = gym.spaces.Discrete(n)
-   return atns
+      Args:
+         obs: An observation dictionary, provided by forward()
+         state: The previous hidden state, only provided for recurrent nets
+         lens: Trajectory segment lengths used to unflatten batched obs
+      '''
+      raise NotImplementedError('Implement this method in a subclass')
+
+   def forward(self, obs, state=None, lens=None):
+      '''Applies builtin IO and value function with user-defined hidden
+      state subnetwork processing. Arguments are supplied by RLlib
+      '''
+      entityLookup  = self.input(obs)
+      hidden, state = self.hidden(entityLookup, state, lens)
+      self.value    = self.valueF(hidden).squeeze(1)
+      actions       = self.output(hidden, entityLookup)
+      return actions, state
+
+class Encoder(Base):
+   def __init__(self, config):
+      '''Simple baseline model with flat subnetworks'''
+      super().__init__(config)
+      h = config.HIDDEN
+
+      self.ent    = nn.Linear(2*h, h)
+      self.conv   = nn.Conv2d(h, h, 3)
+      self.pool   = nn.MaxPool2d(2)
+      self.fc     = nn.Linear(h*6*6, h)
+
+      self.proj   = nn.Linear(2*h, h)
+      self.attend = policy.SelfAttention(self.embed, h)
+
+   def hidden(self, obs, state=None, lens=None):
+      #Attentional agent embedding
+      agentEmb  = obs['Entity']
+      selfEmb   = agentEmb[:, 0:1].expand_as(agentEmb)
+      agents    = torch.cat((selfEmb, agentEmb), dim=-1)
+      agents    = self.ent(agents)
+      agents, _ = self.attend(agents)
+      #agents = self.ent(selfEmb)
+
+      #Convolutional tile embedding
+      tiles     = obs['Tile']
+      self.attn = torch.norm(tiles, p=2, dim=-1)
+
+      w      = self.config.WINDOW
+      batch  = tiles.size(0)
+      hidden = tiles.size(2)
+      #Dims correct?
+      tiles  = tiles.reshape(batch, w, w, hidden).permute(0, 3, 1, 2)
+      tiles  = self.conv(tiles)
+      tiles  = self.pool(tiles)
+      tiles  = tiles.reshape(batch, -1)
+      tiles  = self.fc(tiles)
+
+      hidden = torch.cat((agents, tiles), dim=-1)
+      hidden = self.proj(hidden)
+      return hidden, state
+
+class Recurrent(Encoder):
+   def __init__(self, config):
+      '''Recurrent baseline model'''
+      super().__init__(config)
+      self.lstm   = policy.BatchFirstLSTM(
+            input_size=config.HIDDEN,
+            hidden_size=config.HIDDEN)
+
+   #Note: seemingly redundant transposes are required to convert between 
+   #Pytorch (seq_len, batch, hidden) <-> RLlib (batch, seq_len, hidden)
+   def hidden(self, obs, state, lens):
+      #Attentional input preprocessor and batching
+      lens = lens.cpu() if type(lens) == torch.Tensor else lens
+      hidden, _ = super().hidden(obs)
+      config    = self.config
+      h, c      = state
+
+      TB = hidden.size(0) #Padded batch of size (seq x batch)
+      B  = len(lens)      #Sequence fragment time length
+      T  = TB // B        #Trajectory batch size
+      H  = config.HIDDEN  #Hidden state size
+
+      #Pack (batch x seq, hidden) -> (batch, seq, hidden)
+      hidden        = rnn.pack_padded_sequence(
+                         input=hidden.view(B, T, H),
+                         lengths=lens,
+                         enforce_sorted=False,
+                         batch_first=True)
+
+      #Main recurrent network
+      hidden, state = self.lstm(hidden, state)
+
+      #Unpack (batch, seq, hidden) -> (batch x seq, hidden)
+      hidden, _     = rnn.pad_packed_sequence(
+                         sequence=hidden,
+                         batch_first=True)
+
+      return hidden.reshape(TB, H), state
+>>>>>>> master
+
 
 ###############################################################################
-### RLlib Policy, Evaluator, and Trainer wrappers
+### RLlib Policy, Evaluator, Trainer
 class RLlibPolicy(RecurrentNetwork, nn.Module):
    '''Wrapper class for using our baseline models with RLlib'''
    def __init__(self, *args, **kwargs):
@@ -138,7 +283,7 @@ class RLlibPolicy(RecurrentNetwork, nn.Module):
       nn.Module.__init__(self)
 
       self.space  = actionSpace(self.config).spaces
-      self.model  = baseline.Recurrent(self.config)
+      self.model  = Recurrent(self.config)
 
    #Initial hidden state for RLlib Trainer
    def get_initial_state(self):
@@ -347,8 +492,100 @@ class SanePPOTrainer(ppo.PPOTrainer):
           for idx, line in enumerate(lines):
              print(line)
 
+
 ###############################################################################
-### RLlib Overlays
+### RLlib Wrappers: Env, Overlays
+class RLlibEnv(Env, rllib.MultiAgentEnv):
+   def __init__(self, config):
+      self.config = config['config']
+      super().__init__(self.config)
+
+   def reward(self, ent):
+      config      = self.config
+
+      ACHIEVEMENT = config.REWARD_ACHIEVEMENT
+      SCALE       = config.ACHIEVEMENT_SCALE
+      COOPERATIVE = config.COOPERATIVE
+
+      individual  = 0 if ent.entID in self.realm.players else -1
+      team        = 0
+
+      if ACHIEVEMENT:
+         individual += SCALE*ent.achievements.update(self.realm, ent, dry=True)
+      if COOPERATIVE:
+         nDead = len([p for p in self.dead.values() if p.population == ent.pop])
+         team  = -nDead / config.TEAM_SIZE
+      if COOPERATIVE and ACHIEVEMENT:
+         pre, post = [], []
+         for p in self.realm.players.corporeal.values():
+            if p.population == ent.pop:
+               pre.append(p.achievements.score(aggregate=False))
+               post.append(p.achievements.update(
+                     self.realm, ent, aggregate=False, dry=True))
+        
+         pre   = np.array(pre).max(0)
+         post  = np.array(post).max(0)
+         team += SCALE*(post - pre).sum()
+
+      ent.achievements.update(self.realm, ent)
+
+      alpha  = config.TEAM_SPIRIT
+      return alpha*team + (1.0-alpha)*individual
+
+   def step(self, decisions, preprocess=None, omitDead=False):
+      preprocess = {entID for entID in decisions}
+      obs, rewards, dones, infos = super().step(decisions, preprocess, omitDead)
+
+      config = self.config
+      dones['__all__'] = False
+      test = config.EVALUATE or config.RENDER
+      
+      horizon    = self.realm.tick >= config.TRAIN_HORIZON
+      population = len(self.realm.players) == 0
+      if not test and (horizon or population):
+         dones['__all__'] = True
+
+      return obs, rewards, dones, infos
+
+def observationSpace(config):
+   obs = FlexDict(defaultdict(FlexDict))
+   for entity in sorted(Stimulus.values()):
+      nRows       = entity.N(config)
+      nContinuous = 0
+      nDiscrete   = 0
+
+      for _, attr in entity:
+         if attr.DISCRETE:
+            nDiscrete += 1
+         if attr.CONTINUOUS:
+            nContinuous += 1
+
+      obs[entity.__name__]['Continuous'] = gym.spaces.Box(
+            low=-2**20, high=2**20, shape=(nRows, nContinuous),
+            dtype=DataType.CONTINUOUS)
+
+      obs[entity.__name__]['Discrete']   = gym.spaces.Box(
+            low=0, high=4096, shape=(nRows, nDiscrete),
+            dtype=DataType.DISCRETE)
+
+   obs['Entity']['N']   = gym.spaces.Box(
+         low=0, high=config.N_AGENT_OBS, shape=(1,),
+         dtype=DataType.DISCRETE)
+   obs['Item']['N']   = gym.spaces.Box(
+         high=config.N_AMMUNITION + config.N_CONSUMABLES + config.N_LOOT + 1,
+         dtype=DataType.DISCRETE,
+         low=0, shape=(1,))
+
+   return obs
+
+def actionSpace(config):
+   atns = FlexDict(defaultdict(FlexDict))
+   for atn in sorted(Action.edges):
+      for arg in sorted(atn.edges):
+         n              = arg.N(config)
+         atns[atn][arg] = gym.spaces.Discrete(n)
+   return atns
+
 class RLlibOverlayRegistry(OverlayRegistry):
    '''Host class for RLlib Map overlays'''
    def __init__(self, config, realm):
@@ -480,3 +717,4 @@ class RLlibLogCallbacks(DefaultCallbacks):
          logs[key + '_Max']  = [np.max(vals)]
          logs[key + '_Mean'] = [np.mean(vals)]
          logs[key + '_Std']  = [np.std(vals)]
+

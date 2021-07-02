@@ -225,30 +225,34 @@
 </div>
 <div class="section" id="icon-installation">
 <h1><img alt="icon" src="../_images/icon_pixel.png" /> Installation<a class="headerlink" href="#icon-installation" title="Permalink to this headline">¶</a></h1>
+<p>Tested on Ubuntu 20.04, Windows 10 + WSL, and MacOS</p>
 <div class="literal-block-wrapper docutils container" id="id3">
-<div class="code-block-caption"><span class="caption-text">Ubuntu (20.04 preferred)</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="o">--</span><span class="n">single</span><span class="o">-</span><span class="n">branch</span> <span class="o">--</span><span class="n">depth</span><span class="o">=</span><span class="mi">1</span> <span class="o">--</span><span class="n">branch</span> <span class="n">master</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">jsuarez5341</span><span class="o">/</span><span class="n">neural</span><span class="o">-</span><span class="n">mmo</span>
-<span class="n">git</span> <span class="n">clone</span> <span class="o">--</span><span class="n">single</span><span class="o">-</span><span class="n">branch</span> <span class="o">--</span><span class="n">depth</span><span class="o">=</span><span class="mi">1</span> <span class="o">--</span><span class="n">branch</span> <span class="n">v1</span><span class="o">.</span><span class="mf">5.1</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">jsuarez5341</span><span class="o">/</span><span class="n">neural</span><span class="o">-</span><span class="n">mmo</span><span class="o">-</span><span class="n">client</span> <span class="n">neural</span><span class="o">-</span><span class="n">mmo</span><span class="o">/</span><span class="n">forge</span><span class="o">/</span><span class="n">embyr</span>
-
-<span class="n">cd</span> <span class="n">neural</span><span class="o">-</span><span class="n">mmo</span> <span class="o">&amp;&amp;</span> <span class="n">bash</span> <span class="n">scripts</span><span class="o">/</span><span class="n">setup</span><span class="o">.</span><span class="n">sh</span>
+<div class="code-block-caption"><span class="caption-text">Competition setup</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">gitlab</span><span class="o">.</span><span class="n">aicrowd</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">jyotish</span><span class="o">/</span><span class="n">neuralmmo</span><span class="o">-</span><span class="n">starter</span><span class="o">-</span><span class="n">kit</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="n">neural</span><span class="o">-</span><span class="n">mmo</span>
 </pre></div>
 </div>
 </div>
 <div class="literal-block-wrapper docutils container" id="id4">
-<div class="code-block-caption"><span class="caption-text">Windows 10 + WSL Ubuntu</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#Execute in WSL Ubuntu</span>
-<span class="n">git</span> <span class="n">clone</span> <span class="o">--</span><span class="n">single</span><span class="o">-</span><span class="n">branch</span> <span class="o">--</span><span class="n">depth</span><span class="o">=</span><span class="mi">1</span> <span class="o">--</span><span class="n">branch</span> <span class="n">master</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">jsuarez5341</span><span class="o">/</span><span class="n">neural</span><span class="o">-</span><span class="n">mmo</span>
+<div class="code-block-caption"><span class="caption-text">Environment source. Setup with –CORE_ONLY to omit RLlib requirements</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="o">--</span><span class="n">single</span><span class="o">-</span><span class="n">branch</span> <span class="o">--</span><span class="n">depth</span><span class="o">=</span><span class="mi">1</span> <span class="o">--</span><span class="n">branch</span> <span class="n">master</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">jsuarez5341</span><span class="o">/</span><span class="n">neural</span><span class="o">-</span><span class="n">mmo</span>
 <span class="n">cd</span> <span class="n">neural</span><span class="o">-</span><span class="n">mmo</span> <span class="o">&amp;&amp;</span> <span class="n">bash</span> <span class="n">scripts</span><span class="o">/</span><span class="n">setup</span><span class="o">.</span><span class="n">sh</span>
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id5">
+<div class="code-block-caption"><span class="caption-text">Download the UnityClient client</span><a class="headerlink" href="#id5" title="Permalink to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="o">--</span><span class="n">single</span><span class="o">-</span><span class="n">branch</span> <span class="o">--</span><span class="n">depth</span><span class="o">=</span><span class="mi">1</span> <span class="o">--</span><span class="n">branch</span> <span class="n">v1</span><span class="o">.</span><span class="mf">5.1</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">jsuarez5341</span><span class="o">/</span><span class="n">neural</span><span class="o">-</span><span class="n">mmo</span><span class="o">-</span><span class="n">client</span>
 
-<span class="c1">#Execute in Windows 10</span>
-<span class="n">git</span> <span class="n">clone</span> <span class="o">--</span><span class="n">single</span><span class="o">-</span><span class="n">branch</span> <span class="o">--</span><span class="n">depth</span><span class="o">=</span><span class="mi">1</span> <span class="o">--</span><span class="n">branch</span> <span class="n">v1</span><span class="o">.</span><span class="mf">5.1</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">jsuarez5341</span><span class="o">/</span><span class="n">neural</span><span class="o">-</span><span class="n">mmo</span><span class="o">-</span><span class="n">client</span>
+<span class="c1">#If not on WSL:</span>
+<span class="n">mv</span> <span class="n">neural</span><span class="o">-</span><span class="n">mmo</span><span class="o">-</span><span class="n">client</span> <span class="n">neural</span><span class="o">-</span><span class="n">mmo</span><span class="o">/</span><span class="n">forge</span><span class="o">/</span><span class="n">embyr</span>
 </pre></div>
 </div>
 </div>
 <dl class="simple">
 <dt><strong>Troubleshooting:</strong></dt><dd><ul class="simple">
 <li><p>Post installation errors in #support on the <a class="reference external" href="https://discord.gg/BkMmFUC">[Discord]</a></p></li>
-<li><p>If you are training on GPU and get an IndexError error on self.device, set gpu_ids=[0] in ray/rllib/policy/rotch_policy.py:150 (typically in ~/anaconda3/lib/python3.8/site-packages)</p></li>
+<li><p>If you are training on GPU and get an IndexError error on self.device, set gpu_ids=[0] in ray/rllib/policy/torch_policy.py:150 (typically in ~/anaconda3/lib/python3.8/site-packages)</p></li>
 <li><p>Most compatibility issues with the client and unsupported operating systems can be resolved by opening the project in the Unity Editor</p></li>
 <li><p>If you want full commit history, clone without <code class="docutils literal notranslate"><span class="pre">--depth=1</span></code> (including in scripts/setup.sh for the client). This flag is only included to cut down on download time</p></li>
 <li><p>The master branch will always contain the latest stable version. Each previous version release is archived in a separate branch. Dev branches are not nightly builds and may be flammable.</p></li>
@@ -258,15 +262,15 @@
 </div>
 <div class="section" id="icon-cli">
 <h1><img alt="icon" src="../_images/icon_pixel.png" /> CLI<a class="headerlink" href="#icon-cli" title="Permalink to this headline">¶</a></h1>
-<p>Forge.py is the main file for the included demo and starter project (/projekt). It includes commands for map generation, training, evaluation, visualization, and rendering. To view documentation:</p>
+<p>Forge is the main file for the included demo and starter project (/projekt). It includes commands for map generation, training, evaluation, visualization, and rendering. To view documentation:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">Forge</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">help</span>
 </pre></div>
 </div>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>NAME
-    Forge.py --help - Neural MMO CLI powered by Google Fire
+    python Forge.py --help - Neural MMO CLI powered by Google Fire
 
 SYNOPSIS
-    Forge.py --help - GROUP | COMMAND
+    python Forge.py --help - GROUP | COMMAND
 
 DESCRIPTION
     Main file for the RLlib demo included with Neural MMO.
@@ -313,8 +317,8 @@ COMMANDS
 <div class="section" id="icon-terrain-generation">
 <h1><img alt="icon" src="../_images/icon_pixel.png" /> Terrain Generation<a class="headerlink" href="#icon-terrain-generation" title="Permalink to this headline">¶</a></h1>
 <p>We’re going to need some maps to play with in the tutorials below. If you’re following along interactively and want to keep things quick, we suggest only generating the small maps. Generating image previews of each map can be useful in certain circumstances. The files for large maps are huge, so we’ll only generate PNGs for small maps.</p>
-<div class="literal-block-wrapper docutils container" id="id5">
-<div class="code-block-caption"><span class="caption-text">Generate small and large game maps</span><a class="headerlink" href="#id5" title="Permalink to this code">¶</a></div>
+<div class="literal-block-wrapper docutils container" id="id6">
+<div class="code-block-caption"><span class="caption-text">Generate small and large game maps</span><a class="headerlink" href="#id6" title="Permalink to this code">¶</a></div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">Forge</span><span class="o">.</span><span class="n">py</span> <span class="n">generate</span> <span class="o">--</span><span class="n">config</span><span class="o">=</span><span class="n">SmallMaps</span> <span class="o">--</span><span class="n">TERRAIN_RENDER</span>
 <span class="n">python</span> <span class="n">Forge</span><span class="o">.</span><span class="n">py</span> <span class="n">generate</span> <span class="o">--</span><span class="n">config</span><span class="o">=</span><span class="n">LargeMaps</span>
 </pre></div>
@@ -327,11 +331,11 @@ Generating 256 training and 64 evaluation maps:
 </pre></div>
 </div>
 <p>Generating small maps without rendering takes 5-10 seconds on a modern CPU.</p>
-<div class="figure align-default" id="id6">
+<div class="figure align-default" id="id7">
 <img alt="../_images/map1.png" src="../_images/map1.png" />
-<p class="caption"><span class="caption-text">Example map from resource/maps/procedural-small/map1/map.png</span><a class="headerlink" href="#id6" title="Permalink to this image">¶</a></p>
+<p class="caption"><span class="caption-text">Example map from resource/maps/procedural-small/map1/map.png</span><a class="headerlink" href="#id7" title="Permalink to this image">¶</a></p>
 </div>
-<p>Terrain generation is controlled by a number of parameters prefixed with <a href="#id14"><span class="problematic" id="id15">TERRAIN_</span></a>. The config documentation details them all, and you can experiment with larger modifications to the procedural generation source in forge/blade/core/terrain.py.</p>
+<p>Terrain generation is controlled by a number of parameters prefixed with <a href="#id15"><span class="problematic" id="id16">TERRAIN_</span></a>. The config documentation details them all, and you can experiment with larger modifications to the procedural generation source in neural_mmo/forgeblade/core/terrain.py.</p>
 </div>
 <div class="section" id="icon-rendering-and-overlays">
 <h1><img alt="icon" src="../_images/icon_pixel.png" /> Rendering and Overlays<a class="headerlink" href="#icon-rendering-and-overlays" title="Permalink to this headline">¶</a></h1>
@@ -340,26 +344,26 @@ Generating 256 training and 64 evaluation maps:
 </pre></div>
 </div>
 <div class="line-block">
-<div class="line"><strong>Linux:</strong> Launch <em>client.sh</em> in a separate shell or click the associated executable</div>
+<div class="line"><strong>Linux/MacOS:</strong> Launch <em>client.sh</em> in a separate shell or click the associated executable</div>
 <div class="line"><strong>Windows:</strong> Launch neural-mmo-client/UnityClient/neural-mmo.exe from Windows 10</div>
 </div>
 <p>The server will take a few seconds to load the pretrained policy and connect to the client.</p>
-<div class="figure align-default" id="id7">
+<div class="figure align-default" id="id8">
 <img alt="../_images/ui.png" src="../_images/ui.png" />
-<p class="caption"><span class="caption-text">You should see this view once the map loads</span><a class="headerlink" href="#id7" title="Permalink to this image">¶</a></p>
+<p class="caption"><span class="caption-text">You should see this view once the map loads</span><a class="headerlink" href="#id8" title="Permalink to this image">¶</a></p>
 </div>
 <p>The on-screen instructions demonstrate how to pan and zoom in the environment. You can also click on agents to examine their skill levels. The in-game console (which you can toggle with the tilde key) give you access to a number of overlays. Note that the LargeMaps config requires a good workstation to render and you should avoid zooming all the way out.</p>
 <img alt="../_images/overlays.png" src="../_images/overlays.png" />
 <p>The counts (exploration) overlay is computed by splatting the agent’s current position to a counts map. Most other overlays are computed analogously. However, you can also do more impressive things with a bit more compute. For example, the tileValues and entityValues overlays simulate an agent on every tile and computes the value function with respect to local tiles/entities. Note that some overlays, such as counts and skills, are well-defined for all models. Others, such as value function and attention, do not exist for scripted baselines.</p>
-<p>Writing your own overlays is simple. You can find the source code for general overlays (those computable by scripted baselines) in forge/trinity/overlay.py. RLlib-specific overlays that require access to the trainer/model are included in projekt/rllib_wrapper.py. Details are also included in the User API.</p>
+<p>Writing your own overlays is simple. You can find the source code for general overlays (those computable by scripted baselines) in neural_mmo/forgetrinity/overlay.py. RLlib-specific overlays that require access to the trainer/model are included in projekt/rllib_wrapper.py. Details are also included in the User API.</p>
 </div>
 <div class="section" id="icon-training">
 <h1><img alt="icon" src="../_images/icon_pixel.png" /> Training<a class="headerlink" href="#icon-training" title="Permalink to this headline">¶</a></h1>
 <p>Evaluating on canonical configs will load the associated pretrained baseline by default. To reproduce our baselines by training from scratch:</p>
-<div class="literal-block-wrapper docutils container" id="id8">
-<div class="code-block-caption"><span class="caption-text">Train on small and large game maps</span><a class="headerlink" href="#id8" title="Permalink to this code">¶</a></div>
+<div class="literal-block-wrapper docutils container" id="id9">
+<div class="code-block-caption"><span class="caption-text">Train on small and large game maps</span><a class="headerlink" href="#id9" title="Permalink to this code">¶</a></div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">Forge</span><span class="o">.</span><span class="n">py</span> <span class="n">train</span> <span class="o">--</span><span class="n">config</span><span class="o">=</span><span class="n">SmallMultimodalSkills</span> <span class="o">--</span><span class="n">LOAD</span><span class="o">=</span><span class="kc">False</span>
-<span class="n">python</span> <span class="n">Forge</span><span class="o">.</span><span class="n">py</span> <span class="n">train</span> <span class="o">--</span><span class="n">config</span><span class="o">=</span><span class="n">LargeMultimodalSkills</span> <span class="o">--</span><span class="n">LOAD</span><span class="o">=</span><span class="kc">False</span>
+<span class="n">python</span> <span class="n">Forge</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">config</span><span class="o">=</span><span class="n">LargeMultimodalSkills</span> <span class="o">--</span><span class="n">LOAD</span><span class="o">=</span><span class="kc">False</span>
 </pre></div>
 </div>
 </div>
@@ -422,8 +426,8 @@ Generating 256 training and 64 evaluation maps:
 <div class="section" id="icon-evaluation">
 <h1><img alt="icon" src="../_images/icon_pixel.png" /> Evaluation<a class="headerlink" href="#icon-evaluation" title="Permalink to this headline">¶</a></h1>
 <p>Evaluation in open-ended massively multiagent settings is akin to that in the real world. There is not an obvious single real-number metric. It’s like trying to order people from best to worst. Nonetheless, we can still make meaningful insights about agent behavior and draw well-evidenced conclusions about relative performance. This section will introduce you to Neural MMO’s suite of evaluation and visualization tools.</p>
-<div class="literal-block-wrapper docutils container" id="id9">
-<div class="code-block-caption"><span class="caption-text">Evaluate a pretrained and scripted model</span><a class="headerlink" href="#id9" title="Permalink to this code">¶</a></div>
+<div class="literal-block-wrapper docutils container" id="id10">
+<div class="code-block-caption"><span class="caption-text">Evaluate a pretrained and scripted model</span><a class="headerlink" href="#id10" title="Permalink to this code">¶</a></div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">Forge</span><span class="o">.</span><span class="n">py</span> <span class="n">evaluate</span> <span class="o">--</span><span class="n">config</span><span class="o">=</span><span class="n">SmallMultimodalSkills</span> <span class="o">--</span><span class="n">EVAL_MAPS</span><span class="o">=</span><span class="mi">1</span>
 <span class="n">python</span> <span class="n">Forge</span><span class="o">.</span><span class="n">py</span> <span class="n">evaluate</span> <span class="o">--</span><span class="n">config</span><span class="o">=</span><span class="n">SmallMultimodalSkills</span> <span class="o">--</span><span class="n">EVAL_MAPS</span><span class="o">=</span><span class="mi">1</span> <span class="o">--</span><span class="n">SCRIPTED</span><span class="o">=</span><span class="n">Combat</span>
 </pre></div>
@@ -447,10 +451,10 @@ Number of evaluation maps: 1
 <div class="section" id="icon-dashboard-and-statistics">
 <h1><img alt="icon" src="../_images/icon_pixel.png" /> Dashboard and Statistics<a class="headerlink" href="#icon-dashboard-and-statistics" title="Permalink to this headline">¶</a></h1>
 <p>The “visualize” command creates summary tables and figures using the results of training and evaluation</p>
-<div class="literal-block-wrapper docutils container" id="id10">
-<div class="code-block-caption"><span class="caption-text">Visualize evaluation results for pretrained and scripted baselines</span><a class="headerlink" href="#id10" title="Permalink to this code">¶</a></div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">Forge</span><span class="o">.</span><span class="n">py</span> <span class="n">visualize</span> <span class="o">--</span><span class="n">config</span><span class="o">=</span><span class="n">SmallMultimodalSkills</span> <span class="o">--</span><span class="n">MODEL</span><span class="o">=</span><span class="n">small</span><span class="o">-</span><span class="n">maps</span>
-<span class="n">python</span> <span class="n">Forge</span><span class="o">.</span><span class="n">py</span> <span class="n">visualize</span> <span class="o">--</span><span class="n">config</span><span class="o">=</span><span class="n">SmallMultimodalSkills</span> <span class="o">--</span><span class="n">MODEL</span><span class="o">=</span><span class="n">scripted</span><span class="o">-</span><span class="n">combat</span>
+<div class="literal-block-wrapper docutils container" id="id11">
+<div class="code-block-caption"><span class="caption-text">Visualize evaluation results for pretrained and scripted baselines</span><a class="headerlink" href="#id11" title="Permalink to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">Forge</span><span class="o">.</span><span class="n">py</span> <span class="n">visualize</span> <span class="o">--</span><span class="n">config</span><span class="o">=</span><span class="n">SmallMultimodalSkills</span>
+<span class="n">python</span> <span class="n">Forge</span><span class="o">.</span><span class="n">py</span> <span class="n">visualize</span> <span class="o">--</span><span class="n">config</span><span class="o">=</span><span class="n">SmallMultimodalSkills</span> <span class="n">SCRIPTED</span><span class="o">=</span><span class="n">CombatTribrid</span>
 </pre></div>
 </div>
 </div>
@@ -565,20 +569,20 @@ Number of evaluation maps: 1
 </tbody>
 </table>
 <p>Your results may vary slightly from ours, which were obtained using a slightly larger evaluation for stability. From the summary stats, the models look pretty comparable. Since the scripted baseline performs an exact min-max search using a ton of hand-coded domain knowledge, this is actually quite a good result. But it would be nice to have finer-grained insights – both to aid in future development and for the paper. The “visualize” command also loads a browser-based interactive dashboard:</p>
-<div class="figure align-default" id="id11">
-<img alt="../_images/small-map.png" src="../_images/small-map.png" />
-<p class="caption"><span class="caption-text">Pretrained neural baseline</span><a class="headerlink" href="#id11" title="Permalink to this image">¶</a></p>
-</div>
 <div class="figure align-default" id="id12">
+<img alt="../_images/small-map.png" src="../_images/small-map.png" />
+<p class="caption"><span class="caption-text">Pretrained neural baseline</span><a class="headerlink" href="#id12" title="Permalink to this image">¶</a></p>
+</div>
+<div class="figure align-default" id="id13">
 <img alt="../_images/scripted-combat.png" src="../_images/scripted-combat.png" />
-<p class="caption"><span class="caption-text">Scripted baseline</span><a class="headerlink" href="#id12" title="Permalink to this image">¶</a></p>
+<p class="caption"><span class="caption-text">Scripted baseline</span><a class="headerlink" href="#id13" title="Permalink to this image">¶</a></p>
 </div>
 <p>Each row of the dashboard contains multiple visualization styles for one row of the summary table. In this particular instance, the Skill Level bar chart is most illuminating – notice how the scripted model uses only Ranged combat whereas the pretrained model uses a mix of Ranged and Mage. I set the scripted model to only use range combat because I thought it was probably stronger overall, but apparently Range and Mage are somewhat balanced. The pretrained model avoids Melee even though it does the most damage, probably because the current movement system makes it difficult to close distance to an opponent – perhaps I should consider changing the movement system in a future update.</p>
 <p>So, why do we need 15 plots when only one turned out to be important? First of all, we didn’t know which plot would highlight an interesting difference ahead of time. Second, there are some smaller observations we can make, such as the pretrained model obtaining significantly more equipment pickups while the scripted model obtained fewer and better pickups (Equipment scatter plots). Or that the pretrained model has a slightly heavier Lifetime right tail, as seen in the Lifetime Gantt plot. Many of our most successful experiments (and worst bug fixes) were motivated by an unusual disparity in the dashboard.</p>
-<p>And before you ask, yes: there’s a boring publication theme: specify –VIS_THEME=publication. In fact, you can create custom logging with a highly configurable dashboard to go with it in only a few lines of code – just override the log method of forge/trinity/env.py to specify your own data tracks and plot styles.</p>
-<div class="figure align-default" id="id13">
+<p>And before you ask, yes: there’s a boring publication theme: specify –VIS_THEME=publication. In fact, you can create custom logging with a highly configurable dashboard to go with it in only a few lines of code – just override the log method of neural_mmo/forgetrinity/env.py to specify your own data tracks and plot styles.</p>
+<div class="figure align-default" id="id14">
 <img alt="../_images/publication_theme.png" src="../_images/publication_theme.png" />
-<p class="caption"><span class="caption-text">Publication theme</span><a class="headerlink" href="#id13" title="Permalink to this image">¶</a></p>
+<p class="caption"><span class="caption-text">Publication theme</span><a class="headerlink" href="#id14" title="Permalink to this image">¶</a></p>
 </div>
 </div>
 

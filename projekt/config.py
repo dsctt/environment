@@ -1,12 +1,10 @@
 from pdb import set_trace as T
-import numpy as np
-import os
 
-from forge.blade import core
-from forge.blade.core import config
-from forge.blade.systems.ai import behavior
+from neural_mmo.forge.blade import core
+from neural_mmo.forge.blade.core import config
 
-class Base(core.Config):
+
+class RLlibConfig:
    '''Base config for RLlib Models
 
    Extends core Config, which contains environment, evaluation,
@@ -19,16 +17,13 @@ class Base(core.Config):
    #Hardware Scale
    NUM_GPUS_PER_WORKER     = 0
    NUM_GPUS                = 1
-   NUM_WORKERS             = 6
+   NUM_WORKERS             = 1
    LOCAL_MODE              = False
    LOAD                    = True
 
    #Memory/Batch Scale
    TRAIN_EPOCHS            = 10000
-   TRAIN_BATCH_SIZE        = 256 * NUM_WORKERS #Bug? This gets doubled
-   ROLLOUT_FRAGMENT_LENGTH = 256
    LSTM_BPTT_HORIZON       = 16
-   SGD_MINIBATCH_SIZE      = min(256, TRAIN_BATCH_SIZE)
    NUM_SGD_ITER            = 1
 
    #Model
@@ -39,14 +34,13 @@ class Base(core.Config):
    EMBED                   = 64
 
    #Reward
-   COOP                    = False
    TEAM_SPIRIT             = 0.0
    ACHIEVEMENT_SCALE       = 1.0/15.0
 
    DEV_COMBAT = False
 
 
-class LargeMaps(Base):
+class LargeMaps(core.Config, RLlibConfig, config.AllGameSystems):
    '''Large scale Neural MMO training setting
 
    Features up to 1000 concurrent agents and 1000 concurrent NPCs,
@@ -55,15 +49,8 @@ class LargeMaps(Base):
    This is the default setting as of v1.5 and allows for large
    scale multiagent research even on relatively modest hardware'''
 
-   #Path settings
-   PATH_MAPS               = core.Config.PATH_MAPS_LARGE
-
-   #Harware Scale
-   NUM_WORKERS             = 16
-   LOCAL_MODE              = False
-   LOAD                    = True
-
    #Memory/Batch Scale
+   NUM_WORKERS             = 1 #16
    TRAIN_BATCH_SIZE        = 32 * NUM_WORKERS #Bug? This gets doubled
    ROLLOUT_FRAGMENT_LENGTH = 32
    SGD_MINIBATCH_SIZE      = 256
@@ -72,12 +59,8 @@ class LargeMaps(Base):
    TRAIN_HORIZON           = 8192
    EVALUATION_HORIZON      = 8192
 
-   #Population
-   NENT                    = 2048
-   NMOB                    = 1024
 
-
-class SmallMaps(Base):
+class SmallMaps(config.SmallMaps, RLlibConfig, config.AllGameSystems):
    '''Small scale Neural MMO training setting
 
    Features up to 128 concurrent agents and 32 concurrent NPCs,
@@ -87,30 +70,17 @@ class SmallMaps(Base):
    task for new ideas, a transfer target for agents trained on large maps,
    or as a primary research target for PCG methods.'''
 
-   #Path settings
-   PATH_MAPS               = core.Config.PATH_MAPS_SMALL
-
+   #Memory/Batch Scale
+   NUM_WORKERS             = 6 #32
+   TRAIN_BATCH_SIZE        = 256 * NUM_WORKERS #Bug? This gets doubled
+   ROLLOUT_FRAGMENT_LENGTH = 256
+   SGD_MINIBATCH_SIZE      = min(256, TRAIN_BATCH_SIZE)
+ 
    #Horizon
    TRAIN_HORIZON           = 1024
    EVALUATION_HORIZON      = 1024
 
-   #Scale
-   TERRAIN_CENTER          = 128
-   NENT                    = 256
-   NMOB                    = 128
-
-   #Players spawned per tick
-   PLAYER_SPAWN_ATTEMPTS   = 2
-
-   #NPC parameters
-   NPC_LEVEL_MAX           = 30
-   NPC_LEVEL_SPREAD        = 5
-
-
    NTILE                   = 16
-
-   PATH_MAPS_DEV           = os.path.join(core.Config.PATH_MAPS, 'dev')
-   PATH_MAPS               = PATH_MAPS_DEV
 
    ORE_RESPAWN       = 0.01
    '''Probability that a harvested ore tile will regenerate each tick'''
@@ -178,6 +148,7 @@ class Debug(SmallMaps, config.AllGameSystems):
 
    A version of the SmallMap setting with greatly reduced batch parameters.
    Only intended as a tool for identifying bugs in the model or environment'''
+   LOAD                    = False
    LOCAL_MODE              = True
    NUM_WORKERS             = 1
 
@@ -189,9 +160,39 @@ class Debug(SmallMaps, config.AllGameSystems):
    HIDDEN                  = 2
    EMBED                   = 2
 
+### AICrowd competition settings
+class Competition(config.AllGameSystems, config.Achievement): pass
+class CompetitionRound1(SmallMaps, Competition):
+   @property
+   def SPAWN(self):
+      return self.SPAWN_CONCURRENT
+
+   NENT                    = 128
+   NPOP                    = 1
+
+class CompetitionRound2(SmallMaps, Competition):
+   @property
+   def SPAWN(self):
+      return self.SPAWN_CONCURRENT
+
+   NENT                    = 128
+   NPOP                    = 16
+   COOPERATIVE             = True
+
+class CompetitionRound3(LargeMaps, Competition):
+   @property
+   def SPAWN(self):
+      return self.SPAWN_CONCURRENT
+
+   NENT                    = 1024
+   NPOP                    = 32
+   COOPERATIVE             = True
+
+
 ### NeurIPS Experiments
 class SmallMultimodalSkills(SmallMaps, config.AllGameSystems): pass
 class LargeMultimodalSkills(LargeMaps, config.AllGameSystems): pass
+
 
 class MagnifyExploration(SmallMaps, config.Resource, config.Progression):
    pass
@@ -202,6 +203,7 @@ class Population32(MagnifyExploration):
 class Population256(MagnifyExploration):
    NENT  = 256
 
+
 class DomainRandomization16384(SmallMaps, config.AllGameSystems):
    TERRAIN_TRAIN_MAPS=16384
 class DomainRandomization256(SmallMaps, config.AllGameSystems):
@@ -211,42 +213,13 @@ class DomainRandomization32(SmallMaps, config.AllGameSystems):
 class DomainRandomization1(SmallMaps, config.AllGameSystems):
    TERRAIN_TRAIN_MAPS=1
 
+
 class TeamBased(MagnifyExploration, config.Combat):
    NENT                    = 128
    NPOP                    = 32
-   COOP                    = True
+   COOPERATIVE             = True
    TEAM_SPIRIT             = 0.5
 
    @property
    def SPAWN(self):
       return self.SPAWN_CONCURRENT
-
-
-### AICrowd competition settings
-class Competition(config.AllGameSystems, config.Achievement): pass
-class CompetitionRound1(SmallMaps, Competition):
-   @property
-   def SPAWN(self):
-      return self.SPAWN_CONCURRENT
-
-   NENT                    = 128
-   NPOP                    = 1
-   COOP                    = False
-
-class CompetitionRound2(SmallMaps, Competition):
-   @property
-   def SPAWN(self):
-      return self.SPAWN_CONCURRENT
-
-   NENT                    = 128
-   NPOP                    = 16
-   COOP                    = True
-
-class CompetitionRound3(LargeMaps, Competition):
-   @property
-   def SPAWN(self):
-      return self.SPAWN_CONCURRENT
-
-   NENT                    = 1024
-   NPOP                    = 32
-   COOP                    = True
