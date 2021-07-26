@@ -10,6 +10,7 @@ import re
 from tqdm import tqdm
 import numpy as np
 import gym
+import wandb
 
 import torch
 from torch import nn
@@ -19,6 +20,8 @@ from ray import rllib
 import ray.rllib.agents.ppo.ppo as ppo
 import ray.rllib.agents.ppo.appo as appo
 from ray.rllib.agents.callbacks import DefaultCallbacks
+from ray.tune.integration.wandb import WandbLoggerCallback
+from ray.tune.logger import LoggerCallback
 from ray.rllib.utils.spaces.flexdict import FlexDict
 from ray.rllib.models.torch.recurrent_net import RecurrentNetwork
 
@@ -270,7 +273,6 @@ class Recurrent(Encoder):
                          batch_first=True)
 
       return hidden.reshape(TB, H), state
->>>>>>> master
 
 
 ###############################################################################
@@ -341,10 +343,12 @@ class RLlibEvaluator(evaluator.Base):
 
 class SanePPOTrainer(ppo.PPOTrainer):
    '''Small utility class on top of RLlib's base trainer'''
-   def __init__(self, config):
+   def __init__(self, config, env=None, logger_creator=None):
       self.envConfig = config['env_config']['config']
       super().__init__(env=self.envConfig.ENV_NAME, config=config)
       self.training_logs = {}
+
+      wandb.init(project='NeuralMMO', name='NeuralMMO')   
 
    def save(self):
       '''Save model to file. Note: RLlib does not let us chose save paths'''
@@ -456,6 +460,8 @@ class SanePPOTrainer(ppo.PPOTrainer):
                 training_logs[track][stat] = []
 
              training_logs[track][stat] += vals
+
+             wandb.log({key: vals})
 
           np.save(trainPath, {
                'logs': training_logs,
@@ -707,14 +713,6 @@ class RLlibLogCallbacks(DefaultCallbacks):
    def on_episode_end(self, *, worker, base_env, policies, episode, **kwargs):
       assert len(base_env.envs) == 1, 'One env per worker'
       env    = base_env.envs[0]
-      config = env.config
 
       for key, vals in env.terminal()['Stats'].items():
-         logs = episode.hist_data
-
-         key  = '_' + key
-         logs[key + '_Min']  = [np.min(vals)]
-         logs[key + '_Max']  = [np.max(vals)]
-         logs[key + '_Mean'] = [np.mean(vals)]
-         logs[key + '_Std']  = [np.std(vals)]
-
+         episode.custom_metrics[key] = np.mean(vals)

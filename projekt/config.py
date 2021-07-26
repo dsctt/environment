@@ -13,10 +13,13 @@ class RLlibConfig:
    @property
    def MODEL(self):
       return self.__class__.__name__
+
+   #Paths
+   EXPERIMENT_DIR          = 'experiment'
   
    #Hardware Scale
    NUM_GPUS_PER_WORKER     = 0
-   NUM_GPUS                = 1
+   NUM_GPUS                = 0
    NUM_WORKERS             = 1
    LOCAL_MODE              = False
    LOAD                    = True

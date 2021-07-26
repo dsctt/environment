@@ -17,8 +17,8 @@ class Action(Node):
 
    @staticproperty
    def edges():
-      return [Move, Attack, Buy, InventoryAction]
-      #return [Move, Attack]
+      #return [Move, Attack, Buy, InventoryAction]
+      return [Move, Attack]
 
    @staticproperty
    def n():
