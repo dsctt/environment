@@ -135,7 +135,7 @@ class Anvil():
          config = self.rllib_config,
          name = self.config.__class__.__name__,
          verbose = 1,
-         stop = {'training_iteration': 3},
+         stop = {'training_iteration': 1000},
          #resources_per_trial= ,
          local_dir = 'experiments',
          keep_checkpoints_num = 5,

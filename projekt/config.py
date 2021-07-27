@@ -19,7 +19,7 @@ class RLlibConfig:
   
    #Hardware Scale
    NUM_GPUS_PER_WORKER     = 0
-   NUM_GPUS                = 0
+   NUM_GPUS                = 1
    NUM_WORKERS             = 1
    LOCAL_MODE              = False
    LOAD                    = True
@@ -53,7 +53,7 @@ class LargeMaps(core.Config, RLlibConfig, config.AllGameSystems):
    scale multiagent research even on relatively modest hardware'''
 
    #Memory/Batch Scale
-   NUM_WORKERS             = 1 #16
+   NUM_WORKERS             = 16
    TRAIN_BATCH_SIZE        = 32 * NUM_WORKERS #Bug? This gets doubled
    ROLLOUT_FRAGMENT_LENGTH = 32
    SGD_MINIBATCH_SIZE      = 256
@@ -74,10 +74,10 @@ class SmallMaps(config.SmallMaps, RLlibConfig, config.AllGameSystems):
    or as a primary research target for PCG methods.'''
 
    #Memory/Batch Scale
-   NUM_WORKERS             = 6 #32
+   NUM_WORKERS             = 32
    TRAIN_BATCH_SIZE        = 256 * NUM_WORKERS #Bug? This gets doubled
-   ROLLOUT_FRAGMENT_LENGTH = 256
-   SGD_MINIBATCH_SIZE      = min(256, TRAIN_BATCH_SIZE)
+   ROLLOUT_FRAGMENT_LENGTH = 32
+   SGD_MINIBATCH_SIZE      = min(128, TRAIN_BATCH_SIZE)
  
    #Horizon
    TRAIN_HORIZON           = 1024
