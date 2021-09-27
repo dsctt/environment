@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Evaluator &mdash; Neural MMO v1.5 1.5.1 documentation</title>
+  <title>Evaluator &mdash; Neural MMO v1.5.2 1.5.2 documentation</title>
   
 
   
@@ -40,7 +40,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Overlay" href="neural_mmo.forge.trinity.overlay.html" />
-    <link rel="prev" title="Scripted Observation Wrapper" href="neural_mmo.forge.trinity.scripted.io.html" /> 
+    <link rel="prev" title="Scripted Baselines" href="neural_mmo.forge.trinity.scripted.baselines.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -54,7 +54,7 @@
           
 
           
-            <a href="../index.html" class="icon icon-home"> Neural MMO v1.5
+            <a href="../index.html" class="icon icon-home"> Neural MMO v1.5.2
           
 
           
@@ -88,24 +88,10 @@
               <p class="caption"><span class="caption-text">User Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="userguide.html"> Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="userguide.html#icon-installation"> Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="userguide.html#icon-cli"> CLI</a></li>
-<li class="toctree-l1"><a class="reference internal" href="userguide.html#icon-terrain-generation"> Terrain Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userguide.html#icon-generate-environments"> Generate Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userguide.html#icon-create-policies"> Create Policies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userguide.html#icon-evaluate-agents"> Evaluate Agents</a></li>
 <li class="toctree-l1"><a class="reference internal" href="userguide.html#icon-rendering-and-overlays"> Rendering and Overlays</a></li>
-<li class="toctree-l1"><a class="reference internal" href="userguide.html#icon-training"> Training</a></li>
-<li class="toctree-l1"><a class="reference internal" href="userguide.html#icon-evaluation"> Evaluation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="userguide.html#icon-dashboard-and-statistics"> Dashboard and Statistics</a></li>
-</ul>
-<p class="caption"><span class="caption-text">Developer Guide</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="devguide.html"> Foreword</a></li>
-<li class="toctree-l1"><a class="reference internal" href="devguide.html#icon-contributing"> Contributing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="devguide.html#icon-code-structure"> Code Structure</a></li>
-<li class="toctree-l1"><a class="reference internal" href="devguide.html#icon-style"> Style</a></li>
-<li class="toctree-l1"><a class="reference internal" href="devguide.html#icon-tech-stack"> Tech Stack</a></li>
-<li class="toctree-l1"><a class="reference internal" href="devguide.html#icon-client-map-representation"> Client Map Representation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="devguide.html#icon-observation-representation"> Observation Representation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="devguide.html#icon-model-io"> Model IO</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Documentation</span></p>
 <ul class="current">
@@ -121,6 +107,15 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="api.html#icon-developer-api"> Developer API</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Game Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="game_wiki.html"> Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="game_wiki.html#icon-game-systems"> Game Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="game_wiki.html#icon-resource-system"> Resource System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="game_wiki.html#icon-combat"> Combat</a></li>
+<li class="toctree-l1"><a class="reference internal" href="game_wiki.html#icon-npc-equipment"> NPC &amp; Equipment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="game_wiki.html#icon-progression"> Progression</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Baselines</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="baselines.html"> Evaluation Protocol</a></li>
@@ -135,6 +130,17 @@
 <li class="toctree-l1"><a class="reference internal" href="updates.html#icon-update-slides"> Update Slides</a></li>
 <li class="toctree-l1"><a class="reference internal" href="updates.html#icon-additional-links"> Additional Links</a></li>
 <li class="toctree-l1"><a class="reference internal" href="updates.html#icon-patch-notes-version-history"> Patch Notes + Version History</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="devguide.html"> Foreword</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devguide.html#icon-contributing"> Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devguide.html#icon-code-structure"> Code Structure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devguide.html#icon-style"> Style</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devguide.html#icon-tech-stack"> Tech Stack</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devguide.html#icon-client-map-representation"> Client Map Representation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devguide.html#icon-observation-representation"> Observation Representation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devguide.html#icon-model-io"> Model IO</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Ideology</span></p>
 <ul>
@@ -165,7 +171,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">Neural MMO v1.5</a>
+          <a href="../index.html">Neural MMO v1.5.2</a>
         
       </nav>
 
@@ -219,79 +225,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="module-neural_mmo.forge.trinity.evaluator">
-<span id="evaluator"></span><h1>Evaluator<a class="headerlink" href="#module-neural_mmo.forge.trinity.evaluator" title="Permalink to this headline">¶</a></h1>
-<dl class="py class">
-<dt id="neural_mmo.forge.trinity.evaluator.Base">
-<em class="property">class </em><code class="sig-prename descclassname">neural_mmo.forge.trinity.evaluator.</code><code class="sig-name descname">Base</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config</span></em><span class="sig-paren">)</span><a class="headerlink" href="#neural_mmo.forge.trinity.evaluator.Base" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Base class for test-time evaluators</p>
-<dl class="py method">
-<dt id="neural_mmo.forge.trinity.evaluator.Base.render">
-<code class="sig-name descname">render</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#neural_mmo.forge.trinity.evaluator.Base.render" title="Permalink to this definition">¶</a></dt>
-<dd><p>Rendering launches a Twisted WebSocket server with a fixed
-tick rate. This is a blocking call; the server will handle
-environment execution using the provided tick function.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="neural_mmo.forge.trinity.evaluator.Base.evaluate">
-<code class="sig-name descname">evaluate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">generalize</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#neural_mmo.forge.trinity.evaluator.Base.evaluate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Evaluate the model on maps according to config params</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="neural_mmo.forge.trinity.evaluator.Base.tick">
-<code class="sig-name descname">tick</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obs</span></em>, <em class="sig-param"><span class="n">actions</span></em>, <em class="sig-param"><span class="n">pos</span></em>, <em class="sig-param"><span class="n">cmd</span></em>, <em class="sig-param"><span class="n">preprocess</span><span class="o">=</span><span class="default_value">{}</span></em>, <em class="sig-param"><span class="n">omitDead</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#neural_mmo.forge.trinity.evaluator.Base.tick" title="Permalink to this definition">¶</a></dt>
-<dd><p>Simulate a single timestep</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>obs</strong> – dict of agent observations</p></li>
-<li><p><strong>actions</strong> – dict of policy actions</p></li>
-<li><p><strong>pos</strong> – Camera position (r, c) from the server</p></li>
-<li><p><strong>cmd</strong> – Console command from the server</p></li>
-<li><p><strong>preprocessActions</strong> – Required for actions provided as indices</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt id="neural_mmo.forge.trinity.evaluator.Evaluator">
-<em class="property">class </em><code class="sig-prename descclassname">neural_mmo.forge.trinity.evaluator.</code><code class="sig-name descname">Evaluator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config</span></em>, <em class="sig-param"><span class="n">policy</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#neural_mmo.forge.trinity.evaluator.Evaluator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#neural_mmo.forge.trinity.evaluator.Base" title="neural_mmo.forge.trinity.evaluator.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">neural_mmo.forge.trinity.evaluator.Base</span></code></a></p>
-<p>Evaluator for scripted models</p>
-<dl class="py method">
-<dt id="neural_mmo.forge.trinity.evaluator.Evaluator.render">
-<code class="sig-name descname">render</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#neural_mmo.forge.trinity.evaluator.Evaluator.render" title="Permalink to this definition">¶</a></dt>
-<dd><p>Render override for scripted models</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="neural_mmo.forge.trinity.evaluator.Evaluator.tick">
-<code class="sig-name descname">tick</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pos</span></em>, <em class="sig-param"><span class="n">cmd</span></em><span class="sig-paren">)</span><a class="headerlink" href="#neural_mmo.forge.trinity.evaluator.Evaluator.tick" title="Permalink to this definition">¶</a></dt>
-<dd><p>Simulate a single timestep</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>pos</strong> – Camera position (r, c) from the server)</p></li>
-<li><p><strong>cmd</strong> – Console command from the server</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="neural_mmo.forge.trinity.evaluator.Evaluator.evaluate">
-<code class="sig-name descname">evaluate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">generalize</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#neural_mmo.forge.trinity.evaluator.Evaluator.evaluate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Evaluate the model on maps according to config params</p>
-</dd></dl>
-
-</dd></dl>
-
+  <div class="section" id="evaluator">
+<h1>Evaluator<a class="headerlink" href="#evaluator" title="Permalink to this headline">¶</a></h1>
 </div>
 
 
@@ -301,7 +236,7 @@ environment execution using the provided tick function.</p>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
         <a href="neural_mmo.forge.trinity.overlay.html" class="btn btn-neutral float-right" title="Overlay" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="neural_mmo.forge.trinity.scripted.io.html" class="btn btn-neutral float-left" title="Scripted Observation Wrapper" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="neural_mmo.forge.trinity.scripted.baselines.html" class="btn btn-neutral float-left" title="Scripted Baselines" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

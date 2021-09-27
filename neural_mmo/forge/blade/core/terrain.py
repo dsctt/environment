@@ -143,6 +143,7 @@ class MapGenerator:
          mkdir(path)
 
          terrain, tiles = self.grid(config, seed, interpolaters[idx])
+         spawnResources(config, tiles)
 
          Save.np(tiles, path)
          if config.TERRAIN_RENDER:
