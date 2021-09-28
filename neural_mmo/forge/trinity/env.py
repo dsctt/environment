@@ -263,80 +263,35 @@ class Env:
 
       quill = self.quill
 
-      blob = quill.register('Population', self.realm.tick,
-            quill.HISTOGRAM, quill.INDEX, quill.SCATTER)
-      blob.log(self.realm.population)
+      quill.stat('Lifetime',  ent.history.timeAlive.val)
 
-      blob = quill.register('Lifetime', self.realm.tick,
-            quill.HISTOGRAM, quill.INDEX, quill.SCATTER, quill.GANTT)
-      blob.log(ent.history.timeAlive.val)
-
-      blob = quill.register('Basic Skills', self.realm.tick,
-            quill.HISTOGRAM, quill.STACKED_AREA, quill.STATS)
-      blob.log(ent.skills.water.level,        'Water')
-      blob.log(ent.skills.food.level,         'Food')
-
-      blob = quill.register('Harvest Skills', self.realm.tick,
-            quill.HISTOGRAM, quill.STACKED_AREA, quill.STATS, quill.RADAR)
-      blob.log(ent.skills.fishing.level,      'Fishing')
-      blob.log(ent.skills.hunting.level,      'Hunting')
-      blob.log(ent.skills.prospecting.level,  'Prospecting')
-      blob.log(ent.skills.carving.level,      'Carving')
-      blob.log(ent.skills.alchemy.level,      'Alchemy')
-
-      blob = quill.register('Combat Skills', self.realm.tick,
-            quill.HISTOGRAM, quill.STACKED_AREA, quill.STATS, quill.RADAR)
-      blob.log(ent.skills.melee.level,        'Melee')
-      blob.log(ent.skills.range.level,        'Range')
-      blob.log(ent.skills.mage.level,         'Mage')
-
-      blob = quill.register('Equipment', self.realm.tick,
-            quill.HISTOGRAM, quill.SCATTER)
-      blob.log(ent.inventory.equipment.offense, 'Offense')
-      blob.log(ent.inventory.equipment.defense, 'Defense')
+      if self.config.game_system_enabled('Achievement'):
+         quill.stat('Achievement', ent.achievements.score())
+         for name, stat in ent.achievements.stats:
+            quill.stat('Achievement_{}'.format(name), stat)
 
       blob = quill.register('Trades', self.realm.tick,
             quill.HISTOGRAM, quill.SCATTER)
-      blob.log(ent.sells, 'Sells')
-      blob.log(ent.buys,  'Buys')
+
+      quill.stat('Market Sells', ent.sells)
+      quill.stat('Market Buys', ent.sells)
 
       prices = quill.register('Market Prices', self.realm.tick, quill.LINE)
       levels = quill.register('Market Levels', self.realm.tick, quill.LINE)
       volume = quill.register('Market Volume', self.realm.tick, quill.LINE)
       supply = quill.register('Market Supply', self.realm.tick, quill.LINE)
       value  = quill.register('Market Value',  self.realm.tick, quill.LINE)
+
+      key = 'Market_{}_{}'
       for item, listing in self.realm.exchange.items.items():
-         prices.log(listing.price(),  item.__name__)
-         levels.log(listing.level(),  item.__name__)
-         volume.log(listing.volume,   item.__name__)
-         supply.log(listing.supply(), item.__name__)
-         value.log(listing.value(),   item.__name__)
+         quill.stat(key.format('Price', item.__name__), listing.price())
+         quill.stat(key.format('Level', item.__name__), listing.level())
+         quill.stat(key.format('Volume', item.__name__), listing.volume())
+         quill.stat(key.format('Supply', item.__name__), listing.supply())
+         quill.stat(key.format('Value', item.__name__), listing.value())
 
-      blob = quill.register('Population Wealth', self.realm.tick, quill.LINE)
       wealth = [p.inventory.gold.quantity.val for _, p in self.realm.players.items()]
-      blob.log(sum(wealth), 'Gold')
-
-      blob = quill.register('Exploration', self.realm.tick,
-            quill.HISTOGRAM, quill.SCATTER)
-      blob.log(ent.history.exploration)
-
-      '''
-      quill.stat('Population',      self.realm.population)
-      quill.stat('Lifetime',        ent.history.timeAlive.val)
-      quill.stat('Basic Skills',    ent.skills.basicLevel)
-      quill.stat('Harvest Skills',  ent.skills.harvestLevel)
-      quill.stat('Combat Skills',   ent.skills.combatLevel)
-      quill.stat('Equipment',       ent.inventory.equipment.level)
-      quill.stat('Exchange',        ent.buys + ent.sells)
-      quill.stat('Exploration',     ent.history.exploration)
-      '''
-
-      quill.stat('Lifetime',  ent.history.timeAlive.val)
-
-      if self.config.game_system_enabled('Achievement'):
-         quill.stat('Achievement', ent.achievements.score())
-         for name, stat in ent.achievements.stats:
-            quill.stat(name, stat)
+      quill.stat('Market_Wealth', sum(wealth))
 
       if not self.config.EVALUATE:
          return
