@@ -574,7 +574,12 @@ class RLlibTrainer(ppo.PPOTrainer):
          key  = 'SR_{}'.format(list(rating.keys())[0])
          val  = list(rating.values())[0]
          stats[key] = val.mu
-     
+
+      #? Post mean ?
+      for key, vals in stats.items():
+         if type(vals) == list:
+            stats[key] = np.mean(vals)
+
       return stat_dict
 
 

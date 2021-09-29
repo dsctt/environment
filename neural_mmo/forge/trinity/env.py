@@ -273,14 +273,14 @@ class Env:
       blob = quill.register('Trades', self.realm.tick,
             quill.HISTOGRAM, quill.SCATTER)
 
-      quill.stat('Market Sells', ent.sells)
-      quill.stat('Market Buys', ent.sells)
+      quill.stat('Market_Sells', ent.sells)
+      quill.stat('Market_Buys', ent.sells)
 
-      prices = quill.register('Market Prices', self.realm.tick, quill.LINE)
-      levels = quill.register('Market Levels', self.realm.tick, quill.LINE)
-      volume = quill.register('Market Volume', self.realm.tick, quill.LINE)
-      supply = quill.register('Market Supply', self.realm.tick, quill.LINE)
-      value  = quill.register('Market Value',  self.realm.tick, quill.LINE)
+      prices = quill.register('Market_Prices', self.realm.tick, quill.LINE)
+      levels = quill.register('Market_Levels', self.realm.tick, quill.LINE)
+      volume = quill.register('Market_Volume', self.realm.tick, quill.LINE)
+      supply = quill.register('Market_Supply', self.realm.tick, quill.LINE)
+      value  = quill.register('Market_Value',  self.realm.tick, quill.LINE)
 
       key = 'Market_{}_{}'
       for item, listing in self.realm.exchange.items.items():
