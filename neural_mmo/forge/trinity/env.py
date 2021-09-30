@@ -276,6 +276,10 @@ class Env:
       quill.stat('Market_Sells', ent.sells)
       quill.stat('Market_Buys', ent.sells)
 
+      quill.stat('Mage_Level', ent.skills.mage.level)
+      quill.stat('Range_Level', ent.skills.range.level)
+      quill.stat('Melee_Level', ent.skills.melee.level)
+
       prices = quill.register('Market_Prices', self.realm.tick, quill.LINE)
       levels = quill.register('Market_Levels', self.realm.tick, quill.LINE)
       volume = quill.register('Market_Volume', self.realm.tick, quill.LINE)

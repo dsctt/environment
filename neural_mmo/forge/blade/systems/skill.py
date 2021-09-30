@@ -189,6 +189,10 @@ class Melee(CombatSkill): pass
 class Range(CombatSkill): pass
 class Mage(CombatSkill): pass
 
+Melee.weakness = Mage
+Range.weakness = Melee
+Mage.weakness  = Range
+
 ### Individual Skills ###
 class CombatSkill(Skill): pass
 

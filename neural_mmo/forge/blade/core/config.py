@@ -468,16 +468,16 @@ class Combat:
    COMBAT_DEFENSE_WEIGHT               = 0.3 
    '''Fraction of defense that comes from the Defense skill'''   
 
-   COMBAT_MELEE_REACH                  = 1
+   COMBAT_MELEE_REACH                  = 3
    '''Reach of attacks using the Melee skill'''
 
    COMBAT_RANGE_REACH                  = 3
    '''Reach of attacks using the Range skill'''
 
-   COMBAT_MAGE_REACH                   = 4
+   COMBAT_MAGE_REACH                   = 3
    '''Reach of attacks using the Mage skill'''
 
-   COMBAT_FREEZE_TIME                  = 3
+   COMBAT_FREEZE_TIME                  = 0
    '''Number of ticks successful Mage attacks freeze a target'''
 
 class Progression:

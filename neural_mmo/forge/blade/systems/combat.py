@@ -13,64 +13,53 @@ def level(skills):
    final = max(melee, ranged, mage)
    return final
 
-def dev_combat(entity, targ, skillFn):
-   config = entity.config
-   skill  = skillFn(entity)
-   dmg    = damageFn(config, skill.__class__)(skill.level)
-   
-   item = entity.inventory.ammunition.use(skill)
-   if entity.isPlayer and item:
-      dmg += item.damage
-      
-   dmg = min(dmg, entity.resources.health.val)
-   entity.applyDamage(dmg, skill.__class__.__name__.lower())
-   targ.receiveDamage(entity, dmg)
-   return dmg
+def damage_multiplier(config, skill, targ):
+   skills = [targ.skills.melee, targ.skills.range, targ.skills.mage]
+   idx    = np.argmax([s.level for s in skills])
+   targ   = skills[idx]
+
+   if type(targ) == skill.weakness:
+       return config.DAMAGE_MULTIPLIER 
+
+   return 1.0
 
 def attack(entity, targ, skillFn):
-   config      = entity.config
-   if config.DEV_COMBAT:
-      return dev_combat(entity, targ, skillFn)
+   config = entity.config
+   skill  = skillFn(entity)
 
-   entitySkill = skillFn(entity)
-   targetSkill = skillFn(targ)
+   #Base damage
+   base    = config.DAMAGE_BASE
 
-   targetDefense = targ.skills.defense.level + targ.loadout.defense
+   #Weapon mod
+   weapon  = entity.inventory.equipment.weapon
+   if weapon:
+      weapon = weapon.offense.val
+   else:
+      weapon = 0
 
-   die  = config.COMBAT_DICE_SIDES
-   roll = np.random.randint(1, die+1)
-   dc   = accuracy(config, entitySkill.level, targetSkill.level, targetDefense)
-   crit = roll == die
+   #Ammo mod
+   ammo   = 0
+   if entity.isPlayer:
+      item = entity.inventory.ammunition.use(skill)
+      if item:
+         ammo = item.damage
 
-   dmg = 1 #Chip dmg on a miss
-   if roll >= dc or crit:
-      dmg = damage(entitySkill.__class__, entitySkill.level)
-      
-   dmg = min(dmg, entity.resources.health.val)
-   entity.applyDamage(dmg, entitySkill.__class__.__name__.lower())
+   #Style dominance multiplier
+   mul     = damage_multiplier(config, skill, targ)
+
+   #Attack and defense scores
+   attack  = base + weapon + ammo
+   defense = entity.inventory.equipment.defense
+
+   #Total damage calculation
+   dmg     = mul * (attack - defense)
+   dmg     = max(int(dmg), 0)
+   dmg     = min(int(dmg), entity.resources.health.val)
+
+   entity.applyDamage(dmg, skill.__class__.__name__.lower())
    targ.receiveDamage(entity, dmg)
+
    return dmg
-
-#Compute maximum damage roll
-def damageFn(config, skill):
-   if skill == Skill.Melee:
-      return config.DAMAGE_MELEE
-   if skill == Skill.Range:
-      return config.DAMAGE_RANGE
-   if skill == Skill.Mage:
-      return config.DAMAGE_MAGE
-
-#Compute maximum attack or defense roll (same formula)
-#Max attack 198 - min def 1 = 197. Max 198 - max 198 = 0
-#REMOVE FACTOR OF 2 FROM ATTACK AFTER IMPLEMENTING WEAPONS
-def accuracy(config, entAtk, targAtk, targDef):
-   alpha   = config.COMBAT_DEFENSE_WEIGHT
-
-   attack  = entAtk
-   defense = alpha*targDef + (1-alpha)*targAtk
-   dc      = defense - attack + config.COMBAT_DICE_SIDES//2
-
-   return dc
 
 def danger(config, pos, full=False):
    border = config.TERRAIN_BORDER
