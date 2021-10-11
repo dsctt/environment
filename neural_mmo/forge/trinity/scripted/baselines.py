@@ -1,10 +1,13 @@
 from pdb import set_trace as T
+import numpy as np
 
 from neural_mmo.forge.trinity.agent import Agent
 from neural_mmo.forge.trinity.scripted import behavior, move, attack, utils, io
 from neural_mmo.forge.blade.io.stimulus.static import Stimulus
 from neural_mmo.forge.blade.io.action import static as Action
+from neural_mmo.forge.blade.lib import material
 from neural_mmo.forge.blade.lib import enums
+from neural_mmo.forge.blade import item
 
 class Scripted(Agent):
     '''Template class for scripted models.
@@ -33,6 +36,10 @@ class Scripted(Agent):
     def forage(self):
         '''Min/max food and water using Dijkstra's algorithm'''
         move.forageDijkstra(self.config, self.ob, self.actions, self.food_max, self.water_max)
+
+    def gather(self, resource):
+        '''BFS search for a particular resource'''
+        move.gatherBFS(self.config, self.ob, self.actions, resource)
 
     def explore(self):
         '''Route away from spawn'''
@@ -73,10 +80,11 @@ class Scripted(Agent):
         if self.closest is None:
             return False
 
-        selfLevel = io.Observation.attribute(self.ob.agent, Stimulus.Entity.Level)
-        targLevel = io.Observation.attribute(self.closest, Stimulus.Entity.Level)
+        selfLevel  = io.Observation.attribute(self.ob.agent, Stimulus.Entity.Level)
+        targLevel  = io.Observation.attribute(self.closest, Stimulus.Entity.Level)
+        population = io.Observation.attribute(self.closest, Stimulus.Entity.Population)
         
-        if targLevel <= selfLevel <= 5 or selfLevel >= targLevel + 3:
+        if population == -1 or targLevel <= selfLevel <= 5 or selfLevel >= targLevel + 3:
            self.target     = self.closest
            self.targetID   = self.closestID
            self.targetDist = self.closestDist
@@ -114,6 +122,164 @@ class Scripted(Agent):
 
         self.target_weak()
 
+    def process_inventory(self):
+        self.inventory  = set()
+        self.best_items = {}
+
+        self.gold = io.Observation.attribute(self.ob.agent, Stimulus.Entity.Gold)
+
+        for item_ary in self.ob.items:
+           index    = io.Observation.attribute(item_ary, Stimulus.Item.Index)
+           level    = io.Observation.attribute(item_ary, Stimulus.Item.Level)
+           quantity = io.Observation.attribute(item_ary, Stimulus.Item.Quantity)
+
+           itm      = item.ItemID.get(int(index))
+           self.inventory.add((itm, level, quantity))
+
+           if itm not in self.best_items:
+              self.best_items[itm] = (level, quantity)
+
+           best, _ = self.best_items[itm]
+           if best < level:
+              self.best_items[itm] = (level, quantity)
+
+    def process_market(self):
+        self.market          = set()
+        self.best_affordable = {}
+
+        for item in self.ob.market:
+           index    = io.Observation.attribute(item, Stimulus.Item.Index)
+           level    = io.Observation.attribute(item, Stimulus.Item.Level)
+           quantity = io.Observation.attribute(item, Stimulus.Item.Quantity)
+           price    = io.Observation.attribute(item, Stimulus.Item.Price)
+
+           item     = item.ItemID.get(int(index))
+
+           self.market.add((item, level, quantity, price))
+
+           #Affordable
+           if price > self.gold:
+              continue
+
+           if item not in self.best_affordable:
+               self.best_affordable[item] = (level, quantity, price)
+
+           best_level, best_quantity, best_price = self.best_affordable[item]
+
+           #Not lower level
+           if level < best_level:
+               continue
+
+           #Not same level but more expensive
+           if level == best_level and price > best_price:
+               continue
+
+           self.best_affordable[item] = (level, quantity, price)
+
+ 
+    def sell(self, keep_all: set, keep_best: set):
+        for item, level, quantity in self.inventory:
+            if item in keep_all:
+                continue
+
+            best = level == self.best_items[item][0]
+            if item in keep_best and best:
+                continue
+
+            if quantity == 0:
+                continue
+
+            self.actions[Action.Exchange] = {
+               Action.ExchangeAction: Action.Sell,
+               Action.Item: item,
+               Action.Level: level,
+               Action.Quantity: quantity,
+               Action.Price: level}
+
+            return True
+
+    def buy(self, buy_best: set, buy_upgrade: set):
+        purchase = None
+        for item, (level, quantity, price) in self.best_affordable.items():
+            if item in buy_best:
+                purchase = (item, level, quantity, price)
+            if item not in buy_upgrades:
+                continue
+            if item not in self.best_items:
+                purchase = (item, level, quantity, price)
+            if self.best_items[item][0] < level:
+                purchase = (item, level, quantity, price)
+
+        if purchase is None:
+            return
+ 
+        item, level, quantity, price = purchase
+        self.actions[Action.Exchange] = {
+           Action.ExchangeAction: Action.Buy,
+           Action.Item: item,
+           Action.Level: level,
+           Action.Quantity: quantity,
+           Action.Price: price}
+
+        return True
+ 
+    def exchange(self):
+        rand = np.random.rand()
+        if rand < 0.25:
+           self.actions[Action.Exchange] = {
+                 Action.ExchangeAction: Action.Buy,
+                 Action.Item: item.Food,
+                 Action.Level: 1,
+                 Action.Quantity: 1,
+                 Action.Price: 1}
+        elif rand < 0.5:
+            self.actions[Action.Exchange] = {
+                 Action.ExchangeAction: Action.Sell,
+                 Action.Item: item.Food,
+                 Action.Level: 1,
+                 Action.Quantity: 1,
+                 Action.Price: 2}
+        elif rand < 0.75:
+            self.actions[Action.Inventory] = {
+                 Action.InventoryAction: Action.Use,
+                 Action.Item: item.Food}
+        else:
+            self.actions[Action.Inventory] = {
+                 Action.InventoryAction: Action.Discard,
+                 Action.Item: item.Food}
+
+    def exchange_resources(self, action):
+        rand = np.random.rand()
+        if rand < 1/3.0:
+            itm = item.Scrap
+        elif rand < 2/3.0:
+            itm = item.Shaving
+        else:
+            itm = item.Shard
+
+        self.actions[Action.Exchange] = {
+              Action.ExchangeAction: action,
+              Action.Item: itm,
+              Action.Level: 1,
+              Action.Quantity: 1,
+              Action.Price: 2}
+
+    def exchange_equipment(self, action):
+        rand = np.random.rand()
+        if rand < 1/3.0:
+            itm = item.Hat
+        elif rand < 2/3.0:
+            itm = item.Top
+        else:
+            itm = item.Bottom
+
+        self.actions[Action.Exchange] = {
+              Action.ExchangeAction: action,
+              Action.Level: 1,
+              Action.Item: itm,
+              Action.Quantity: 1,
+              Action.Price: 5}
+
     def __call__(self, obs):
         '''Process observations and return actions
 
@@ -139,7 +305,7 @@ class Scripted(Agent):
             self.spawnC = io.Observation.attribute(agent, Stimulus.Entity.C)
 
 class Random(Scripted):
-    name = 'Random_'
+    policy = 'Random'
     '''Moves randomly'''
     def __call__(self, obs):
         super().__call__(obs)
@@ -148,7 +314,7 @@ class Random(Scripted):
         return self.actions
 
 class Meander(Scripted):
-    name = 'Meander_'
+    policy = 'Meander'
     '''Moves randomly on safe terrain'''
     def __call__(self, obs):
         super().__call__(obs)
@@ -158,7 +324,7 @@ class Meander(Scripted):
 
 class ForageNoExplore(Scripted):
     '''Forages using Dijkstra's algorithm'''
-    name = 'ForageNE_'
+    policy = 'ForageNE'
     def __call__(self, obs):
         super().__call__(obs)
 
@@ -168,7 +334,7 @@ class ForageNoExplore(Scripted):
 
 class Forage(Scripted):
     '''Forages using Dijkstra's algorithm and actively explores'''
-    name = 'Forage_'
+    policy = 'Forage'
     def __call__(self, obs):
         super().__call__(obs)
 
@@ -181,7 +347,7 @@ class Forage(Scripted):
 
 class CombatNoExplore(Scripted):
     '''Forages using Dijkstra's algorithm and fights nearby agents'''
-    name = 'CombatNE_'
+    policy = 'CombatNE'
     def __call__(self, obs):
         super().__call__(obs)
 
@@ -194,7 +360,7 @@ class CombatNoExplore(Scripted):
  
 class Combat(Scripted):
     '''Forages, fights, and explores'''
-    name = 'Combat_'
+    policy = 'Combat'
     def __call__(self, obs):
         super().__call__(obs)
 
@@ -206,7 +372,7 @@ class Combat(Scripted):
         return self.actions
 
 class CombatTribrid(Scripted):
-    name = 'CombatTri_'
+    policy = 'CombatTri'
     '''Forages, fights, and explores.
 
     Uses a slightly more sophisticated attack routine'''
@@ -219,3 +385,72 @@ class CombatTribrid(Scripted):
         self.attack()
 
         return self.actions
+
+class Gather(Scripted):
+    '''Forages, fights, and explores'''
+    policy = 'Abstract!'
+    def __call__(self, obs):
+        super().__call__(obs)
+        self.process_inventory()
+        self.process_market()
+
+        if self.forage_criterion:
+           self.forage()
+        elif self.gather(self.resource):
+            pass #Successful pathing
+        else:
+           self.explore()
+
+
+        item_sold = self.sell(
+                keep_all={item.Ration, item.Potion},
+                keep_best={item.Hat, item.Top, item.Bottom, item.Weapon})
+
+        if not item_sold:
+           return self.actions
+
+        item_bought = self.buy(
+                buy_best={item.Hat, item.Top, item.Bottom, item.Weapon},
+                buy_upgrade={})
+
+        return self.actions
+
+class Crystal(Gather):
+    policy = 'Crystal'
+    def __init__(self, config, idx):
+        super().__init__(config, idx)
+        self.resource = material.Crystal
+
+class Herb(Gather):
+    policy = 'Herb'
+    def __init__(self, config, idx):
+        super().__init__(config, idx)
+        self.resource = material.Herb
+
+class Fish(Gather):
+    policy = 'Fish'
+    def __init__(self, config, idx):
+        super().__init__(config, idx)
+        self.resource = material.Fish
+
+class CombatExchange(CombatTribrid):
+    policy = 'CombatExchange'
+    def __call__(self, obs):
+        super().__call__(obs)
+        self.process_inventory()
+        self.process_market()
+
+        item_sold = self.sell(
+                keep_all={item.Ration, item.Potion},
+                keep_best={item.Hat, item.Top, item.Bottom, item.Weapon})
+
+        if not item_sold:
+           return self.actions
+
+        item_bought = self.buy(
+                buy_best={item.Scrap, item.Shaving, item.Shard},
+                buy_upgrade={})
+
+        return self.actions
+
+

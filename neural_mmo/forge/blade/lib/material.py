@@ -135,7 +135,7 @@ class Fish(Material):
          self.respawn  = config.RESOURCE_FISH_RESPAWN
 
    def harvest(self):
-      return droptable.Consumable(item.Food) 
+      return droptable.Consumable(item.Ration) 
 
 class Meta(type):
    def __init__(self, name, bases, dict):

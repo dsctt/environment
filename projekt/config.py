@@ -30,6 +30,7 @@ class RLlibConfig:
    #Policy specification
    AGENTS      = [Agent]
    EVAL_AGENTS = [baselines.Meander, baselines.Forage, baselines.Combat, Agent]
+   DEV_AGENTS  = [baselines.Crystal, baselines.Herb, baselines.Fish, baselines.CombatExchange]
    EVALUATE    = False #Reserved param
 
    #Hardware and debug
@@ -53,6 +54,7 @@ class RLlibConfig:
    #Model
    SCRIPTED                = None
    N_AGENT_OBS             = 100
+   N_ITEM_OBS              = 100
    NPOLICIES               = 1
    HIDDEN                  = 64
    EMBED                   = 64
@@ -64,7 +66,7 @@ class RLlibConfig:
    DEV_COMBAT = False
 
 
-class LargeMaps(core.Config, RLlibConfig, config.AllGameSystems):
+class LargeMaps(RLlibConfig, core.Config):
    '''Large scale Neural MMO training setting
 
    Features up to 1000 concurrent agents and 1000 concurrent NPCs,
@@ -84,7 +86,7 @@ class LargeMaps(core.Config, RLlibConfig, config.AllGameSystems):
    EVALUATION_HORIZON      = 8192
 
 
-class SmallMaps(RLlibConfig, config.AllGameSystems, config.SmallMaps):
+class SmallMaps(RLlibConfig, config.SmallMaps):
    '''Small scale Neural MMO training setting
 
    Features up to 128 concurrent agents and 32 concurrent NPCs,
@@ -147,21 +149,12 @@ class SmallMaps(RLlibConfig, config.AllGameSystems, config.SmallMaps):
    def EQUIPMENT_OFFENSE(level):
       return level / 4
 
+   DAMAGE_BASE       = 3
+   DAMAGE_MULTIPLIER = 1.5
+
    @staticmethod
    def DAMAGE_AMMUNITION(level):
       return level // 5 + 1, level // 3 + 1
-
-   @staticmethod
-   def DAMAGE_MELEE(level):
-      return round(10 + level*70/99)
-
-   @staticmethod
-   def DAMAGE_RANGE(level):
-      return round(3 + level*32/99)
-
-   @staticmethod
-   def DAMAGE_MAGE(level):
-      return round(1 + level*24/99)
 
    @staticmethod
    def RESTORE(level):

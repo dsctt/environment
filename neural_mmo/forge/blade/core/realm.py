@@ -168,7 +168,7 @@ class Realm:
       self.config   = config
 
       #Load the world file
-      self.dataframe = trinity.Dataframe(config)
+      self.dataframe = trinity.Dataframe(self)
       self.map       = core.Map(config, self)
 
       #Entity handlers

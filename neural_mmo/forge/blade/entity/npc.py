@@ -103,24 +103,27 @@ class NPC(entity.Entity):
       return True
 
 class Passive(NPC):
+   policy = 'Passive'
    def __init__(self, realm, pos, iden):
-      super().__init__(realm, pos, iden, 'Passive', Neon.GREEN, -1)
+      super().__init__(realm, pos, iden, Passive.policy, Neon.GREEN, -1)
       self.dataframe.init(Static.Entity, iden, pos)
 
    def decide(self, realm):
       return ai.policy.passive(realm, self)
 
 class PassiveAggressive(NPC):
+   policy = 'Neutral'
    def __init__(self, realm, pos, iden):
-      super().__init__(realm, pos, iden, 'Neutral', Neon.ORANGE, -2)
+      super().__init__(realm, pos, iden, PassiveAggressive.policy, Neon.ORANGE, -2)
       self.dataframe.init(Static.Entity, iden, pos)
 
    def decide(self, realm):
       return ai.policy.neutral(realm, self)
 
 class Aggressive(NPC):
+   policy = 'Hostile'
    def __init__(self, realm, pos, iden):
-      super().__init__(realm, pos, iden, 'Hostile', Neon.RED, -3)
+      super().__init__(realm, pos, iden, Aggressive.policy, Neon.RED, -3)
       self.dataframe.init(Static.Entity, iden, pos)
       self.vision = int(max(self.vision, 1 + combat.level(self.skills) // 10))
       self.dataframe.init(Static.Entity, self.entID, self.pos)

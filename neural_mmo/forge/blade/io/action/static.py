@@ -17,8 +17,9 @@ class Action(Node):
 
    @staticproperty
    def edges():
-      #return [Move, Attack, Buy, InventoryAction]
-      return [Move, Attack]
+      #return [Move, Attack, Exchange, Inventory]
+      return [Move, Attack, Inventory]
+      #return [Move, Attack]
 
    @staticproperty
    def n():
@@ -228,109 +229,111 @@ class Mage(Node):
    def skill(entity):
       return entity.skills.mage
 
-class Buy(Node):
-   priority = -1 
-   nodeType = NodeType.SELECTION
-
-   @staticproperty
-   def edges():
-      return [ItemType]
-
-   @staticproperty
-   def leaf():
-      return True
-
-   def call(env, entity, item):
-      if not item:
-         return
-      
-      return env.exchange.buy(entity, item, 0, 99)
-
-class ItemType(Node):
-   argType = Fixed
-   @staticproperty
-   def edges():
-      return [item.Hat, item.Top, item.Bottom, item.Weapon,
-              item.Scrap, item.Shaving, item.Shard,
-              item.Food, item.Potion]
-
-   def args(stim, entity, config):
-      return Item.edges
-
-class InventoryAction(Node):
-   priority = -2 
-   nodeType = NodeType.SELECTION
-
-   @staticproperty
-   def edges():
-      return [InventoryActionType, Item]
-
-   @staticproperty
-   def leaf():
-      return True
-
-   def call(env, entity, actionType, item):
-      assert actionType in (Discard, Use, Sell)
-
-      if item is None:
-         return
-
-      if actionType == Discard:
-         return
-         return entity.inventory.consumables.remove(item)
-      if actionType == Sell:
-         return env.exchange.sell(entity, item)
-
-      if not entity.inventory.consumables.__contains__(type(item)):
-         return
-
-      item.use(entity)
-      entity.inventory.consumables.remove(item)
-      return True
-
-class Item(Node):
-   argType  = 'Item'
-
-   @classmethod
-   def N(cls, config):
-      return config.N_AMMUNITION + config.N_CONSUMABLES + config.N_LOOT + 1
-
-   def args(stim, entity, config):
-      return entity.items
-
-   @classmethod
-   def gameObjects(cls, realm, entity, val):
-      return entity.inventory.items[5:]
-
-class InventoryActionType(Node):
+class Inventory(Node):
    priority = -3 
    argType  = Fixed
 
    @staticproperty
    def edges():
-      return [Discard, Sell, Use]
+      return [InventoryAction, Item]
 
-   def args(env, entity, item):
-      return InventoryActionType.edges
+   def call(env, entity, inventory_action, item):
+      assert inventory_action in (Use, Discard)
 
-class Discard(Node):
-   nodeType = NodeType.ACTION
+      if item not in entity.inventory:
+         return
 
-class Sell(Node):
-   nodeType = NodeType.ACTION
+      if inventory_action == Use:
+         return entity.inventory.use(item)
 
-class Use(Node):
-   nodeType = NodeType.ACTION
+      return entity.inventory.remove(item)
 
-class Reproduce:
-   pass
+class InventoryAction(Node):
+   argType = Fixed
+
+   @staticproperty
+   def edges():
+      return [Use, Discard]
+
+   def args(stim, entity, config):
+      return InventoryAction.edges
+
+class Use(Node): pass
+class Discard(Node): pass
+
+class Item(Node):
+   argType  = 'Entity'
+
+   @classmethod
+   def N(cls, config):
+      return config.N_ITEM_OBS
+
+   def args(stim, entity, config):
+      return stim.exchange.items()
+
+   @classmethod
+   def gameObjects(cls, realm, entity, val):
+      return [realm.entity(targ) for targ in entity.targets]
+
+class Exchange(Node):
+   priority = -3 
+   argType  = Fixed
+
+   @staticproperty
+   def edges():
+      return [ExchangeAction, Item]#, Quantity, Price]
+
+   def call(env, entity, exchange_action, item, level, quantity, price):
+      assert exchange_action in (Buy, Sell)
+      if exchange_action == Buy:
+         return env.exchange.buy(env, entity, item, level, quantity)
+      return env.exchange.sell(env, entity, item, level, quantity, price)
+
+class ExchangeAction(Node):
+   argType = Fixed
+
+   @staticproperty
+   def edges():
+      return [Buy, Sell]
+
+   def args(stim, entity, config):
+      return ExchangeAction.edges
+
+class Buy(Node): pass
+class Sell(Node): pass
+
+class Level(Node):
+   argType = Fixed
+
+   @staticproperty
+   def edges():
+      return [1, 5, 10, 15, 20]
+
+   def args(stim, entity, config):
+      return Level.edges
+
+class Quantity(Node):
+   argType = Fixed
+
+   @staticproperty
+   def edges():
+      return [1, 5, 10, 50]
+
+   def args(stim, entity, config):
+      return Quantity.edges
+
+class Price(Node):
+   argType = Fixed
+
+   @staticproperty
+   def edges():
+      return [1, 5, 10, 25, 50, 100]
+
+   def args(stim, entity, config):
+      return Price.edges
 
 #TODO: Add communication
 class Message:
-   pass
-
-#TODO: Add trade
-class Exchange:
    pass
 
 #TODO: Solve AGI

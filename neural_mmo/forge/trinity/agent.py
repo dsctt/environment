@@ -4,7 +4,7 @@ from neural_mmo.forge.blade.lib import enums
 
 class Agent:
     scripted = False
-    name     = 'Neural_'
+    policy   = 'Neural'
     color    = enums.Neon.CYAN
     pop      = 0
 

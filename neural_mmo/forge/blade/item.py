@@ -4,12 +4,26 @@ import random
 from neural_mmo.forge.blade.io.stimulus import Static
 from neural_mmo.forge.blade.lib.enums import Tier
 
+class ItemID:
+   item_ids = {} 
+   id_items = {}
+
+   def register(cls, item_id):
+      ItemID.item_ids[cls] = item_id
+      ItemID.id_items[item_id] = cls
+
+   def get(cls_or_id):
+      if type(cls_or_id) == int:
+         return ItemID.id_items[cls_or_id]
+      return ItemID.item_ids[cls_or_id]
+
 class Item:
-   INSTANCE_ID = 1
+   ITEM_ID = None
+   INSTANCE_ID = 0
    def __init__(self, realm, level,
          capacity=0, quantity=0, tradable=True,
          offense=0, defense=0, minDmg=0, maxDmg=0,
-         restore=0):
+         restore=0, price=0):
       self.instanceID   = self.INSTANCE_ID
       Item.INSTANCE_ID += 1
 
@@ -26,8 +40,17 @@ class Item:
       self.minDmg   = Static.Item.MinDmg(realm.dataframe, self.instanceID, minDmg)
       self.maxDmg   = Static.Item.MaxDmg(realm.dataframe, self.instanceID, maxDmg)
       self.restore  = Static.Item.Restore(realm.dataframe, self.instanceID, restore)
+      self.price    = Static.Item.Price(realm.dataframe, self.instanceID, price)
+      self.equipped = Static.Item.Price(realm.dataframe, self.instanceID, 0)
 
       realm.dataframe.init(Static.Item, self.instanceID, None)
+
+      if self.ITEM_ID is not None:
+         ItemID.register(self.__class__, item_id=self.ITEM_ID)
+
+   @property
+   def signature(self):
+      return (self.index.val, self.level.val)
 
    @property
    def packet(self):
@@ -39,7 +62,8 @@ class Item:
               'defense':  self.defense.val,
               'minDmg':   self.minDmg.val,
               'maxDmg':   self.maxDmg.val,
-              'restore':  self.restore.val}
+              'restore':  self.restore.val,
+              'price':    self.price.val}
  
    def use(self, entity):
       return
@@ -82,6 +106,28 @@ class Equipment(Item):
      else:
         return Tier.DIAMOND
 
+   def use(self, entity):
+      if self.equipped.val:
+         #Check if cannot unequip
+         if not entity.inventory.loot.space:
+            return
+
+         self.equipped.update(0)
+         entity.inventory.equipment.remove(self)
+         entity.inventory.receiveLoot(self)
+         return
+
+      #Unequip old one
+      item_type = type(self)
+      unequip   = None
+      if entity.inventory.equipment.contains(item_type):
+         unequip = entity.inventory.equipment.remove(item_type)
+
+      entity.inventory.receivePurcahse(self)
+
+      if unequip:
+         entity.inventory.receiveLoot(unequip)
+
 class Offensive(Equipment):
    def __init__(self, realm, level, **kwargs):
       offense = realm.config.EQUIPMENT_OFFENSE(level)
@@ -111,6 +157,13 @@ class Ammunition(Stack):
 
    def damage(self):
       return random.randint(self.minDmg.val, self.maxDmg.val)
+
+   def use(self):
+      if self.quantity.val == 0:
+          return 0
+      self.quantity.decrement()
+      return self.damage()
+      
   
 class Scrap(Ammunition):
    ITEM_ID = 6
@@ -126,7 +179,7 @@ class Consumable(Item):
       restore = realm.config.RESTORE(level)
       super().__init__(realm, level, restore=restore, **kwargs)
 
-class Food(Consumable):
+class Ration(Consumable):
    ITEM_ID = 9
    def use(self, entity):
       entity.resources.food.increment(self.restore.val)

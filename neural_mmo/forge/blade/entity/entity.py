@@ -90,7 +90,7 @@ class History:
 
 class Base:
    def __init__(self, ent, pos, iden, name, color, pop):
-      self.name  = name + str(iden)
+      self.name  = '{}_{}'.format(name, iden)
       self.color = color
       r, c       = pos
 
@@ -101,11 +101,13 @@ class Base:
       self.self       = Static.Entity.Self(      ent.dataframe, ent.entID, 1)
       self.identity   = Static.Entity.ID(        ent.dataframe, ent.entID, ent.entID)
       self.level      = Static.Entity.Level(     ent.dataframe, ent.entID, 3)
+      self.gold       = Static.Entity.Gold(      ent.dataframe, ent.entID, 0)
 
       ent.dataframe.init(Static.Entity, ent.entID, (r, c))
 
    def update(self, realm, entity, actions):
       self.level.update(combat.level(entity.skills))
+      self.gold.update(entity.inventory.gold.quantity.val)
 
    @property
    def pos(self):
@@ -127,8 +129,9 @@ class Entity:
    def __init__(self, realm, pos, iden, name, color, pop):
       self.dataframe    = realm.dataframe
       self.config       = realm.config
-      self.entID        = iden
 
+      self.policy       = name
+      self.entID        = iden
       self.repr         = None
       self.vision       = 5
 
@@ -171,13 +174,10 @@ class Entity:
       self.resources.health.decrement(dmg)
 
       if not self.alive and source is not None:
-         source.inventory.receiveLoot(self.inventory.items)
+         source.inventory.receive(self.inventory.items)
          return False
 
       return True
-
-   def receiveLoot(self, items):
-      pass
 
    def applyDamage(self, dmg, style):
       pass

@@ -1,6 +1,9 @@
 from pdb import set_trace as T
 
 from collections import defaultdict, deque
+from queue import PriorityQueue
+import inspect
+
 import math
 
 class Offer:
@@ -42,155 +45,110 @@ class Queue(deque):
          return self[-1]
       return None
 
-class Listing:
+class ItemListings:
    def __init__(self):
-      self.offers = defaultdict(Queue)
-      self.alpha  = 0.01
+      self.listings    = PriorityQueue()
+      self.placeholder = None
+      self.item_number = 0
+      self.alpha       = 0.01
+
       self.step()
 
    def step(self):
       self.volume = 0
 
-   def available(self, level=None):
-      if level is None:
-         return self.level()
-   
-      offers = self.offers[level]
-      if len(offers) == 0:
-         return None
-
-      return offers
-
-   def supply(self):
-      total = 0
-      for level in range(99, 0, -1):
-         total += len(self.offers[level])
-      return total
-
-   def level(self):
-      '''Highest level on market'''
-      for level in range(99, 0, -1):
-         if len(self.offers[level]) == 0:
-            continue
-         return level
-
+   @property
    def price(self):
-      '''Highest level price on market'''
-      for level in range(99, 0, -1):
-         if len(offers := self.offers[level]) == 0:
-            continue
-         return offers.price
+      if not self.supply:
+          return
 
-   def minPrice(self, minLevel, maxLevel):
-      price = None
-      for level in range(maxLevel, minLevel, -1):
-         offers = self.offers[level]
-         if not hasattr(offers, 'price'):
-            continue
-
-         if offers.price and (price is None or offers.price < price):
-            price = offers.price
-
+      price, item_number, seller = self.listings.get()
+      self.listings.put((price, self.item_number, seller))
       return price
 
-   def maxPrice(self, minLevel, maxLevel):
-      price = None
-      for level in range(maxLevel, minLevel, -1):
-         offers = self.offers[level]
-         if not hasattr(offers, 'price'):
-            continue
+   @property
+   def supply(self):
+      return self.listings.qsize()
 
-         if offers.price and (price is None or offers.price > price):
-            price = offers.price
+   @property
+   def empty(self):
+      return self.listings.empty()
 
-      return price
-
-   def value(self):
-      '''Total value'''
-      total = 0
-      for level in range(99, 0, -1):
-         offers = self.offers[level]
-         if n := len(offers):
-            total += n * offers.price
-      return total
-
-   def buy(self, buyer, minLevel, maxLevel):
-      bound = self.minPrice(minLevel, maxLevel)
-      if not bound or bound > buyer.inventory.gold.quantity:
+   def buy(self, buyer, quantity):
+      if not self.supply:
          return
 
-      for level in range(maxLevel, minLevel, -1):
-         offers = self.offers[level]
-         if not offers.price:
-            continue
+      price, item_number, seller = self.listings.get()
 
-         adjusted     = (1 + self.alpha) * offers.price 
-         price        = math.ceil(adjusted)
+      if price > buyer.inventory.gold.quantity:
+         self.listings.put((price, item_number, seller))
+         return
 
-         if buyer.inventory.gold.quantity < price:
-            continue
+      seller.inventory.gold.quantity += price
+      buyer.inventory.gold.quantity  -= price
 
-         offers.price = price
-
-         if not offers:
-            continue
-
-         offer        = offers.pop()
-         seller       = offer.seller
-         item         = offer.item
-
-         buyer.inventory.receivePurchase(item)
-         #print('Buy {}: {}'.format(item.__name__, price))
- 
-         seller.inventory.gold.quantity += price
-         buyer.inventory.gold.quantity  -= price
-
-         buyer.buys   += 1
-         seller.sells += 1
-         self.volume  += 1
-
-         return price
-
-      return False
+      buyer.buys   += 1
+      seller.sells += 1
+      self.volume  += 1
+      return True
          
-   def sell(self, seller, item):
-      level    = item.level.val
-      offers   = self.offers[level]
-
-      adjusted = 1
-      if offers:
-         adjusted = (1 - self.alpha) * offers.price
+   def sell(self, seller, quantity, price):
+      if price == 1 and not self.empty:
+         seller.inventory.gold.quantity += 1
       else:
-         minPrice = self.minPrice(0, level)
-         if minPrice:
-            adjusted = minPrice
-
-      price        = max(math.floor(adjusted), 1)
-      offers.price = price
+         self.listings.put((price, self.item_number, seller))
+         self.item_number += 1
 
       #print('Sell {}: {}'.format(item.__class__.__name__, price))
 
-      if price == 1 and len(offers):
-         seller.inventory.gold.quantity += 1
-      else:
-         offer = Offer(seller, item)
-         self.offers[level].push(offer)
-
-      seller.inventory.remove(item)
-
 class Exchange:
    def __init__(self):
-      self.items  = defaultdict(Listing)
+      self.item_listings = defaultdict(ItemListings)
+
+   @property
+   def dataframeKeys(self):
+      keys = []
+      for listings in self.item_listings.values():
+         if listings.placeholder:
+            keys.append(listings.placeholder.instanceID)
+      return keys
 
    def step(self):
-      for item, listing in self.items.items():
-         listing.step()
+      for item, listings in self.item_listings.items():
+         listings.step()
 
    def available(self, item):
-      return self.items[item].available()
+      return self.item_listings[item].available()
 
-   def buy(self, buyer, item, minLevel, maxLevel):
-      return self.items[item].buy(buyer, minLevel, maxLevel)
-    
-   def sell(self, seller, item):
-      self.items[type(item)].sell(seller, item)
+   def buy(self, realm, buyer, item, level, quantity):
+      listings_key  = (item, level)
+      listings      = self.item_listings[listings_key]
+
+      if listings.buy(buyer, quantity):
+         print('{} Bought {} x {}.'.format(buyer.base.name, quantity, item.__name__))
+         buyer.inventory.receivePurchase(item)
+
+         #Update placeholder
+         listings.placeholder = None
+         if listings.supply:
+            listings.placeholder = item(realm, level, price=listings.price)
+            
+   def sell(self, realm, seller, item, level, quantity, price):
+      item = seller.inventory.get(item, level)
+      if not item:
+         return
+
+      seller.inventory.remove(item)
+      item = type(item)
+      
+      listings_key  = (item, level)
+      listings      = self.item_listings[listings_key]
+      current_price = listings.price
+
+      #Update obs placeholder item
+      if listings.placeholder is None or (current_price is not None and price < current_price):
+         listings.placeholder = item(realm, level, price=price)
+
+
+      print('{} Sold {} x {} for {} ea.'.format(seller.base.name, quantity, item.__name__, price))
+      listings.sell(seller, quantity, price)

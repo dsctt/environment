@@ -118,6 +118,12 @@ class Stimulus(Config):
             self.max = 3
             self.scale = 0.3
 
+      class Gold(node.Continuous):
+         def init(self, config):
+            self.val = 0
+            self.scale = 0.01
+
+
    class Tile(Config):
       @staticmethod
       def N(config):
@@ -198,6 +204,11 @@ class Stimulus(Config):
          def init(self, config):
             self.max   = 99
             self.scale = 1.0 / self.max
+
+      class Price(node.Discrete):
+         def init(self, config):
+            self.scale = 0.01
+
 
 for objName, obj in Stimulus:
    for idx, (attrName, attr) in enumerate(obj):

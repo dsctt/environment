@@ -176,6 +176,67 @@ def forageDijkstra(config, ob, actions, food_max, water_max, cutoff=100):
    direction = towards(goal)
    actions[Action.Move] = {Action.Direction: direction}
 
+def gatherBFS(config, ob, actions, resource, cutoff=100):
+   vision = config.NSTIM
+   Entity = Stimulus.Entity
+   Tile   = Stimulus.Tile
+
+   agent  = ob.agent
+
+   start     = (0, 0)
+   goal      = (0, 0)
+
+   backtrace = {start: None}
+
+   queue = Queue()
+   queue.put(start)
+
+   while not queue.empty():
+      cutoff -= 1
+      if cutoff <= 0:
+         return False
+
+      cur = queue.get()
+      for nxt in adjacentPos(cur):
+         if nxt in backtrace:
+            continue
+
+         if not inSight(*nxt, vision):
+            continue
+
+         tile     = ob.tile(*nxt)
+         matl     = io.Observation.attribute(tile, Tile.Index)
+         occupied = io.Observation.attribute(tile, Tile.NEnts)
+
+         if not vacant(tile):
+            continue
+
+         if resource.index != material.Fish:
+            if matl == resource.index:
+               backtrace[nxt] = cur
+               break
+            for pos in adjacentPos(nxt):
+               if not inSight(*pos, vision):
+                  continue
+
+               tile = ob.tile(*pos)
+               matl = io.Observation.attribute(tile, Tile.Index)
+ 
+               if matl == material.Fish.index:
+                  backtrace[nxt] = cur
+                  break
+
+         queue.put(nxt)
+         backtrace[nxt] = cur
+
+   while goal in backtrace and backtrace[goal] != start:
+      goal = backtrace[goal]
+
+   direction = towards(goal)
+   actions[Action.Move] = {Action.Direction: direction}
+   return True
+
+
 def aStar(config, ob, actions, rr, cc, cutoff=100):
    Entity = Stimulus.Entity
    Tile   = Stimulus.Tile

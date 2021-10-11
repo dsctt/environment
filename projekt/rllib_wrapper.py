@@ -386,13 +386,20 @@ def observationSpace(config):
             low=0, high=4096, shape=(nRows, nDiscrete),
             dtype=DataType.DISCRETE)
 
-   obs['Entity']['N']   = gym.spaces.Box(
+   obs['Entity']['N'] = gym.spaces.Box(
          low=0, high=config.N_AGENT_OBS, shape=(1,),
          dtype=DataType.DISCRETE)
    obs['Item']['N']   = gym.spaces.Box(
          high=config.N_AMMUNITION + config.N_CONSUMABLES + config.N_LOOT + 1,
          dtype=DataType.DISCRETE,
          low=0, shape=(1,))
+
+   ''' 
+   obs['Exchange']['N']   = gym.spaces.Box(
+         high=config.N_ITEM_OBS,
+         dtype=DataType.DISCRETE,
+         low=0, shape=(1,))
+   ''' 
 
    return obs
 

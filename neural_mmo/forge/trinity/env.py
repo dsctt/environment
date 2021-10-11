@@ -261,45 +261,43 @@ class Env:
          ent: An agent
       '''
 
-      quill = self.quill
+      quill  = self.quill
+      policy = ent.policy
 
-      quill.stat('Lifetime',  ent.history.timeAlive.val)
+      #Basic stats
+      quill.stat('{}_Lifetime'.format(policy), ent.history.timeAlive.val)
 
+      #Achievements
       if self.config.game_system_enabled('Achievement'):
          quill.stat('Achievement', ent.achievements.score())
+         quill.stat('{}_Achievement'.format(policy), ent.achievements.score())
          for name, stat in ent.achievements.stats:
-            quill.stat('Achievement_{}'.format(name), stat)
+            quill.stat('{}_Achievement_{}'.format(policy, name), stat)
 
-      blob = quill.register('Trades', self.realm.tick,
-            quill.HISTOGRAM, quill.SCATTER)
-
-      quill.stat('Market_Sells', ent.sells)
-      quill.stat('Market_Buys', ent.sells)
-
-      quill.stat('Mage_Level', ent.skills.mage.level)
-      quill.stat('Range_Level', ent.skills.range.level)
-      quill.stat('Melee_Level', ent.skills.melee.level)
-
-      prices = quill.register('Market_Prices', self.realm.tick, quill.LINE)
-      levels = quill.register('Market_Levels', self.realm.tick, quill.LINE)
-      volume = quill.register('Market_Volume', self.realm.tick, quill.LINE)
-      supply = quill.register('Market_Supply', self.realm.tick, quill.LINE)
-      value  = quill.register('Market_Value',  self.realm.tick, quill.LINE)
-
-      key = 'Market_{}_{}'
-      for item, listing in self.realm.exchange.items.items():
-         quill.stat(key.format('Price', item.__name__), listing.price())
-         quill.stat(key.format('Level', item.__name__), listing.level())
-         quill.stat(key.format('Volume', item.__name__), listing.volume())
-         quill.stat(key.format('Supply', item.__name__), listing.supply())
-         quill.stat(key.format('Value', item.__name__), listing.value())
-
+      #Market
       wealth = [p.inventory.gold.quantity.val for _, p in self.realm.players.items()]
-      quill.stat('Market_Wealth', sum(wealth))
+      quill.stat('{}_Market_Wealth'.format(policy), sum(wealth))
+      quill.stat('{}_Market_Sells'.format(policy), ent.sells)
+      quill.stat('{}_Market_Buys'.format(policy), ent.buys)
+
+      quill.stat('{}_Mage_Level'.format(policy), ent.skills.mage.level)
+      quill.stat('{}_Range_Level'.format(policy), ent.skills.range.level)
+      quill.stat('{}_Melee_Level'.format(policy), ent.skills.melee.level)
+ 
+      '''
+      key = '{}_Market_{}_{}'
+      for item, listing in self.realm.exchange.items.items():
+         quill.stat(key.format(policy, 'Price', item.__name__), listing.price())
+         quill.stat(key.format(policy, 'Level', item.__name__), listing.level())
+         quill.stat(key.format(policy, 'Volume', item.__name__), listing.volume)
+         quill.stat(key.format(policy, 'Supply', item.__name__), listing.supply())
+         quill.stat(key.format(policy, 'Value', item.__name__), listing.value())
+      '''
 
       if not self.config.EVALUATE:
          return
 
+      #Used for SR
       quill.stat('PolicyID', ent.agent.policyID)
 
    def terminal(self):
