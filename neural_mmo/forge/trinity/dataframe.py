@@ -93,6 +93,7 @@ class ContinuousTable:
       data[rows==0] = 0
 
       if pad is not None:
+         #Error = improperly set buffer size in stimulus.static
          data = np.pad(data, ((0, pad-len(data)), (0, 0)))
 
       return data

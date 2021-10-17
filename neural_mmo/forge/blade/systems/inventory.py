@@ -127,7 +127,7 @@ class Loadout(Equipment):
           else:
               val = self.itm.packet
 
-          packet[key][name] = val
+          packet[name] = val
          
       return packet
 

@@ -105,7 +105,7 @@ class Config(Template):
 
    AGENT_LOADER            = SequentialLoader
 
-   NTILE                   = 6
+   NTILE                   = 16
    #TODO: Find a way to auto-compute this
    '''Number of distinct terrain tile types'''
 

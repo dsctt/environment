@@ -199,7 +199,7 @@ def gatherAStar(config, ob, actions, resource, cutoff=100):
    
    rr, cc = resource_pos
    next_pos = aStar(config, ob, actions, rr, cc, cutoff=cutoff)
-   if not next_pos:
+   if not next_pos or next_pos == (0, 0):
       return
 
    direction = towards(next_pos)
@@ -214,20 +214,19 @@ def gatherBFS(config, ob, actions, resource, cutoff=100):
    agent  = ob.agent
 
    start     = (0, 0)
-   goal      = (0, 0)
 
    backtrace = {start: None}
 
    queue = Queue()
    queue.put(start)
 
+   found = False
    while not queue.empty():
       cutoff -= 1
       if cutoff <= 0:
          return False
 
       cur = queue.get()
-      found = False
       for nxt in adjacentPos(cur):
          if found:
             break
@@ -242,32 +241,42 @@ def gatherBFS(config, ob, actions, resource, cutoff=100):
          matl     = io.Observation.attribute(tile, Tile.Index)
          occupied = io.Observation.attribute(tile, Tile.NEnts)
 
+         if resource.index == material.Fish.index == matl:
+            found = nxt
+            backtrace[nxt] = cur
+            break
+
          if not vacant(tile):
             continue
 
-         if resource.index != material.Fish.index:
-            if matl == resource.index:
-               found = True
+         if matl == resource.index:
+            found = nxt
+            backtrace[nxt] = cur
+            break
+
+         for pos in adjacentPos(nxt):
+            if not inSight(*pos, vision):
+               continue
+
+            tile = ob.tile(*pos)
+            matl = io.Observation.attribute(tile, Tile.Index)
+ 
+            if matl == material.Fish.index:
                backtrace[nxt] = cur
                break
-            for pos in adjacentPos(nxt):
-               if not inSight(*pos, vision):
-                  continue
-
-               tile = ob.tile(*pos)
-               matl = io.Observation.attribute(tile, Tile.Index)
- 
-               if matl == material.Fish.index:
-                  backtrace[nxt] = cur
-                  break
 
          queue.put(nxt)
          backtrace[nxt] = cur
 
-   while goal in backtrace and backtrace[goal] != start:
-      goal = backtrace[goal]
+   #Ran out of tiles
+   if not found:
+      return False
 
-   direction = towards(goal)
+   found_orig = found
+   while found in backtrace and backtrace[found] != start:
+      found = backtrace[found]
+
+   direction = towards(found)
    actions[Action.Move] = {Action.Direction: direction}
    return True
 

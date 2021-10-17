@@ -153,7 +153,7 @@ class Stimulus(Config):
    class Item(Config):
       @staticmethod
       def N(config):
-         return config.N_AMMUNITION + config.N_CONSUMABLES + config.N_LOOT + 1
+         return config.N_ITEMS
 
       class Index(node.Discrete):
          def init(self, config):

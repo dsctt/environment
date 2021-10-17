@@ -18,6 +18,8 @@ class RLlibConfig:
    def MODEL(self):
       return self.__class__.__name__
 
+   N_ITEMS = 1000
+
    #Paths
    EXPERIMENT_DIR          = 'experiment'
   

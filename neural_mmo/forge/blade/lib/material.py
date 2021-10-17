@@ -62,7 +62,7 @@ class Ore(Material):
    tex     = 'ore'
    index   = 7
 
-   deplete = Stone
+   deplete = Slag
    def __init__(self, config):
       self.respawn  = config.ORE_RESPAWN
 

@@ -39,7 +39,7 @@ class Scripted(Agent):
 
     def gather(self, resource):
         '''BFS search for a particular resource'''
-        return move.gatherAStar(self.config, self.ob, self.actions, resource)
+        return move.gatherBFS(self.config, self.ob, self.actions, resource)
 
     def explore(self):
         '''Route away from spawn'''
