@@ -21,7 +21,7 @@ class Item:
    ITEM_ID = None
    INSTANCE_ID = 0
    def __init__(self, realm, level,
-         capacity=0, quantity=0, tradable=True,
+         capacity=0, quantity=1, tradable=True,
          offense=0, defense=0, minDmg=0, maxDmg=0,
          restore=0, price=0):
       self.instanceID   = self.INSTANCE_ID
@@ -69,6 +69,9 @@ class Item:
       return
 
 class Stack(Item):
+   def __init__(self, realm, level, quantity=0, **kwargs):
+       super().__init__(realm, level, quantity=quantity, **kwargs)
+
    def use(self, entity):
       assert self.quantity > 0
 

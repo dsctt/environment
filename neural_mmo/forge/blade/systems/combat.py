@@ -34,7 +34,7 @@ def attack(entity, targ, skillFn):
    weapon  = entity.inventory.equipment.offense
 
    #Ammo mod
-   ammo = entity.inventory.equipment.use_ammunition(type(skill))
+   ammo = entity.inventory.ammunition.use(type(skill))
 
    #Style dominance multiplier
    mul     = damage_multiplier(config, skill, targ)

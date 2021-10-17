@@ -36,10 +36,15 @@ class Pouch:
 
    def get(self, item, level=None, remove=False):
       for itm in self.items:
+         if itm is item:
+            if remove:
+                self.items.remove(itm)
+            return itm
+
          if type(itm) != item:
             continue
 
-         if level is not None and level != item.level.val:
+         if level is not None and level != itm.level.val:
             continue
 
          if remove:
@@ -58,63 +63,7 @@ class Pouch:
 
       return item
 
-class Loadout:
-   def __init__(self, realm, hat=0, top=0, bottom=0, weapon=0):
-      self.equipment = {
-            Item.Hat:     Item.Hat(realm, hat) if hat !=0 else None,
-            Item.Top:     Item.Top(realm, top) if top !=0 else None,
-            Item.Bottom:  Item.Bottom(realm, bottom) if bottom != 0 else None,
-            Item.Weapon:  Item.Weapon(realm, weapon) if weapon != 0 else None,
-            Item.Scrap:   Item.Scrap(realm, 0),
-            Item.Shard:   Item.Shard(realm, 0),
-            Item.Shaving: Item.Shaving(realm, 0)}
-
-      self.itm = Item.Hat(realm, 0)
-  
-   def remove(self, item):
-      itm = self.get(item, remove=True)
-      assert itm, 'item.remove: {} not in inventory'.format(item)
-      return itm
-
-   def get(self, item, level=None, remove=False):
-      if item not in self.equipment:
-          return None
-
-      itm = self.equipment[item]
-
-      if remove:
-          self.equipment[item] = None
-
-      return itm
-
-   def use_ammunition(self, skill):
-      if skill == Skill.Mage:
-         return self.equipment[Item.Shard].use()
-      elif skill == Skill.Range:
-         return self.equipment[Item.Shaving].use()
-      elif skill == Skill.Melee:
-         return self.equipment[Item.Scrap].use()
-      else:
-         assert False, 'No ammunition for skill {}'.format(skill)
-
-   def add(self, ammo):
-      ammo_type = type(ammo)
-      item = self.equipment[ammo_type]
-      item.quantity.update(item.quantity.val + ammo.quantity.val)
-
-   @property
-   def packet(self):
-      packet = {}
-
-      for item_type, item in self.equipment.items():
-          name = item_type.__name__
-          if item:
-              packet[name] = item.packet
-          else:
-              packet[name] = self.itm.packet
-         
-      return packet
-
+class Equipment:
    @property
    def items(self):
       return [e for e in self.equipment.values() if e is not None]
@@ -140,7 +89,89 @@ class Loadout:
       if not (levels := self.levels):
          return 0
       return sum(levels)
+   
+   def remove(self, item):
+      itm = self.get(item, remove=True)
+      assert itm, 'item.remove: {} not in inventory'.format(item)
+      return itm
+
+class Loadout(Equipment):
+   def __init__(self, realm, hat=0, top=0, bottom=0, weapon=0):
+      self.equipment = {
+            Item.Hat:     Item.Hat(realm, hat) if hat !=0 else None,
+            Item.Top:     Item.Top(realm, top) if top !=0 else None,
+            Item.Bottom:  Item.Bottom(realm, bottom) if bottom != 0 else None,
+            Item.Weapon:  Item.Weapon(realm, weapon) if weapon != 0 else None}
+
+      self.itm = Item.Hat(realm, 0)
+  
+   def get(self, item, level=None, remove=False):
+      if item not in self.equipment:
+          return None
+
+      itm = self.equipment[item]
+
+      if remove:
+          self.equipment[item] = None
+
+      return itm
+
+   @property
+   def packet(self):
+      packet = {}
+
+      for item_type, item in self.equipment.items():
+          name = item_type.__name__.lower()
+          if item:
+              val = item.packet
+          else:
+              val = self.itm.packet
+
+          packet[key][name] = val
          
+      return packet
+
+class Ammunition(Equipment):
+   def __init__(self, realm, hat=0, top=0, bottom=0, weapon=0):
+      self.ammunition = {
+            Item.Scrap:   Item.Scrap(realm, 0),
+            Item.Shard:   Item.Shard(realm, 0),
+            Item.Shaving: Item.Shaving(realm, 0)}
+
+   def add(self, ammo):
+      ammo_type = type(ammo)
+      item = self.ammunition[ammo_type]
+      item.quantity.update(item.quantity.val + ammo.quantity.val)
+
+   def use(self, skill):
+      if skill == Skill.Mage:
+         return self.ammunition[Item.Shard].use()
+      elif skill == Skill.Range:
+         return self.ammunition[Item.Shaving].use()
+      elif skill == Skill.Melee:
+         return self.ammunition[Item.Scrap].use()
+      else:
+         assert False, 'No ammunition for skill {}'.format(skill)
+
+   def get(self, item, level=None, remove=False):
+      itm      = self.equipment[item]
+
+      if remove:
+          quantity = itm.quantity.val
+          item.quantity.val.update(0)
+
+      return itm
+
+   @property
+   def packet(self):
+      packet = {}
+
+      for item_type, item in self.ammunition.items():
+          packet[item_type.__name__.lower()] = item.packet
+         
+      return packet
+
+      
 class Inventory:
    def __init__(self, realm, entity):
       config           = realm.config
@@ -150,16 +181,18 @@ class Inventory:
 
       self.gold        = Item.Gold(realm)
       self.equipment   = Loadout(realm)
+      self.ammunition  = Ammunition(realm)
       self.consumables = Pouch(config.N_CONSUMABLES)
       self.loot        = Pouch(config.N_LOOT)
 
       self.pouches = [self.equipment, self.consumables, self.loot]
 
    def packet(self):
-      data                = {}
+      data = {}
 
-      data['gold']        = self.gold.packet
       data['equipment']   = self.equipment.packet
+      data['ammunition']  = self.ammunition.packet
+      data['gold']        = self.gold.packet
       data['consumables'] = self.consumables.packet
       data['loot']        = self.loot.packet
 
@@ -199,6 +232,6 @@ class Inventory:
          if isinstance(item, Item.Gold):
             self.gold.quantity += item.quantity.val
          elif isinstance(item, Item.Ammunition):
-            self.equipment.add(item)
+            self.ammunition.add(item)
          elif self.loot.space:
             self.loot.add(item)

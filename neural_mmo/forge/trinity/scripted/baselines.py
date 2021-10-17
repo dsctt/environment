@@ -39,7 +39,7 @@ class Scripted(Agent):
 
     def gather(self, resource):
         '''BFS search for a particular resource'''
-        move.gatherBFS(self.config, self.ob, self.actions, resource)
+        return move.gatherAStar(self.config, self.ob, self.actions, resource)
 
     def explore(self):
         '''Route away from spawn'''
@@ -147,24 +147,24 @@ class Scripted(Agent):
         self.market          = set()
         self.best_affordable = {}
 
-        for item in self.ob.market:
-           index    = io.Observation.attribute(item, Stimulus.Item.Index)
-           level    = io.Observation.attribute(item, Stimulus.Item.Level)
-           quantity = io.Observation.attribute(item, Stimulus.Item.Quantity)
-           price    = io.Observation.attribute(item, Stimulus.Item.Price)
+        for item_ary in self.ob.market:
+           index    = io.Observation.attribute(item_ary, Stimulus.Item.Index)
+           level    = io.Observation.attribute(item_ary, Stimulus.Item.Level)
+           quantity = io.Observation.attribute(item_ary, Stimulus.Item.Quantity)
+           price    = io.Observation.attribute(item_ary, Stimulus.Item.Price)
 
-           item     = item.ItemID.get(int(index))
+           itm      = item.ItemID.get(int(index))
 
-           self.market.add((item, level, quantity, price))
+           self.market.add((itm, level, quantity, price))
 
            #Affordable
            if price > self.gold:
               continue
 
-           if item not in self.best_affordable:
-               self.best_affordable[item] = (level, quantity, price)
+           if itm not in self.best_affordable:
+               self.best_affordable[itm] = (level, quantity, price)
 
-           best_level, best_quantity, best_price = self.best_affordable[item]
+           best_level, best_quantity, best_price = self.best_affordable[itm]
 
            #Not lower level
            if level < best_level:
@@ -174,7 +174,7 @@ class Scripted(Agent):
            if level == best_level and price > best_price:
                continue
 
-           self.best_affordable[item] = (level, quantity, price)
+           self.best_affordable[itm] = (level, quantity, price)
 
  
     def sell(self, keep_all: set, keep_best: set):
@@ -203,7 +203,7 @@ class Scripted(Agent):
         for item, (level, quantity, price) in self.best_affordable.items():
             if item in buy_best:
                 purchase = (item, level, quantity, price)
-            if item not in buy_upgrades:
+            if item not in buy_upgrade:
                 continue
             if item not in self.best_items:
                 purchase = (item, level, quantity, price)
@@ -388,7 +388,10 @@ class CombatTribrid(Scripted):
 
 class Gather(Scripted):
     '''Forages, fights, and explores'''
-    policy = 'Abstract!'
+    @property
+    def policy(self):
+       return self.__class__.__name__
+
     def __call__(self, obs):
         super().__call__(obs)
         self.process_inventory()
@@ -403,10 +406,10 @@ class Gather(Scripted):
 
 
         item_sold = self.sell(
-                keep_all={item.Ration, item.Potion},
+                keep_all={},
                 keep_best={item.Hat, item.Top, item.Bottom, item.Weapon})
 
-        if not item_sold:
+        if item_sold:
            return self.actions
 
         item_bought = self.buy(
@@ -415,26 +418,32 @@ class Gather(Scripted):
 
         return self.actions
 
-class Crystal(Gather):
-    policy = 'Crystal'
+class Prospector(Gather):
     def __init__(self, config, idx):
         super().__init__(config, idx)
-        self.resource = material.Crystal
+        self.resource = material.Ore
 
-class Herb(Gather):
-    policy = 'Herb'
+class Hunter(Gather):
     def __init__(self, config, idx):
         super().__init__(config, idx)
         self.resource = material.Herb
 
-class Fish(Gather):
-    policy = 'Fish'
+class Fisher(Gather):
     def __init__(self, config, idx):
         super().__init__(config, idx)
         self.resource = material.Fish
 
+class Carver(Gather):
+    def __init__(self, config, idx):
+        super().__init__(config, idx)
+        self.resource = material.Tree
+
+class Alchemist(Gather):
+    def __init__(self, config, idx):
+        super().__init__(config, idx)
+        self.resource = material.Crystal
+
 class CombatExchange(CombatTribrid):
-    policy = 'CombatExchange'
     def __call__(self, obs):
         super().__call__(obs)
         self.process_inventory()

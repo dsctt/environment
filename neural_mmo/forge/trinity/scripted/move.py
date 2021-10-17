@@ -176,6 +176,36 @@ def forageDijkstra(config, ob, actions, food_max, water_max, cutoff=100):
    direction = towards(goal)
    actions[Action.Move] = {Action.Direction: direction}
 
+def findResource(config, ob, resource):
+   vision = config.NSTIM
+   Tile   = Stimulus.Tile
+   
+   resource_index = resource.index
+
+   for r in range(-vision, vision+1):
+      for c in range(-vision, vision+1):
+         tile = ob.tile(r, c)
+         material_index = io.Observation.attribute(tile, Tile.Index)
+
+         if material_index == resource_index:
+             return (r, c)
+
+   return False
+
+def gatherAStar(config, ob, actions, resource, cutoff=100):
+   resource_pos = findResource(config, ob, resource)
+   if not resource_pos:
+      return
+   
+   rr, cc = resource_pos
+   next_pos = aStar(config, ob, actions, rr, cc, cutoff=cutoff)
+   if not next_pos:
+      return
+
+   direction = towards(next_pos)
+   actions[Action.Move] = {Action.Direction: direction}
+   return True
+
 def gatherBFS(config, ob, actions, resource, cutoff=100):
    vision = config.NSTIM
    Entity = Stimulus.Entity
@@ -197,7 +227,11 @@ def gatherBFS(config, ob, actions, resource, cutoff=100):
          return False
 
       cur = queue.get()
+      found = False
       for nxt in adjacentPos(cur):
+         if found:
+            break
+
          if nxt in backtrace:
             continue
 
@@ -211,8 +245,9 @@ def gatherBFS(config, ob, actions, resource, cutoff=100):
          if not vacant(tile):
             continue
 
-         if resource.index != material.Fish:
+         if resource.index != material.Fish.index:
             if matl == resource.index:
+               found = True
                backtrace[nxt] = cur
                break
             for pos in adjacentPos(nxt):

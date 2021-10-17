@@ -154,7 +154,7 @@ class Entity:
 
       data['status']    = self.status.packet()
       data['history']   = self.history.packet()
-      data['equipment'] = self.inventory.equipment.packet
+      data['inventory'] = self.inventory.packet()
       data['alive']     = self.alive
 
       return data

@@ -274,9 +274,17 @@ class Env:
          for name, stat in ent.achievements.stats:
             quill.stat('{}_Achievement_{}'.format(policy, name), stat)
 
+
+      #Skills
+      quill.stat('{}_Fishing'.format(policy), ent.skills.fishing.level)
+      quill.stat('{}_Hunting'.format(policy), ent.skills.hunting.level)
+      quill.stat('{}_Prospecting'.format(policy), ent.skills.prospecting.level)
+      quill.stat('{}_Carving'.format(policy), ent.skills.carving.level)
+      quill.stat('{}_Alchemy'.format(policy), ent.skills.alchemy.level)
+
       #Market
       wealth = [p.inventory.gold.quantity.val for _, p in self.realm.players.items()]
-      quill.stat('{}_Market_Wealth'.format(policy), sum(wealth))
+      quill.stat('{}_Wealth'.format(policy), ent.inventory.gold.quantity.val)
       quill.stat('{}_Market_Sells'.format(policy), ent.sells)
       quill.stat('{}_Market_Buys'.format(policy), ent.buys)
 

@@ -30,7 +30,7 @@ class RLlibConfig:
    #Policy specification
    AGENTS      = [Agent]
    EVAL_AGENTS = [baselines.Meander, baselines.Forage, baselines.Combat, Agent]
-   DEV_AGENTS  = [baselines.Crystal, baselines.Herb, baselines.Fish, baselines.CombatExchange]
+   DEV_AGENTS  = []
    EVALUATE    = False #Reserved param
 
    #Hardware and debug
@@ -175,6 +175,10 @@ class Debug(SmallMaps, config.AllGameSystems):
 
    HIDDEN                  = 2
    EMBED                   = 2
+
+   SPAWN_CLUSTERS          = 90
+   SPAWN_UNIFORMS          = 300
+
 
 ### AICrowd competition settings
 class CompetitionRound1(config.Achievement, SmallMaps):

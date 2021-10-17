@@ -63,7 +63,7 @@ class ItemListings:
           return
 
       price, item_number, seller = self.listings.get()
-      self.listings.put((price, self.item_number, seller))
+      self.listings.put((price, item_number, seller))
       return price
 
    @property
@@ -126,7 +126,7 @@ class Exchange:
 
       if listings.buy(buyer, quantity):
          print('{} Bought {} x {}.'.format(buyer.base.name, quantity, item.__name__))
-         buyer.inventory.receivePurchase(item)
+         buyer.inventory.receive(item(realm, level, quantity=quantity))
 
          #Update placeholder
          listings.placeholder = None
