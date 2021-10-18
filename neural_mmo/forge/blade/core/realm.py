@@ -96,6 +96,8 @@ class NPCManager(EntityGroup):
       super().__init__(config, realm)
       self.realm = realm
       self.idx   = -1
+
+      self.spawn_positions = []
  
    def spawn(self):
       if not self.config.game_system_enabled('NPC'):
@@ -105,9 +107,13 @@ class NPCManager(EntityGroup):
          if len(self.entities) >= self.config.NMOB:
             break
 
-         center = self.config.TERRAIN_CENTER
-         border = self.config.TERRAIN_BORDER
-         r, c   = np.random.randint(border, center+border, 2).tolist()
+         if self.spawn_positions:
+            r, c = self.spawn_positions[-1]
+         else:
+            center = self.config.TERRAIN_CENTER
+            border = self.config.TERRAIN_BORDER
+            r, c   = np.random.randint(border, center+border, 2).tolist()
+
          if self.realm.map.tiles[r, c].occupied:
             continue
 
@@ -115,6 +121,13 @@ class NPCManager(EntityGroup):
          if npc: 
             super().spawn(npc)
             self.idx -= 1
+
+         if self.spawn_positions:
+            self.spawn_positions.pop()
+
+   def cull(self):
+      for entity in super().cull().values():
+         self.spawn_positions.append(entity.spawn_pos)
 
    def actions(self, realm):
       actions = {}

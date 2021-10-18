@@ -123,13 +123,13 @@ class Equipment(Item):
       #Unequip old one
       item_type = type(self)
       unequip   = None
-      if entity.inventory.equipment.contains(item_type):
+      if entity.inventory.equipment.get(item_type):
          unequip = entity.inventory.equipment.remove(item_type)
 
-      entity.inventory.receivePurcahse(self)
+      entity.inventory.receive(self)
 
       if unequip:
-         entity.inventory.receiveLoot(unequip)
+         entity.inventory.receive(unequip)
 
 class Offensive(Equipment):
    def __init__(self, realm, level, **kwargs):

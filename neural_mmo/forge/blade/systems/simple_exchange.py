@@ -129,6 +129,9 @@ class Exchange:
          #print('{} Bought {} for {}.'.format(buyer.base.name, item.__name__, price))
          buyer.inventory.receive(item(realm, level, quantity=quantity))
 
+         if item.__name__ == 'Tool':
+            print('Buy Tool Lvl: {}'.format(level))
+
          #Update placeholder
          listings.placeholder = None
          if listings.supply:
@@ -137,9 +140,12 @@ class Exchange:
    def sell(self, realm, seller, item, level, quantity, price):
       item = seller.inventory.get(item, level)
 
+      if item.__class__.__name__ == 'Tool':
+         print('Sell Tool Lvl: {}'.format(item.level.val))
+ 
       seller.inventory.remove(item)
       item = type(item)
-      
+
       listings_key  = (item, level)
       listings      = self.item_listings[listings_key]
       current_price = listings.price

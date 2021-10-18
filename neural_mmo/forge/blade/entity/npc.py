@@ -34,12 +34,11 @@ class NPC(entity.Entity):
          ent = Aggressive(realm, pos, iden)
       elif danger >= config.NPC_SPAWN_NEUTRAL:
          ent = PassiveAggressive(realm, pos, iden)
-      elif danger >= config.NPC_SPAWN_PASSIVE:
-         ent = Passive(realm, pos, iden)
       else:
-         return
+         ent = Passive(realm, pos, iden)
 
       #Set levels
+      ent.spawn_pos = pos
       levels = NPC.clippedLevels(config, danger, n=5)
       constitution, defense, melee, ranged, mage = levels
 
@@ -54,11 +53,16 @@ class NPC(entity.Entity):
          (Action.Melee, Action.Range, Action.Mage))
 
       #Set equipment levels
-      ent.inventory.equipment.hat    = Item.Hat(realm, NPC.gearLevel(defense))
-      ent.inventory.equipment.top    = Item.Top(realm, NPC.gearLevel(defense))
-      ent.inventory.equipment.bottom = Item.Bottom(realm, NPC.gearLevel(defense))
-      ent.inventory.equipment.weapon = Item.Weapon(realm, NPC.gearLevel(defense))
+      Item.Hat(realm, NPC.gearLevel(defense)).use(ent)
+      Item.Top(realm, NPC.gearLevel(defense)).use(ent)
+      Item.Bottom(realm, NPC.gearLevel(defense)).use(ent)
+      Item.Weapon(realm, NPC.gearLevel(defense)).use(ent)
+      #ent.inventory.equipment.hat    = Item.Hat(realm, NPC.gearLevel(defense))
+      #ent.inventory.equipment.top    = Item.Top(realm, NPC.gearLevel(defense))
+      #ent.inventory.equipment.bottom = Item.Bottom(realm, NPC.gearLevel(defense))
+      #ent.inventory.equipment.weapon = Item.Weapon(realm, NPC.gearLevel(defense))
       ent.inventory.gold.quantity.update(combat.level(ent.skills))
+      ent.inventory.receive(Item.Tool(realm, NPC.gearLevel(defense)))
 
       return ent
 
@@ -68,7 +72,7 @@ class NPC(entity.Entity):
    @staticmethod
    def gearLevel(lvl, offset=10):
       proposed = random.gauss(lvl-offset, offset)
-      lvl      = np.clip(proposed, 0, lvl)
+      lvl      = np.clip(proposed, 1, lvl)
       return int(lvl)
 
    @staticmethod

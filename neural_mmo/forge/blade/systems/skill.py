@@ -3,6 +3,7 @@ import abc
 
 import numpy as np
 from neural_mmo.forge.blade.systems import experience, combat, ai
+from neural_mmo.forge.blade import item
 
 from neural_mmo.forge.blade.lib import material
 
@@ -87,6 +88,12 @@ class NonCombatSkill(Skill):
 
 class HarvestSkill(NonCombatSkill):
    def processDrops(self, realm, entity, dropTable):
+      level = self.level
+
+      tool = entity.inventory.equipment.mapping[item.Weapon]
+      if type(tool) == item.Tool:
+         level += tool.level.val
+
       drops = dropTable.roll(realm, self.level)
       entity.inventory.receive(drops)
       self.exp += 10 * self.config.PROGRESSION_BASE_XP_SCALE

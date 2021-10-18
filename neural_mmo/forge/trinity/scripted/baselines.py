@@ -410,13 +410,13 @@ class Gather(Scripted):
 
         item_sold = self.sell(
                 keep_all={},
-                keep_best={item.Hat, item.Top, item.Bottom, item.Weapon})
+                keep_best={item.Hat, item.Top, item.Bottom, item.Tool})
 
         if item_sold:
            return self.actions
 
         item_bought = self.buy(
-                buy_best={item.Hat, item.Top, item.Bottom, item.Weapon},
+                buy_best={item.Hat, item.Top, item.Bottom, item.Tool},
                 buy_upgrade={})
 
         return self.actions
