@@ -153,6 +153,9 @@ class Bottom(Defensive):
 class Weapon(Offensive):
    ITEM_ID = 5
 
+class Tool(Defensive):
+   ITEM_ID = 6
+
 class Ammunition(Stack):
    def __init__(self, realm, level, **kwargs):
       minDmg, maxDmg = realm.config.DAMAGE_AMMUNITION(level)
@@ -169,13 +172,13 @@ class Ammunition(Stack):
       
   
 class Scrap(Ammunition):
-   ITEM_ID = 6
-
-class Shaving(Ammunition):
    ITEM_ID = 7
 
-class Shard(Ammunition):
+class Shaving(Ammunition):
    ITEM_ID = 8
+
+class Shard(Ammunition):
+   ITEM_ID = 9
 
 class Consumable(Item):
    def __init__(self, realm, level, **kwargs):
@@ -183,13 +186,13 @@ class Consumable(Item):
       super().__init__(realm, level, restore=restore, **kwargs)
 
 class Ration(Consumable):
-   ITEM_ID = 9
+   ITEM_ID = 10
    def use(self, entity):
       entity.resources.food.increment(self.restore.val)
       entity.resources.water.increment(self.restore.val)
 
 class Potion(Consumable):
-   ITEM_ID = 10
+   ITEM_ID = 11
    def use(self, entity):
       entity.resources.health.increment(self.restore.val)
  

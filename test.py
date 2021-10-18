@@ -34,7 +34,7 @@ def run_env(worker):
    return env.terminal()['Stats']
 
 NUM_CORES = 4
-ray.init()
+ray.init(local_mode=False)
 results = []
 for worker in range(NUM_CORES):
    result = run_env.remote(worker)

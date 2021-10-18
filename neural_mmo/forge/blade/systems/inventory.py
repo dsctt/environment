@@ -63,10 +63,62 @@ class Pouch:
 
       return item
 
+
 class Equipment:
+   def remove(self, item):
+      itm = self.get(item, remove=True)
+      assert itm, 'item.remove: {} not in inventory'.format(item)
+      return itm
+
+   def get(self, item, level=None, remove=False):
+      if inspect.isclass(item):
+         key = item
+      else:
+         key = type(item)
+ 
+      mapping = self.mapping
+      if key not in mapping:
+          return None
+
+      itm = self.mapping[key]
+
+      if itm is None:
+         return None
+
+      if remove:
+         self.force_remove(key)
+
+      return itm
+
    @property
    def items(self):
-      return [e for e in self.equipment.values() if e is not None]
+      return [e for e in self.mapping.values() if e is not None]
+
+   @property
+   def packet(self):
+      packet = {}
+
+      for item_type, item in self.mapping.items():
+         name = item_type.__name__.lower()
+
+         if item is not None:
+            val = item.packet
+         else:
+            val = self.itm.packet
+
+         packet[name] = val
+        
+      return packet
+
+
+class Loadout(Equipment):
+   def __init__(self, realm, hat=0, top=0, bottom=0, weapon=0):
+      self.hat    = Item.Hat(realm, hat) if hat != 0 else None
+      self.top    = Item.Top(realm, top) if top != 0 else None
+      self.bottom = Item.Bottom(realm, bottom) if bottom != 0 else None
+      self.weapon = Item.Weapon(realm, weapon) if weapon != 0 else None
+
+      self.itm = Item.Hat(realm, 0)
 
    @property
    def levels(self):
@@ -89,97 +141,57 @@ class Equipment:
       if not (levels := self.levels):
          return 0
       return sum(levels)
-   
-   def remove(self, item):
-      itm = self.get(item, remove=True)
-      assert itm, 'item.remove: {} not in inventory'.format(item)
-      return itm
-
-class Loadout(Equipment):
-   def __init__(self, realm, hat=0, top=0, bottom=0, weapon=0):
-      self.equipment = {
-            Item.Hat:     Item.Hat(realm, hat) if hat !=0 else None,
-            Item.Top:     Item.Top(realm, top) if top !=0 else None,
-            Item.Bottom:  Item.Bottom(realm, bottom) if bottom != 0 else None,
-            Item.Weapon:  Item.Weapon(realm, weapon) if weapon != 0 else None}
-
-      self.itm = Item.Hat(realm, 0)
-  
-   def get(self, item, level=None, remove=False):
-      if item not in self.equipment:
-          return None
-
-      itm = self.equipment[item]
-
-      if remove:
-          self.equipment[item] = None
-
-      return itm
+ 
+   @property
+   def items(self):
+      itms = [self.hat, self.top, self.bottom, self.weapon]
+      return [e for e in itms if e is not None]
 
    @property
-   def packet(self):
-      packet = {}
+   def mapping(self):
+      return {
+            Item.Hat: self.hat,
+            Item.Top: self.top,
+            Item.Bottom: self.bottom,
+            Item.Weapon: self.weapon}
 
-      for item_type, item in self.equipment.items():
-          name = item_type.__name__.lower()
-          if item:
-              val = item.packet
-          else:
-              val = self.itm.packet
+   def force_remove(self, item):
+      self.mapping[item] = None
 
-          packet[name] = val
-         
-      return packet
 
 class Ammunition(Equipment):
    def __init__(self, realm, hat=0, top=0, bottom=0, weapon=0):
-      self.equipment = {
-            Item.Scrap:   Item.Scrap(realm, 1),
-            Item.Shard:   Item.Shard(realm, 1),
-            Item.Shaving: Item.Shaving(realm, 1)}
+      self.scrap   = Item.Scrap(realm, 1)
+      self.shard   = Item.Shard(realm, 1)
+      self.shaving = Item.Shaving(realm, 1)
+
+   @property
+   def mapping(self):
+      return {
+            Item.Scrap:   self.scrap,
+            Item.Shard:   self.shard,
+            Item.Shaving: self.shaving}
+
+   @property
+   def skill_mapping(self):
+      return {
+            Skill.Melee:  self.scrap,
+            Skill.Mage:  self.shard,
+            Skill.Range: self.shaving}
 
    def add(self, ammo):
       ammo_type = type(ammo)
-      item = self.equipment[ammo_type]
+      item = self.mapping[ammo_type]
       item.quantity.update(item.quantity.val + ammo.quantity.val)
 
    def use(self, skill):
-      if skill == Skill.Mage:
-         return self.equipment[Item.Shard].use()
-      elif skill == Skill.Range:
-         return self.equipment[Item.Shaving].use()
-      elif skill == Skill.Melee:
-         return self.equipment[Item.Scrap].use()
-      else:
-         assert False, 'No ammunition for skill {}'.format(skill)
+      return self.skill_mapping[skill].use()
 
-   def get(self, item, level=None, remove=False):
-      if inspect.isclass(item):
-         key = item
-      else:
-         key = type(item)
+   def force_remove(self, item):
+      item = self.mapping[item]
+      quantity = item.quantity.val
+      item.quantity.update(0)
 
-      if key not in self.equipment:
-         return
-
-      itm = self.equipment[key]
-
-      if remove:
-          quantity = itm.quantity.val
-          itm.quantity.update(0)
-
-      return itm
-
-   @property
-   def packet(self):
-      packet = {}
-
-      for item_type, item in self.equipment.items():
-          packet[item_type.__name__.lower()] = item.packet
-         
-      return packet
-
-      
 class Inventory:
    def __init__(self, realm, entity):
       config           = realm.config
