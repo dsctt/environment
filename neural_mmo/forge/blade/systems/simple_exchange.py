@@ -90,7 +90,7 @@ class ItemListings:
       buyer.buys   += 1
       seller.sells += 1
       self.volume  += 1
-      return True
+      return price
          
    def sell(self, seller, quantity, price):
       if price == 1 and not self.empty:
@@ -124,8 +124,9 @@ class Exchange:
       listings_key  = (item, level)
       listings      = self.item_listings[listings_key]
 
-      if listings.buy(buyer, quantity):
-         print('{} Bought {} x {}.'.format(buyer.base.name, quantity, item.__name__))
+      price = listings.buy(buyer, quantity)
+      if price:
+         print('{} Bought {} for {}.'.format(buyer.base.name, item.__name__, price))
          buyer.inventory.receive(item(realm, level, quantity=quantity))
 
          #Update placeholder
@@ -135,8 +136,6 @@ class Exchange:
             
    def sell(self, realm, seller, item, level, quantity, price):
       item = seller.inventory.get(item, level)
-      if not item:
-         return
 
       seller.inventory.remove(item)
       item = type(item)
@@ -150,5 +149,5 @@ class Exchange:
          listings.placeholder = item(realm, level, price=price)
 
 
-      print('{} Sold {} x {} for {} ea.'.format(seller.base.name, quantity, item.__name__, price))
+      #print('{} Sold {} x {} for {} ea.'.format(seller.base.name, quantity, item.__name__, price))
       listings.sell(seller, quantity, price)

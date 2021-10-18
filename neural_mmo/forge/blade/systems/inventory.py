@@ -133,32 +133,40 @@ class Loadout(Equipment):
 
 class Ammunition(Equipment):
    def __init__(self, realm, hat=0, top=0, bottom=0, weapon=0):
-      self.ammunition = {
-            Item.Scrap:   Item.Scrap(realm, 0),
-            Item.Shard:   Item.Shard(realm, 0),
-            Item.Shaving: Item.Shaving(realm, 0)}
+      self.equipment = {
+            Item.Scrap:   Item.Scrap(realm, 1),
+            Item.Shard:   Item.Shard(realm, 1),
+            Item.Shaving: Item.Shaving(realm, 1)}
 
    def add(self, ammo):
       ammo_type = type(ammo)
-      item = self.ammunition[ammo_type]
+      item = self.equipment[ammo_type]
       item.quantity.update(item.quantity.val + ammo.quantity.val)
 
    def use(self, skill):
       if skill == Skill.Mage:
-         return self.ammunition[Item.Shard].use()
+         return self.equipment[Item.Shard].use()
       elif skill == Skill.Range:
-         return self.ammunition[Item.Shaving].use()
+         return self.equipment[Item.Shaving].use()
       elif skill == Skill.Melee:
-         return self.ammunition[Item.Scrap].use()
+         return self.equipment[Item.Scrap].use()
       else:
          assert False, 'No ammunition for skill {}'.format(skill)
 
    def get(self, item, level=None, remove=False):
-      itm      = self.equipment[item]
+      if inspect.isclass(item):
+         key = item
+      else:
+         key = type(item)
+
+      if key not in self.equipment:
+         return
+
+      itm = self.equipment[key]
 
       if remove:
           quantity = itm.quantity.val
-          item.quantity.val.update(0)
+          itm.quantity.update(0)
 
       return itm
 
@@ -166,7 +174,7 @@ class Ammunition(Equipment):
    def packet(self):
       packet = {}
 
-      for item_type, item in self.ammunition.items():
+      for item_type, item in self.equipment.items():
           packet[item_type.__name__.lower()] = item.packet
          
       return packet
@@ -185,7 +193,7 @@ class Inventory:
       self.consumables = Pouch(config.N_CONSUMABLES)
       self.loot        = Pouch(config.N_LOOT)
 
-      self.pouches = [self.equipment, self.consumables, self.loot]
+      self.pouches = [self.equipment, self.ammunition, self.consumables, self.loot]
 
    def packet(self):
       data = {}
@@ -200,7 +208,7 @@ class Inventory:
 
    @property
    def items(self):
-      return (self.equipment.items + [self.gold] + 
+      return ([self.gold] + self.equipment.items + self.ammunition.items +
             self.consumables.items + self.loot.items)
 
    @property

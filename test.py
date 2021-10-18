@@ -7,7 +7,10 @@ from neural_mmo.forge.trinity.scripted import baselines
 
 from projekt.config import SmallMultimodalSkills, Debug
 
-DEV_AGENTS  = [baselines.Prospector, baselines.Hunter, baselines.Fisher, baselines.Carver, baselines.Alchemist, baselines.CombatExchange]
+DEV_AGENTS  = [
+      baselines.Hunter, baselines.Fisher, 
+      baselines.Prospector, baselines.Carver, baselines.Alchemist,
+      baselines.Melee, baselines.Range, baselines.Mage]
 
 #config         = SmallMultimodalSkills()
 config         = Debug()
@@ -15,12 +18,12 @@ config.AGENTS  = DEV_AGENTS
 config.NMOB = 32
 config.NENT = 32
 config.EVALUTE = True
-#config.RENDER  = True
+config.RENDER  = True
 
 env = Env(config)
 
 env.reset()
-for _ in range(256):
+for _ in range(1024):
    env.render()
    env.step({})
 

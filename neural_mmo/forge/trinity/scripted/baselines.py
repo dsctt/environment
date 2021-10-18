@@ -102,7 +102,6 @@ class Scripted(Agent):
         if self.attacker is not None:
            self.attackerID = io.Observation.attribute(self.attacker, Stimulus.Entity.ID)
 
-        self.style      = None
         self.target     = None
         self.targetID   = None
         self.targetDist = None
@@ -132,6 +131,9 @@ class Scripted(Agent):
            index    = io.Observation.attribute(item_ary, Stimulus.Item.Index)
            level    = io.Observation.attribute(item_ary, Stimulus.Item.Level)
            quantity = io.Observation.attribute(item_ary, Stimulus.Item.Quantity)
+
+           if quantity == 0:
+              continue
 
            itm      = item.ItemID.get(int(index))
            self.inventory.add((itm, level, quantity))
@@ -178,12 +180,15 @@ class Scripted(Agent):
 
  
     def sell(self, keep_all: set, keep_best: set):
-        for item, level, quantity in self.inventory:
-            if item in keep_all:
+        for itm, level, quantity in self.inventory:
+            if itm in keep_all:
                 continue
 
-            best = level == self.best_items[item][0]
-            if item in keep_best and best:
+            if itm == item.Gold:
+                continue
+
+            best = level == self.best_items[itm][0]
+            if itm in keep_best and best:
                 continue
 
             if quantity == 0:
@@ -191,7 +196,7 @@ class Scripted(Agent):
 
             self.actions[Action.Exchange] = {
                Action.ExchangeAction: Action.Sell,
-               Action.Item: item,
+               Action.Item: itm,
                Action.Level: level,
                Action.Quantity: quantity,
                Action.Price: level}
@@ -218,7 +223,7 @@ class Scripted(Agent):
            Action.ExchangeAction: Action.Buy,
            Action.Item: item,
            Action.Level: level,
-           Action.Quantity: quantity,
+           Action.Quantity: 1,
            Action.Price: price}
 
         return True
@@ -365,8 +370,6 @@ class Combat(Scripted):
         super().__call__(obs)
 
         self.adaptive_control_and_targeting()
-
-        self.style = Action.Range
         self.attack()
 
         return self.actions
@@ -443,23 +446,47 @@ class Alchemist(Gather):
         super().__init__(config, idx)
         self.resource = material.Crystal
 
-class CombatExchange(CombatTribrid):
+class CombatExchange(Combat):
+    @property
+    def policy(self):
+       return self.__class__.__name__
+
     def __call__(self, obs):
         super().__call__(obs)
         self.process_inventory()
         self.process_market()
 
         item_sold = self.sell(
-                keep_all={item.Ration, item.Potion},
+                keep_all={item.Ration, item.Potion, self.ammo},
                 keep_best={item.Hat, item.Top, item.Bottom, item.Weapon})
 
         if not item_sold:
            return self.actions
 
         item_bought = self.buy(
-                buy_best={item.Scrap, item.Shaving, item.Shard},
+                buy_best={item.Ration, item.Potion, self.ammo},
                 buy_upgrade={})
 
         return self.actions
 
+class Melee(CombatExchange):
+    policy = 'Melee'
+    def __init__(self, config, idx):
+        super().__init__(config, idx)
+        self.style = Action.Melee
+        self.ammo  = item.Scrap
+
+class Range(CombatExchange):
+    policy = 'Range'
+    def __init__(self, config, idx):
+        super().__init__(config, idx)
+        self.style = Action.Range
+        self.ammo  = item.Shaving
+
+class Mage(CombatExchange):
+    policy = 'Mage'
+    def __init__(self, config, idx):
+        super().__init__(config, idx)
+        self.style = Action.Mage
+        self.ammo  = item.Shard
 
