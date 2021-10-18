@@ -209,6 +209,70 @@ class Stimulus(Config):
          def init(self, config):
             self.scale = 0.01
 
+   # ToDo: figure out how to autogen this
+   class Market(Config):
+      @staticmethod
+      def N(config):
+         return config.N_ITEMS
+
+      class Index(node.Discrete):
+         def init(self, config):
+            self.max   = config.N_ITEM + 1
+            self.scale = 1.0 / self.max
+
+      class Level(node.Continuous):
+         def init(self, config):
+            self.max   = 99
+            self.scale = 1.0 / self.max
+
+      class Capacity(node.Continuous):
+         def init(self, config):
+            self.max   = 99
+            self.scale = 1.0 / self.max
+
+      class Quantity(node.Continuous):
+         def init(self, config):
+            self.max   = 99
+            self.scale = 1.0 / self.max
+
+      class Tradable(node.Discrete):
+         def init(self, config):
+            self.max   = 1
+            self.scale = 1.0
+
+      class Offense(node.Discrete):
+         def init(self, config):
+            self.max   = 99
+            self.scale = 1.0 / self.max
+
+      class Defense(node.Discrete):
+         def init(self, config):
+            self.max   = 99
+            self.scale = 1.0 / self.max
+
+      class MinDmg(node.Discrete):
+         def init(self, config):
+            self.max   = 99
+            self.scale = 1.0 / self.max
+
+      class MaxDmg(node.Discrete):
+         def init(self, config):
+            self.max   = 99
+            self.scale = 1.0 / self.max
+
+      class Restore(node.Discrete):
+         def init(self, config):
+            self.max   = 99
+            self.scale = 1.0 / self.max
+
+      class Price(node.Discrete):
+         def init(self, config):
+            self.scale = 0.01
+
+
+      pass
+
+
 
 for objName, obj in Stimulus:
    for idx, (attrName, attr) in enumerate(obj):

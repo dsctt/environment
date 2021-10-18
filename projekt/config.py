@@ -18,7 +18,7 @@ class RLlibConfig:
    def MODEL(self):
       return self.__class__.__name__
 
-   N_ITEMS = 1000
+   N_ITEMS = 100
 
    #Paths
    EXPERIMENT_DIR          = 'experiment'
@@ -32,7 +32,10 @@ class RLlibConfig:
    #Policy specification
    AGENTS      = [Agent]
    EVAL_AGENTS = [baselines.Meander, baselines.Forage, baselines.Combat, Agent]
-   DEV_AGENTS  = []
+   DEV_AGENTS  = [
+         baselines.Hunter, baselines.Fisher,                                     
+         baselines.Prospector, baselines.Carver, baselines.Alchemist,
+         baselines.Melee, baselines.Range, baselines.Mage]
    EVALUATE    = False #Reserved param
 
    #Hardware and debug
@@ -174,6 +177,9 @@ class Debug(SmallMaps, config.AllGameSystems):
    TRAIN_BATCH_SIZE        = 400
    TRAIN_HORIZON           = 200
    EVALUATION_HORIZON      = 50
+
+   NENT = 32
+   NMOB = 32
 
    HIDDEN                  = 2
    EMBED                   = 2

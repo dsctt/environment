@@ -60,7 +60,7 @@ class Input(nn.Module):
 
       #Hackey obs scaling
       self.tileWeight = torch.Tensor([1.0, 0.0, 0.02, 0.02])
-      self.entWeight  = torch.Tensor([1.0, 0.0, 0.0, 0.05, 0.00, 0.02, 0.02, 0.1, 0.01, 0.1, 0.1, 0.1, 0.3])
+      self.entWeight  = torch.Tensor([1.0, 0.0, 0.0, 0.05, 0.00, 0.02, 0.02, 0.1, 0.01, 0.1, 0.1, 0.1, 0.3, 0.01])
 
    def forward(self, inp):
       '''Produces tensor representations from an IO object
@@ -390,16 +390,13 @@ def observationSpace(config):
          low=0, high=config.N_AGENT_OBS, shape=(1,),
          dtype=DataType.DISCRETE)
    obs['Item']['N']   = gym.spaces.Box(
-         high=config.N_AMMUNITION + config.N_CONSUMABLES + config.N_LOOT + 1,
+         high=20,
          dtype=DataType.DISCRETE,
          low=0, shape=(1,))
-
-   ''' 
-   obs['Exchange']['N']   = gym.spaces.Box(
-         high=config.N_ITEM_OBS,
+   obs['Market']['N']   = gym.spaces.Box(
+         high=config.N_ITEMS,
          dtype=DataType.DISCRETE,
          low=0, shape=(1,))
-   ''' 
 
    return obs
 
