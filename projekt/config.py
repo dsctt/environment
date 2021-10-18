@@ -31,17 +31,17 @@ class RLlibConfig:
 
    #Policy specification
    AGENTS      = [Agent]
-   EVAL_AGENTS = [baselines.Meander, baselines.Forage, baselines.Combat, Agent]
-   DEV_AGENTS  = [
+   EVAL_AGENTS = [Agent,
          baselines.Hunter, baselines.Fisher,                                     
          baselines.Prospector, baselines.Carver, baselines.Alchemist,
          baselines.Melee, baselines.Range, baselines.Mage]
+
    EVALUATE    = False #Reserved param
 
    #Hardware and debug
    NUM_WORKERS             = 1
    NUM_GPUS_PER_WORKER     = 0
-   NUM_GPUS                = 0
+   NUM_GPUS                = 1
    EVALUATION_NUM_WORKERS  = 3
    LOCAL_MODE              = False
    LOG_LEVEL               = 1
@@ -68,7 +68,7 @@ class RLlibConfig:
    TEAM_SPIRIT             = 0.0
    ACHIEVEMENT_SCALE       = 1.0/15.0
 
-   DEV_COMBAT = False
+   DEV_COMBAT              = False
 
 
 class LargeMaps(RLlibConfig, core.Config):
@@ -100,6 +100,13 @@ class SmallMaps(RLlibConfig, config.SmallMaps):
    This setting is modeled off of v1.1-v1.4 It is appropriate as a quick train
    task for new ideas, a transfer target for agents trained on large maps,
    or as a primary research target for PCG methods.'''
+
+   #Dev params
+   SPAWN_CLUSTERS          = 90
+   SPAWN_UNIFORMS          = 300
+
+   NENT = 32
+   NMOB = 32
 
    #Memory/Batch Scale
    NUM_WORKERS             = 1
@@ -178,14 +185,8 @@ class Debug(SmallMaps, config.AllGameSystems):
    TRAIN_HORIZON           = 200
    EVALUATION_HORIZON      = 50
 
-   NENT = 32
-   NMOB = 32
-
    HIDDEN                  = 2
    EMBED                   = 2
-
-   SPAWN_CLUSTERS          = 90
-   SPAWN_UNIFORMS          = 300
 
 
 ### AICrowd competition settings

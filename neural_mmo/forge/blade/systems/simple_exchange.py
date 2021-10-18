@@ -126,7 +126,7 @@ class Exchange:
 
       price = listings.buy(buyer, quantity)
       if price:
-         print('{} Bought {} for {}.'.format(buyer.base.name, item.__name__, price))
+         #print('{} Bought {} for {}.'.format(buyer.base.name, item.__name__, price))
          buyer.inventory.receive(item(realm, level, quantity=quantity))
 
          #Update placeholder
