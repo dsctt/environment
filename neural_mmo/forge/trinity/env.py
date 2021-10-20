@@ -11,6 +11,7 @@ from neural_mmo.forge.blade.io import stimulus
 from neural_mmo.forge.blade.io.stimulus import Static
 from neural_mmo.forge.blade.io.action import static as Action
 from neural_mmo.forge.blade.systems import combat
+from neural_mmo.forge.blade import item as Item
 
 from neural_mmo.forge.blade.lib import log
 
@@ -220,6 +221,10 @@ class Env:
                atn  = atns[Action.Attack]
                targ = atn[Action.Target]
                atn[Action.Target] = self.realm.entity(targ)
+            if Action.Exchange in atns:
+               atn     = atns[Action.Exchange]
+               item_id = atn[Action.Item]
+               atn[Action.Item] = self.realm.items[item_id]
             self.actions[entID] = atns
          else:
             obs[entID]     = ob
@@ -287,6 +292,19 @@ class Env:
       quill.stat('{}_Wealth'.format(policy), ent.inventory.gold.quantity.val)
       quill.stat('{}_Market_Sells'.format(policy), ent.sells)
       quill.stat('{}_Market_Buys'.format(policy), ent.buys)
+
+      quill.stat('{}_Defense_Level'.format(policy), ent.inventory.equipment.defense)
+
+      held_item = ent.inventory.equipment.held
+      if isinstance(held_item, Item.Weapon):
+         quill.stat('{}_Weapon_Level'.format(policy), held_item.level.val)
+         quill.stat('{}_Tool_Level'.format(policy), 0)
+      elif isinstance(held_item, Item.Tool):
+         quill.stat('{}_Weapon_Level'.format(policy), 0)
+         quill.stat('{}_Tool_Level'.format(policy), held_item.level.val)
+      else:
+         quill.stat('{}_Weapon_Level'.format(policy), 0)
+         quill.stat('{}_Tool_Level'.format(policy), 0)
 
       quill.stat('{}_Mage_Level'.format(policy), ent.skills.mage.level)
       quill.stat('{}_Range_Level'.format(policy), ent.skills.range.level)

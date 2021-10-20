@@ -155,6 +155,10 @@ class Stimulus(Config):
       def N(config):
          return config.N_ITEMS
 
+      class ID(node.Continuous):
+         def init(self, config):
+            self.scale = 0.001
+
       class Index(node.Discrete):
          def init(self, config):
             self.max   = config.N_ITEM + 1
@@ -205,9 +209,14 @@ class Stimulus(Config):
             self.max   = 99
             self.scale = 1.0 / self.max
 
-      class Price(node.Discrete):
+      class Price(node.Continuous):
          def init(self, config):
             self.scale = 0.01
+
+      class Equipped(node.Discrete):
+         def init(self, config):
+            self.scale = 1.0
+
 
    # ToDo: figure out how to autogen this
    class Market(Config):
@@ -215,6 +224,10 @@ class Stimulus(Config):
       def N(config):
          return config.N_ITEMS
 
+      class ID(node.Continuous):
+         def init(self, config):
+            self.scale = 0.001
+
       class Index(node.Discrete):
          def init(self, config):
             self.max   = config.N_ITEM + 1
@@ -265,13 +278,13 @@ class Stimulus(Config):
             self.max   = 99
             self.scale = 1.0 / self.max
 
-      class Price(node.Discrete):
+      class Price(node.Continuous):
          def init(self, config):
             self.scale = 0.01
 
-
-      pass
-
+      class Equipped(node.Discrete):
+         def init(self, config):
+            self.max   = 1
 
 
 for objName, obj in Stimulus:

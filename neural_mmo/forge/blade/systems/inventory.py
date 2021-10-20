@@ -71,16 +71,25 @@ class Equipment:
       return itm
 
    def get(self, item, level=None, remove=False):
+      #TODO: Figure out how to replace get/setattr
       if inspect.isclass(item):
          key = item
       else:
          key = type(item)
+
+      if issubclass(key, Item.Weapon) or issubclass(key, Item.Tool):
+         key = 'weapon'
+      elif issubclass(key, Item.Tool):
+         key = 'weapon'
  
+
+      key = key.__lower__
+
       mapping = self.mapping
       if key not in mapping:
           return None
 
-      itm = self.mapping[key]
+      itm = getattr(self, key)
 
       if itm is None:
          return None
@@ -148,7 +157,8 @@ class Loadout(Equipment):
       return [e for e in itms if e is not None]
 
    @property
-   def mapping(self):
+   def _mapping(self):
+      '''Get only, cannot use to set'''
       return {
             Item.Hat: self.hat,
             Item.Top: self.top,
@@ -255,3 +265,88 @@ class Inventory:
             self.ammunition.add(item)
          elif self.loot.space:
             self.loot.add(item)
+
+class Equipment:
+   def __init__(self, realm):
+      self.hat         = None
+      self.top         = None
+      self.bottom      = None
+
+      self.held        = None
+      self.ammunition  = None
+
+      #Placeholder item for render
+      self.itm         = Item.Hat(realm, 0)
+
+   @property
+   def offense(self): 
+      items = [e.offense.val for e in self]
+      if not items:
+         return 0
+      return sum(items)
+
+   @property
+   def defense(self): 
+      items = [e.defense.val for e in self]
+      if not items:
+         return 0
+      return sum(items)
+      
+   def __iter__(self):
+      for item in [self.hat, self.top, self.bottom, self.held, self.ammunition]:
+         if item is not None:
+            yield item
+
+   
+
+class Inventory:
+   def __init__(self, realm, entity):
+      config           = realm.config
+      self.realm       = realm
+      self.entity      = entity
+      self.config      = config
+
+      self._items      = set()
+      self.capacity    = config.N_ITEMS
+
+      self.gold        = Item.Gold(realm)
+      self.equipment   = Equipment(realm)
+
+   @property
+   def space(self):
+      return self.capacity - len(self._items)
+
+   @property
+   def dataframeKeys(self):
+      return [e.instanceID for e in self._items]
+
+   def contains(self, item):
+      if item in self._items:
+         return True
+      return False
+
+   @property
+   def packet(self):
+      return {
+            'items':     [e.packet for e in self._items],
+            'equipment': self.equipment.packet}
+
+   def __iter__(self):
+      for item in self._items:
+         yield item
+
+   def receive(self, item):
+      space = self.space
+      err = 'Out of space for {}'
+      assert space, err.format(item) 
+      self._items.add(item)
+      self.realm.items[item.instanceID] = item
+
+   def remove(self, item, level=None):
+      err = 'No item {} to remove'
+      assert item in self._items, err.format(item)
+      self._items.remove(item)
+      del self.realm.items[item.instanceID]
+      return item
+
+

@@ -90,12 +90,12 @@ class HarvestSkill(NonCombatSkill):
    def processDrops(self, realm, entity, dropTable):
       level = self.level
 
-      tool = entity.inventory.equipment.mapping[item.Weapon]
+      tool = entity.equipment.held
       if type(tool) == item.Tool:
          level += tool.level.val
 
-      drops = dropTable.roll(realm, self.level)
-      entity.inventory.receive(drops)
+      for drop in dropTable.roll(realm, self.level):
+         entity.inventory.receive(drop)
       self.exp += 10 * self.config.PROGRESSION_BASE_XP_SCALE
         
    def harvest(self, realm, entity, matl, deplete=True):

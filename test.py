@@ -25,7 +25,7 @@ config.RENDER  = False
 def run_env(worker):
    env = Env(config)
    env.reset()
-   for idx  in range(1024):
+   for idx  in range(128):
       if worker == 0 and idx % 10 == 0:
          print(idx)
       env.render()
@@ -33,8 +33,8 @@ def run_env(worker):
 
    return env.terminal()['Stats']
 
-NUM_CORES = 4
-ray.init(local_mode=False)
+NUM_CORES = 1
+ray.init(local_mode=True)
 results = []
 for worker in range(NUM_CORES):
    result = run_env.remote(worker)
@@ -48,4 +48,6 @@ for key in key_packet:
       vals = results[i][key]
       val_ary.append(np.mean(vals))
 
-   print('{}: {}'.format(key, np.mean(val_ary)))
+   print('{0:>40}'.format(key), ':', np.mean(val_ary))
+
+

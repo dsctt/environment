@@ -145,7 +145,7 @@ class SmallMaps(RLlibConfig, config.SmallMaps):
    N_LOOT            = 8
    '''Number of inventory spaces for ammunition'''
 
-   N_ITEM            = 10
+   N_ITEM            = 11
 
 
    SPAWN_CLUSTERS          = 15

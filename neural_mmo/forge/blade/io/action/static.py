@@ -283,11 +283,11 @@ class Exchange(Node):
    def edges():
       return [ExchangeAction, Item]#, Quantity, Price]
 
-   def call(env, entity, exchange_action, item, level, quantity, price):
+   def call(env, entity, exchange_action, item, quantity, price=None):
       assert exchange_action in (Buy, Sell)
       if exchange_action == Buy:
-         return env.exchange.buy(env, entity, item, level, quantity)
-      return env.exchange.sell(env, entity, item, level, quantity, price)
+         return env.exchange.buy(env, entity, item, quantity)
+      return env.exchange.sell(env, entity, item, quantity, price)
 
 class ExchangeAction(Node):
    argType = Fixed

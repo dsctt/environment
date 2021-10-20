@@ -120,7 +120,8 @@ class Exchange:
    def available(self, item):
       return self.item_listings[item].available()
 
-   def buy(self, realm, buyer, item, level, quantity):
+   def buy(self, realm, buyer, item, quantity):
+      level         = item.level.val
       listings_key  = (item, level)
       listings      = self.item_listings[listings_key]
 
@@ -137,11 +138,12 @@ class Exchange:
          if listings.supply:
             listings.placeholder = item(realm, level, price=listings.price)
             
-   def sell(self, realm, seller, item, level, quantity, price):
-      item = seller.inventory.get(item, level)
+   def sell(self, realm, seller, item, quantity, price):
+      assert seller.inventory.contains(item)
+      level = item.level.val
 
       if item.__class__.__name__ == 'Tool':
-         print('Sell Tool Lvl: {}'.format(item.level.val))
+         print('Sell Tool Lvl: {}'.format(level))
  
       seller.inventory.remove(item)
       item = type(item)
@@ -152,7 +154,13 @@ class Exchange:
 
       #Update obs placeholder item
       if listings.placeholder is None or (current_price is not None and price < current_price):
-         listings.placeholder = item(realm, level, price=price)
+         placeholder = item(realm, level, price=price)
+
+         if listings.placeholder:
+            del realm.items[listings.placeholder.instanceID]
+
+         listings.placeholder = placeholder
+         realm.items[placeholder.instanceID] = placeholder
 
 
       #print('{} Sold {} x {} for {} ea.'.format(seller.base.name, quantity, item.__name__, price))

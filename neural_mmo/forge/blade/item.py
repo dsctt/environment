@@ -24,12 +24,12 @@ class Item:
          capacity=0, quantity=1, tradable=True,
          offense=0, defense=0, minDmg=0, maxDmg=0,
          restore=0, price=0):
-      self.instanceID   = self.INSTANCE_ID
-      Item.INSTANCE_ID += 1
 
-      self.config   = realm.config
-      self.realm    = realm  
+      self.instanceID = self.INSTANCE_ID
+      self.config     = realm.config
+      self.realm      = realm  
 
+      self.instance = Static.Item.ID(realm.dataframe, self.instanceID, Item.INSTANCE_ID)
       self.index    = Static.Item.Index(realm.dataframe, self.instanceID, self.ITEM_ID)
       self.level    = Static.Item.Level(realm.dataframe, self.instanceID, level)
       self.capacity = Static.Item.Capacity(realm.dataframe, self.instanceID, capacity)
@@ -41,10 +41,11 @@ class Item:
       self.maxDmg   = Static.Item.MaxDmg(realm.dataframe, self.instanceID, maxDmg)
       self.restore  = Static.Item.Restore(realm.dataframe, self.instanceID, restore)
       self.price    = Static.Item.Price(realm.dataframe, self.instanceID, price)
-      self.equipped = Static.Item.Price(realm.dataframe, self.instanceID, 0)
+      self.equipped = Static.Item.Equipped(realm.dataframe, self.instanceID, 0)
 
       realm.dataframe.init(Static.Item, self.instanceID, None)
 
+      Item.INSTANCE_ID += 1
       if self.ITEM_ID is not None:
          ItemID.register(self.__class__, item_id=self.ITEM_ID)
 
@@ -111,50 +112,66 @@ class Equipment(Item):
 
    def use(self, entity):
       if self.equipped.val:
-         #Check if cannot unequip
-         if not entity.inventory.loot.space:
-            return
-
          self.equipped.update(0)
-         entity.inventory.equipment.remove(self)
-         entity.inventory.receiveLoot(self)
-         return
+         self.unequip(entity)
+      else:
+         self.equipped.update(1)
+         self.equip(entity)
 
-      #Unequip old one
-      item_type = type(self)
-      unequip   = None
-      if entity.inventory.equipment.get(item_type):
-         unequip = entity.inventory.equipment.remove(item_type)
-
-      entity.inventory.receive(self)
-
-      if unequip:
-         entity.inventory.receive(unequip)
-
-class Offensive(Equipment):
-   def __init__(self, realm, level, **kwargs):
-      offense = realm.config.EQUIPMENT_OFFENSE(level)
-      super().__init__(realm, level, offense=offense, **kwargs)
-
-class Defensive(Equipment):
+class Armor(Equipment):
    def __init__(self, realm, level, **kwargs):
       defense = realm.config.EQUIPMENT_DEFENSE(level)
       super().__init__(realm, level, defense=defense, **kwargs)
 
-class Hat(Defensive):
-   ITEM_ID = 2
-
-class Top(Defensive):
-   ITEM_ID = 3
-
-class Bottom(Defensive):
-   ITEM_ID = 4
-
-class Weapon(Offensive):
+class Weapon(Equipment):
    ITEM_ID = 5
 
-class Tool(Defensive):
+   def equip(self, entity):
+      entity.inventory.weapon = self
+
+   def unequip(self, entity):
+      entity.inventory.weapon = None
+
+
+class Hat(Armor):
+   ITEM_ID = 2
+
+   def equip(self, entity):
+      entity.inventory.hat = self
+
+   def unequip(self, entity):
+      entity.inventory.hat = None
+
+
+class Top(Armor):
+   ITEM_ID = 3
+
+   def equip(self, entity):
+      entity.inventory.top = self
+
+   def unequip(self, entity):
+      entity.inventory.top = None
+
+
+class Bottom(Armor):
+   ITEM_ID = 4
+
+   def equip(self, entity):
+      entity.inventory.bottom = self
+
+   def unequip(self, entity):
+      entity.inventory.bottom = None
+
+
+class Tool(Armor):
    ITEM_ID = 6
+
+   def equip(self, entity):
+      entity.inventory.weapon = self
+
+   def unequip(self, entity):
+      entity.inventory.weapon = None
+
 
 class Ammunition(Stack):
    def __init__(self, realm, level, **kwargs):

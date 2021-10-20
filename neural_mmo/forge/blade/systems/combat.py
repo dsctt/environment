@@ -31,17 +31,18 @@ def attack(entity, targ, skillFn):
    base    = config.DAMAGE_BASE
 
    #Weapon mod
-   weapon  = entity.inventory.equipment.offense
+   weapon  = entity.equipment.offense
 
    #Ammo mod
-   ammo = entity.inventory.ammunition.use(type(skill))
+   if entity.equipment.ammunition:
+      ammo = entity.equipment.ammunition.use(type(skill))
 
    #Style dominance multiplier
    mul     = damage_multiplier(config, skill, targ)
 
    #Attack and defense scores
    attack  = base# + weapon + ammo
-   defense = entity.inventory.equipment.defense
+   defense = entity.equipment.defense
 
    #Total damage calculation
    dmg     = mul * (attack - defense)

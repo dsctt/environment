@@ -190,6 +190,9 @@ class Realm:
 
       #Global item exchange
       self.exchange = Exchange()
+     
+      #Global item registry
+      self.items = {}
 
    def reset(self, idx):
       '''Reset the environment and load the specified map

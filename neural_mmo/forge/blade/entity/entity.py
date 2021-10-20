@@ -174,7 +174,8 @@ class Entity:
       self.resources.health.decrement(dmg)
 
       if not self.alive and source is not None:
-         source.inventory.receive(self.inventory.items)
+         for item in self.inventory:
+            source.inventory.receive(item)
          return False
 
       return True
@@ -200,3 +201,7 @@ class Entity:
    @property
    def isNPC(self) -> bool:
       return False
+
+   @property
+   def equipment(self):
+      return self.inventory.equipment

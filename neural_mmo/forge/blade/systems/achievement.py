@@ -83,7 +83,7 @@ class Equipment(Achievement):
                        hard   = config.EQUIPMENT_HARD)
 
    def update(self, realm, entity, dry):
-      return super().update(entity.inventory.equipment.defense, dry)
+      return super().update(entity.equipment.defense, dry)
 
 class Exploration(Achievement):
    def __init__(self, config):

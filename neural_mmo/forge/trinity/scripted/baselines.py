@@ -131,19 +131,20 @@ class Scripted(Agent):
            index    = io.Observation.attribute(item_ary, Stimulus.Item.Index)
            level    = io.Observation.attribute(item_ary, Stimulus.Item.Level)
            quantity = io.Observation.attribute(item_ary, Stimulus.Item.Quantity)
+           instance = io.Observation.attribute(item_ary, Stimulus.Item.ID)
 
            if quantity == 0:
               continue
 
            itm      = item.ItemID.get(int(index))
-           self.inventory.add((itm, level, quantity))
+           self.inventory.add((itm, instance, level, quantity))
 
            if itm not in self.best_items:
-              self.best_items[itm] = (level, quantity)
+              self.best_items[itm] = (instance, level, quantity)
 
-           best, _ = self.best_items[itm]
+           _ , best, _ = self.best_items[itm]
            if best < level:
-              self.best_items[itm] = (level, quantity)
+              self.best_items[itm] = (instance, level, quantity)
 
     def process_market(self):
         self.market          = set()
@@ -154,19 +155,20 @@ class Scripted(Agent):
            level    = io.Observation.attribute(item_ary, Stimulus.Item.Level)
            quantity = io.Observation.attribute(item_ary, Stimulus.Item.Quantity)
            price    = io.Observation.attribute(item_ary, Stimulus.Item.Price)
+           instance = io.Observation.attribute(item_ary, Stimulus.Item.ID)
 
            itm      = item.ItemID.get(int(index))
 
-           self.market.add((itm, level, quantity, price))
+           self.market.add((itm, instance, level, quantity, price))
 
            #Affordable
            if price > self.gold:
               continue
 
            if itm not in self.best_affordable:
-               self.best_affordable[itm] = (level, quantity, price)
+               self.best_affordable[itm] = (instance, level, quantity, price)
 
-           best_level, best_quantity, best_price = self.best_affordable[itm]
+           _, best_level, _, best_price = self.best_affordable[itm]
 
            #Not lower level
            if level < best_level:
@@ -176,11 +178,11 @@ class Scripted(Agent):
            if level == best_level and price > best_price:
                continue
 
-           self.best_affordable[itm] = (level, quantity, price)
+           self.best_affordable[itm] = (instance, level, quantity, price)
 
  
     def sell(self, keep_all: set, keep_best: set):
-        for itm, level, quantity in self.inventory:
+        for itm, instance, level, quantity in self.inventory:
             if itm in keep_all:
                 continue
 
@@ -196,8 +198,7 @@ class Scripted(Agent):
 
             self.actions[Action.Exchange] = {
                Action.ExchangeAction: Action.Sell,
-               Action.Item: itm,
-               Action.Level: level,
+               Action.Item: instance,
                Action.Quantity: quantity,
                Action.Price: level}
 
@@ -205,26 +206,24 @@ class Scripted(Agent):
 
     def buy(self, buy_best: set, buy_upgrade: set):
         purchase = None
-        for item, (level, quantity, price) in self.best_affordable.items():
+        for item, (instance, level, quantity, price) in self.best_affordable.items():
             if item in buy_best:
-                purchase = (item, level, quantity, price)
+                purchase = (item, instance, level, quantity, price)
             if item not in buy_upgrade:
                 continue
             if item not in self.best_items:
-                purchase = (item, level, quantity, price)
+                purchase = (item, instance, level, quantity, price)
             if self.best_items[item][0] < level:
-                purchase = (item, level, quantity, price)
+                purchase = (item, instance, level, quantity, price)
 
         if purchase is None:
             return
  
-        item, level, quantity, price = purchase
+        item, instance, level, quantity, price = purchase
         self.actions[Action.Exchange] = {
            Action.ExchangeAction: Action.Buy,
-           Action.Item: item,
-           Action.Level: level,
-           Action.Quantity: 1,
-           Action.Price: price}
+           Action.Item: instance,
+           Action.Quantity: 1}
 
         return True
  
