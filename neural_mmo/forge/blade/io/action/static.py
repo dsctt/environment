@@ -286,6 +286,8 @@ class Exchange(Node):
    def call(env, entity, exchange_action, item, quantity, price=None):
       assert exchange_action in (Buy, Sell)
       if exchange_action == Buy:
+         if not entity.inventory.space:
+            return
          return env.exchange.buy(env, entity, item, quantity)
       return env.exchange.sell(env, entity, item, quantity, price)
 

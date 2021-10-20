@@ -25,9 +25,11 @@ class Item:
          offense=0, defense=0, minDmg=0, maxDmg=0,
          restore=0, price=0):
 
-      self.instanceID = self.INSTANCE_ID
       self.config     = realm.config
       self.realm      = realm  
+
+      self.instanceID = Item.INSTANCE_ID
+      realm.items[self.instanceID] = self
 
       self.instance = Static.Item.ID(realm.dataframe, self.instanceID, Item.INSTANCE_ID)
       self.index    = Static.Item.Index(realm.dataframe, self.instanceID, self.ITEM_ID)

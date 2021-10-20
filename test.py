@@ -19,13 +19,13 @@ config.AGENTS  = DEV_AGENTS
 config.NMOB = 32
 config.NENT = 32
 config.EVALUTE = True
-config.RENDER  = False
+config.RENDER  = True
 
 @ray.remote
 def run_env(worker):
    env = Env(config)
    env.reset()
-   for idx  in range(128):
+   for idx  in range(1024):
       if worker == 0 and idx % 10 == 0:
          print(idx)
       env.render()

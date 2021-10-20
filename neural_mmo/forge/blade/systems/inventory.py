@@ -297,6 +297,17 @@ class Equipment:
          if item is not None:
             yield item
 
+   def placeholderize(self, item):
+      return item.packet if item is not None else self.itm.packet
+
+   @property
+   def packet(self):
+      return {
+            'hat':        self.placeholderize(self.hat),
+            'top':        self.placeholderize(self.top),
+            'bottom':     self.placeholderize(self.bottom),
+            'held':       self.placeholderize(self.held),
+            'ammunition': self.placeholderize(self.ammunition)}
    
 
 class Inventory:
@@ -325,7 +336,6 @@ class Inventory:
          return True
       return False
 
-   @property
    def packet(self):
       return {
             'items':     [e.packet for e in self._items],
@@ -336,17 +346,17 @@ class Inventory:
          yield item
 
    def receive(self, item):
-      space = self.space
-      err = 'Out of space for {}'
-      assert space, err.format(item) 
+      if not self.space:
+         return
+      #space = self.space
+      #err = 'Out of space for {}'
+      #assert space, err.format(item) 
       self._items.add(item)
-      self.realm.items[item.instanceID] = item
 
    def remove(self, item, level=None):
       err = 'No item {} to remove'
       assert item in self._items, err.format(item)
       self._items.remove(item)
-      del self.realm.items[item.instanceID]
       return item
 
 

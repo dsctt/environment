@@ -82,6 +82,8 @@ class EntityGroup(Mapping):
             self.dead[entID] = player
 
             self.realm.map.tiles[r, c].delEnt(entID)
+            #for item in player.inventory:
+            #   del self.realm.items[item.instanceID]
             del self.entities[entID]
             self.realm.dataframe.remove(Static.Entity, entID, player.pos)
 

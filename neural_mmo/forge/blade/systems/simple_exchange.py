@@ -74,13 +74,13 @@ class ItemListings:
    def empty(self):
       return self.listings.empty()
 
-   def buy(self, buyer, quantity):
+   def buy(self, buyer, quantity, max_price):
       if not self.supply:
          return
 
       price, item_number, seller = self.listings.get()
 
-      if price > buyer.inventory.gold.quantity:
+      if price > max_price or price > buyer.inventory.gold.quantity.val:
          self.listings.put((price, item_number, seller))
          return
 
@@ -121,17 +121,25 @@ class Exchange:
       return self.item_listings[item].available()
 
    def buy(self, realm, buyer, item, quantity):
-      level         = item.level.val
-      listings_key  = (item, level)
-      listings      = self.item_listings[listings_key]
+      assert isinstance(item, object)
+      level        = item.level.val
 
-      price = listings.buy(buyer, quantity)
+      #Agents may try to buy an item at the same time
+      #Therefore the price has to be semi-variable
+      price        = item.price.val
+      max_price    = 1.1 * price
+
+      item         = type(item)
+      listings_key = (item, level)
+      listings     = self.item_listings[listings_key]
+
+      price = listings.buy(buyer, quantity, max_price)
       if price:
          #print('{} Bought {} for {}.'.format(buyer.base.name, item.__name__, price))
-         buyer.inventory.receive(item(realm, level, quantity=quantity))
+         buyer.inventory.receive(listings.placeholder)
 
-         if item.__name__ == 'Tool':
-            print('Buy Tool Lvl: {}'.format(level))
+         #if item.__name__ == 'Tool':
+         #   print('Buy Tool Lvl: {}'.format(level))
 
          #Update placeholder
          listings.placeholder = None
@@ -139,11 +147,12 @@ class Exchange:
             listings.placeholder = item(realm, level, price=listings.price)
             
    def sell(self, realm, seller, item, quantity, price):
+      assert isinstance(item, object)
       assert seller.inventory.contains(item)
       level = item.level.val
 
-      if item.__class__.__name__ == 'Tool':
-         print('Sell Tool Lvl: {}'.format(level))
+      #if item.__class__.__name__ == 'Tool':
+      #   print('Sell Tool Lvl: {}'.format(level))
  
       seller.inventory.remove(item)
       item = type(item)
@@ -154,13 +163,7 @@ class Exchange:
 
       #Update obs placeholder item
       if listings.placeholder is None or (current_price is not None and price < current_price):
-         placeholder = item(realm, level, price=price)
-
-         if listings.placeholder:
-            del realm.items[listings.placeholder.instanceID]
-
-         listings.placeholder = placeholder
-         realm.items[placeholder.instanceID] = placeholder
+         listings.placeholder = item(realm, level, price=price)
 
 
       #print('{} Sold {} x {} for {} ea.'.format(seller.base.name, quantity, item.__name__, price))
