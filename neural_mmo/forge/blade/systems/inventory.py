@@ -297,18 +297,22 @@ class Equipment:
          if item is not None:
             yield item
 
-   def placeholderize(self, item):
-      return item.packet if item is not None else self.itm.packet
+   def conditional_packet(self, packet, item_name, item):
+      if item:
+         packet[item_name] = item.packet
 
    @property
    def packet(self):
-      return {
-            'hat':        self.placeholderize(self.hat),
-            'top':        self.placeholderize(self.top),
-            'bottom':     self.placeholderize(self.bottom),
-            'held':       self.placeholderize(self.held),
-            'ammunition': self.placeholderize(self.ammunition)}
-   
+      packet = {}
+
+      self.conditional_packet(packet, 'hat',        self.hat)
+      self.conditional_packet(packet, 'top',        self.top)
+      self.conditional_packet(packet, 'bottom',     self.bottom)
+      self.conditional_packet(packet, 'held',       self.held)
+      self.conditional_packet(packet, 'ammunition', self.ammunition)
+
+      return packet
+
 
 class Inventory:
    def __init__(self, realm, entity):
@@ -331,7 +335,7 @@ class Inventory:
    def dataframeKeys(self):
       return [e.instanceID for e in self._items]
 
-   def contains(self, item):
+   def __contains__(self, item):
       if item in self._items:
          return True
       return False

@@ -129,50 +129,50 @@ class Weapon(Equipment):
    ITEM_ID = 5
 
    def equip(self, entity):
-      entity.inventory.weapon = self
+      entity.inventory.equipment.held = self
 
    def unequip(self, entity):
-      entity.inventory.weapon = None
+      entity.inventory.equipment.held = None
 
 
 class Hat(Armor):
    ITEM_ID = 2
 
    def equip(self, entity):
-      entity.inventory.hat = self
+      entity.inventory.equipment.hat = self
 
    def unequip(self, entity):
-      entity.inventory.hat = None
+      entity.inventory.equipment.hat = None
 
 
 class Top(Armor):
    ITEM_ID = 3
 
    def equip(self, entity):
-      entity.inventory.top = self
+      entity.inventory.equipment.top = self
 
    def unequip(self, entity):
-      entity.inventory.top = None
+      entity.inventory.equipment.top = None
 
 
 class Bottom(Armor):
    ITEM_ID = 4
 
    def equip(self, entity):
-      entity.inventory.bottom = self
+      entity.inventory.equipment.bottom = self
 
    def unequip(self, entity):
-      entity.inventory.bottom = None
+      entity.inventory.equipment.bottom = None
 
 
 class Tool(Armor):
    ITEM_ID = 6
 
    def equip(self, entity):
-      entity.inventory.weapon = self
+      entity.inventory.equipment.held = self
 
    def unequip(self, entity):
-      entity.inventory.weapon = None
+      entity.inventory.equipment.held = None
 
 
 class Ammunition(Stack):

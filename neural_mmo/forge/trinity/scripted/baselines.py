@@ -189,7 +189,8 @@ class Scripted(Agent):
             if itm == item.Gold:
                 continue
 
-            best = level == self.best_items[itm][0]
+            best_instance, best_level, best_quantity = self.best_items[itm]
+            best = level == best_level
             if itm in keep_best and best:
                 continue
 
@@ -213,7 +214,9 @@ class Scripted(Agent):
                 continue
             if item not in self.best_items:
                 purchase = (item, instance, level, quantity, price)
-            if self.best_items[item][0] < level:
+
+            best_instance, best_level, best_quantity = self.best_items[item]
+            if best_level < level:
                 purchase = (item, instance, level, quantity, price)
 
         if purchase is None:

@@ -41,7 +41,7 @@ class RLlibConfig:
    #Hardware and debug
    NUM_WORKERS             = 1
    NUM_GPUS_PER_WORKER     = 0
-   NUM_GPUS                = 1
+   NUM_GPUS                = 0
    EVALUATION_NUM_WORKERS  = 3
    LOCAL_MODE              = False
    LOG_LEVEL               = 1

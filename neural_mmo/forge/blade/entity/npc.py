@@ -53,14 +53,14 @@ class NPC(entity.Entity):
          (Action.Melee, Action.Range, Action.Mage))
 
       #Set equipment levels
-      Item.Hat(realm, NPC.gearLevel(defense)).use(ent)
-      Item.Top(realm, NPC.gearLevel(defense)).use(ent)
-      Item.Bottom(realm, NPC.gearLevel(defense)).use(ent)
-      Item.Weapon(realm, NPC.gearLevel(defense)).use(ent)
-      #ent.inventory.equipment.hat    = Item.Hat(realm, NPC.gearLevel(defense))
-      #ent.inventory.equipment.top    = Item.Top(realm, NPC.gearLevel(defense))
-      #ent.inventory.equipment.bottom = Item.Bottom(realm, NPC.gearLevel(defense))
-      #ent.inventory.equipment.weapon = Item.Weapon(realm, NPC.gearLevel(defense))
+      equipment = [Item.Hat, Item.Top, Item.Bottom, Item.Weapon]
+      for equip in equipment:
+          level = NPC.gearLevel(defense)
+          itm   = equip(realm, level)
+
+          ent.inventory.receive(itm)
+          itm.use(ent)
+
       ent.inventory.gold.quantity.update(combat.level(ent.skills))
       ent.inventory.receive(Item.Tool(realm, NPC.gearLevel(defense)))
 

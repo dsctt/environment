@@ -240,7 +240,7 @@ class Inventory(Node):
    def call(env, entity, inventory_action, item):
       assert inventory_action in (Use, Discard)
 
-      if item not in entity.inventory.items:
+      if item not in entity.inventory:
          return
 
       if inventory_action == Use:

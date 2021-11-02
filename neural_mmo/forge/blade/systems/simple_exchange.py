@@ -148,7 +148,7 @@ class Exchange:
             
    def sell(self, realm, seller, item, quantity, price):
       assert isinstance(item, object)
-      assert seller.inventory.contains(item)
+      assert item in seller.inventory
       level = item.level.val
 
       #if item.__class__.__name__ == 'Tool':
