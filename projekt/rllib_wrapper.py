@@ -394,7 +394,7 @@ def observationSpace(config):
          dtype=DataType.DISCRETE,
          low=0, shape=(1,))
    obs['Market']['N']   = gym.spaces.Box(
-         high=config.N_ITEMS,
+         high=config.N_ITEM,
          dtype=DataType.DISCRETE,
          low=0, shape=(1,))
 

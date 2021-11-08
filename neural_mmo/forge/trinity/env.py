@@ -225,6 +225,11 @@ class Env:
                atn     = atns[Action.Exchange]
                item_id = atn[Action.Item]
                atn[Action.Item] = self.realm.items[item_id]
+            if Action.Inventory in atns:
+               atn     = atns[Action.Inventory]
+               item_id = atn[Action.Item]
+               atn[Action.Item] = self.realm.items[item_id]
+ 
             self.actions[entID] = atns
          else:
             obs[entID]     = ob

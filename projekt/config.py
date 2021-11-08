@@ -18,7 +18,7 @@ class RLlibConfig:
    def MODEL(self):
       return self.__class__.__name__
 
-   N_ITEMS = 100
+   N_ITEM = 100
 
    #Paths
    EXPERIMENT_DIR          = 'experiment'
@@ -135,18 +135,8 @@ class SmallMaps(RLlibConfig, config.SmallMaps):
    FISH_RESPAWN      = 0.01
    '''Probability that a harvested fish tile will regenerate each tick'''
 
-
-   N_AMMUNITION      = 3
-   '''Number of inventory spaces for ammunition'''
-
-   N_CONSUMABLES     = 6
-   '''Number of inventory spaces for ammunition'''
-
-   N_LOOT            = 8
-   '''Number of inventory spaces for ammunition'''
-
-   N_ITEM            = 11
-
+   INVENTORY_CAPACITY = 12
+   '''Number of inventory spaces'''
 
    SPAWN_CLUSTERS          = 15
    SPAWN_UNIFORMS          = 50

@@ -153,7 +153,7 @@ class Stimulus(Config):
    class Item(Config):
       @staticmethod
       def N(config):
-         return config.N_ITEMS
+         return config.N_ITEM
 
       class ID(node.Continuous):
          def init(self, config):
@@ -222,7 +222,7 @@ class Stimulus(Config):
    class Market(Config):
       @staticmethod
       def N(config):
-         return config.N_ITEMS
+         return config.N_ITEM
 
       class ID(node.Continuous):
          def init(self, config):

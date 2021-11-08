@@ -67,7 +67,10 @@ class Pouch:
 class Equipment:
    def remove(self, item):
       itm = self.get(item, remove=True)
-      assert itm, 'item.remove: {} not in inventory'.format(item)
+
+      if __debug__:
+         assert itm, 'item.remove: {} not in inventory'.format(item)
+
       return itm
 
    def get(self, item, level=None, remove=False):
@@ -78,10 +81,7 @@ class Equipment:
          key = type(item)
 
       if issubclass(key, Item.Weapon) or issubclass(key, Item.Tool):
-         key = 'weapon'
-      elif issubclass(key, Item.Tool):
-         key = 'weapon'
- 
+         key = 'held'
 
       key = key.__lower__
 
@@ -239,7 +239,10 @@ class Inventory:
 
    def remove(self, item, level=None):
       itm = self.get(item, level, remove=True)
-      assert itm, 'item.remove: {} not in inventory'.format(item)
+
+      if __debug__:
+         assert itm, 'item.remove: {} not in inventory'.format(item)
+
       return itm
 
    def get(self, item, level=None, remove=False):
@@ -322,7 +325,7 @@ class Inventory:
       self.config      = config
 
       self._items      = set()
-      self.capacity    = config.N_ITEMS
+      self.capacity    = config.INVENTORY_CAPACITY
 
       self.gold        = Item.Gold(realm)
       self.equipment   = Equipment(realm)
@@ -350,16 +353,27 @@ class Inventory:
          yield item
 
    def receive(self, item):
+      if __debug__:
+         assert not item.equipped.val, 'Received equipped item {}'.format(item)
+
       if not self.space:
          return
+
       #space = self.space
       #err = 'Out of space for {}'
       #assert space, err.format(item) 
       self._items.add(item)
 
    def remove(self, item, level=None):
-      err = 'No item {} to remove'
-      assert item in self._items, err.format(item)
+      if __debug__:
+         assert item in self._items, 'No item {} to remove'.format(item)
+
+      if item.equipped.val:
+          item.use(self.entity)
+
+      if __debug__:
+         assert not item.equipped.val, 'Removing item {} while equipped'.format(item)
+
       self._items.remove(item)
       return item
 

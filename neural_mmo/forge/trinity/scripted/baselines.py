@@ -9,6 +9,8 @@ from neural_mmo.forge.blade.lib import material
 from neural_mmo.forge.blade.lib import enums
 from neural_mmo.forge.blade import item
 
+from collections import defaultdict
+
 class Scripted(Agent):
     '''Template class for scripted models.
 
@@ -124,6 +126,7 @@ class Scripted(Agent):
     def process_inventory(self):
         self.inventory  = set()
         self.best_items = {}
+        self.instances  = set()
 
         self.gold = io.Observation.attribute(self.ob.agent, Stimulus.Entity.Gold)
 
@@ -132,7 +135,10 @@ class Scripted(Agent):
            level    = io.Observation.attribute(item_ary, Stimulus.Item.Level)
            quantity = io.Observation.attribute(item_ary, Stimulus.Item.Quantity)
            instance = io.Observation.attribute(item_ary, Stimulus.Item.ID)
+           equipped = io.Observation.attribute(item_ary, Stimulus.Item.Equipped)
 
+           self.instances.add(instance)
+           
            if quantity == 0:
               continue
 
@@ -140,11 +146,11 @@ class Scripted(Agent):
            self.inventory.add((itm, instance, level, quantity))
 
            if itm not in self.best_items:
-              self.best_items[itm] = (instance, level, quantity)
+              self.best_items[itm] = (instance, level, quantity, equipped)
 
-           _ , best, _ = self.best_items[itm]
+           _ , best, _, _ = self.best_items[itm]
            if best < level:
-              self.best_items[itm] = (instance, level, quantity)
+              self.best_items[itm] = (instance, level, quantity, equipped)
 
     def process_market(self):
         self.market          = set()
@@ -180,7 +186,21 @@ class Scripted(Agent):
 
            self.best_affordable[itm] = (instance, level, quantity, price)
 
+    def equip(self, items: set):
+        for itm, (instance, level, quantity, equipped) in self.best_items.items():
+            if itm not in items:
+               continue
+
+            if equipped:
+               continue
+
+            self.actions[Action.Inventory] = {
+               Action.InventoryAction: Action.Use,
+               Action.Item: instance}
+           
+            return True
  
+
     def sell(self, keep_all: set, keep_best: set):
         for itm, instance, level, quantity in self.inventory:
             if itm in keep_all:
@@ -189,9 +209,8 @@ class Scripted(Agent):
             if itm == item.Gold:
                 continue
 
-            best_instance, best_level, best_quantity = self.best_items[itm]
-            best = level == best_level
-            if itm in keep_best and best:
+            best_instance, best_level, best_quantity, _ = self.best_items[itm]
+            if itm in keep_best and instance == best_instance:
                 continue
 
             if quantity == 0:
@@ -215,7 +234,7 @@ class Scripted(Agent):
             if item not in self.best_items:
                 purchase = (item, instance, level, quantity, price)
 
-            best_instance, best_level, best_quantity = self.best_items[item]
+            best_instance, best_level, best_quantity, _ = self.best_items[item]
             if best_level < level:
                 purchase = (item, instance, level, quantity, price)
 
@@ -402,6 +421,8 @@ class Gather(Scripted):
         self.process_inventory()
         self.process_market()
 
+        self.equip(items={item.Hat, item.Top, item.Bottom, item.Weapon})
+
         if self.forage_criterion:
            self.forage()
         elif self.gather(self.resource):
@@ -458,11 +479,13 @@ class CombatExchange(Combat):
         self.process_inventory()
         self.process_market()
 
+        self.equip(items={item.Hat, item.Top, item.Bottom, item.Weapon})
+
         item_sold = self.sell(
                 keep_all={item.Ration, item.Potion, self.ammo},
                 keep_best={item.Hat, item.Top, item.Bottom, item.Weapon})
 
-        if not item_sold:
+        if item_sold:
            return self.actions
 
         item_bought = self.buy(

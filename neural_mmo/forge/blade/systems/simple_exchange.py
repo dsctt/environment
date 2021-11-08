@@ -154,6 +154,7 @@ class Exchange:
       #if item.__class__.__name__ == 'Tool':
       #   print('Sell Tool Lvl: {}'.format(level))
  
+      #Unequip from seller
       seller.inventory.remove(item)
       item = type(item)
 

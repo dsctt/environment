@@ -45,7 +45,7 @@ class Action(Node):
       Action.arguments = arguments
 
 class Move(Node):
-   priority = 1
+   priority = 4
    nodeType = NodeType.SELECTION
    def call(env, entity, direction):
       r, c  = entity.pos
@@ -230,7 +230,7 @@ class Mage(Node):
       return entity.skills.mage
 
 class Inventory(Node):
-   priority = -3 
+   priority = 2 
    argType  = Fixed
 
    @staticproperty
@@ -238,13 +238,14 @@ class Inventory(Node):
       return [InventoryAction, Item]
 
    def call(env, entity, inventory_action, item):
-      assert inventory_action in (Use, Discard)
+      if __debug__:
+         assert inventory_action in (Use, Discard)
 
       if item not in entity.inventory:
          return
 
       if inventory_action == Use:
-         return entity.inventory.use(item)
+         return item.use(entity)
 
       return entity.inventory.remove(item)
 
@@ -276,7 +277,7 @@ class Item(Node):
       return [realm.entity(targ) for targ in entity.targets]
 
 class Exchange(Node):
-   priority = -3 
+   priority = 3 
    argType  = Fixed
 
    @staticproperty
@@ -284,11 +285,18 @@ class Exchange(Node):
       return [ExchangeAction, Item]#, Quantity, Price]
 
    def call(env, entity, exchange_action, item, quantity, price=None):
-      assert exchange_action in (Buy, Sell)
+      #Do not process exchange actions on death tick
+      if not entity.alive:
+         return
+
+      if __debug__:
+         assert exchange_action in (Buy, Sell)
+
       if exchange_action == Buy:
          if not entity.inventory.space:
             return
          return env.exchange.buy(env, entity, item, quantity)
+      
       return env.exchange.sell(env, entity, item, quantity, price)
 
 class ExchangeAction(Node):

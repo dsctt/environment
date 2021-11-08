@@ -174,7 +174,8 @@ class Entity:
       self.resources.health.decrement(dmg)
 
       if not self.alive and source is not None:
-         for item in self.inventory:
+         for item in list(self.inventory._items):
+            self.inventory.remove(item)
             source.inventory.receive(item)
          return False
 

@@ -9,6 +9,12 @@ class ItemID:
    id_items = {}
 
    def register(cls, item_id):
+      if __debug__:
+         if cls in ItemID.item_ids:
+            assert ItemID.item_ids[cls] == item_id, 'Missmatched item_id assignment for class {}'.format(cls)
+         if item_id in ItemID.id_items:
+            assert ItemID.id_items[item_id] == cls, 'Missmatched class assignment for item_id {}'.format(item_id)
+
       ItemID.item_ids[cls] = item_id
       ItemID.id_items[item_id] = cls
 
@@ -125,20 +131,13 @@ class Armor(Equipment):
       defense = realm.config.EQUIPMENT_DEFENSE(level)
       super().__init__(realm, level, defense=defense, **kwargs)
 
-class Weapon(Equipment):
-   ITEM_ID = 5
-
-   def equip(self, entity):
-      entity.inventory.equipment.held = self
-
-   def unequip(self, entity):
-      entity.inventory.equipment.held = None
-
 
 class Hat(Armor):
    ITEM_ID = 2
 
    def equip(self, entity):
+      if entity.inventory.equipment.hat:
+          entity.inventory.equipment.hat.use(entity)
       entity.inventory.equipment.hat = self
 
    def unequip(self, entity):
@@ -149,6 +148,8 @@ class Top(Armor):
    ITEM_ID = 3
 
    def equip(self, entity):
+      if entity.inventory.equipment.top:
+          entity.inventory.equipment.top.use(entity)
       entity.inventory.equipment.top = self
 
    def unequip(self, entity):
@@ -159,16 +160,30 @@ class Bottom(Armor):
    ITEM_ID = 4
 
    def equip(self, entity):
+      if entity.inventory.equipment.bottom:
+          entity.inventory.equipment.bottom.use(entity)
       entity.inventory.equipment.bottom = self
 
    def unequip(self, entity):
       entity.inventory.equipment.bottom = None
 
+class Weapon(Equipment):
+   ITEM_ID = 5
+
+   def equip(self, entity):
+      if entity.inventory.equipment.held:
+          entity.inventory.equipment.held.use(entity)
+      entity.inventory.equipment.held = self
+
+   def unequip(self, entity):
+      entity.inventory.equipment.held = None
 
 class Tool(Armor):
    ITEM_ID = 6
 
    def equip(self, entity):
+      if entity.inventory.equipment.held:
+          entity.inventory.equipment.held.use(entity)
       entity.inventory.equipment.held = self
 
    def unequip(self, entity):
