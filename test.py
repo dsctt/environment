@@ -10,7 +10,7 @@ from neural_mmo.forge.trinity.scripted import baselines
 from projekt.config import SmallMultimodalSkills, Debug
 
 DEV_AGENTS  = [
-      baselines.Hunter, baselines.Fisher, 
+      baselines.Fisher, baselines.Herbalist, 
       baselines.Prospector, baselines.Carver, baselines.Alchemist,
       baselines.Melee, baselines.Range, baselines.Mage]
 
