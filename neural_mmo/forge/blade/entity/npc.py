@@ -36,34 +36,52 @@ class NPC(entity.Entity):
          ent = PassiveAggressive(realm, pos, iden)
       else:
          ent = Passive(realm, pos, iden)
-
-      #Set levels
       ent.spawn_pos = pos
-      levels = NPC.clippedLevels(config, danger, n=5)
-      constitution, defense, melee, ranged, mage = levels
 
-      ent.resources.health.max = constitution
-      ent.resources.health.update(constitution)
+      #Compute level
+      level_min = config.NPC_LEVEL_MIN
+      level_max = config.NPC_LEVEL_MAX
+      level     = int(danger * (level_max - level_min) + level_min)
 
-      ent.skills.melee.setExpByLevel(melee)
-      ent.skills.range.setExpByLevel(ranged)
-      ent.skills.mage.setExpByLevel(mage)
-
-      ent.skills.style = random.choice(
+      #Select combat focus
+      style = random.choice(
          (Action.Melee, Action.Range, Action.Mage))
 
-      #Set equipment levels
-      equipment = [Item.Hat, Item.Top, Item.Bottom, Item.Weapon]
+      #Equipment to instantiate
+      equipment =  [Item.Hat, Item.Top, Item.Bottom]
+      tools     =  [Item.Rod, Item.Gloves, Item.Pickaxe, Item.Chisel, Item.Arcane]
+      equipment.append(random.choice(tools))
+
+      #Set skills
+      ent.skills.style = style
+      if style == Action.Melee:
+         ent.skills.melee.setExpByLevel(level)
+         equipment.append(Item.Sword)
+      elif style == Action.Range:
+         ent.skills.range.setExpByLevel(level)
+         equipment.append(Item.Bow)
+      elif style == Action.Mage:
+         ent.skills.mage.setExpByLevel(level)
+         equipment.append(Item.Wand)
+
+      ent.resources.health.max = level
+      ent.resources.health.update(level)
+
+      #Select one piece of equipment to match the agent's level
+      #The rest will be one tier lower
+      upgrade = random.choice(equipment)
       for equip in equipment:
-          level = NPC.gearLevel(defense)
-          itm   = equip(realm, level)
+          if equip is upgrade:
+              itm = equip(realm, level)
+          elif level == 1:
+              continue
+          else:
+              itm = equip(realm, level - 1)
 
           ent.inventory.receive(itm)
           itm.use(ent)
 
-      ent.inventory.gold.quantity.update(combat.level(ent.skills))
-      ent.inventory.receive(Item.Tool(realm, NPC.gearLevel(defense)))
-
+      ent.inventory.gold.quantity.update(level)
       return ent
 
    def yieldDrops(self):

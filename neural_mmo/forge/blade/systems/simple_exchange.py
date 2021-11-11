@@ -121,7 +121,13 @@ class Exchange:
       return self.item_listings[item].available()
 
    def buy(self, realm, buyer, item, quantity):
-      assert isinstance(item, object)
+      if __debug__:
+         assert isinstance(item, object)
+
+      #TODO: Handle ammo stacks
+      if not buyer.inventory.space:
+         return
+
       level        = item.level.val
 
       #Agents may try to buy an item at the same time
@@ -147,9 +153,12 @@ class Exchange:
             listings.placeholder = item(realm, level, price=listings.price)
             
    def sell(self, realm, seller, item, quantity, price):
-      assert isinstance(item, object)
-      assert item in seller.inventory
-      level = item.level.val
+      if __debug__:
+         assert isinstance(item, object)
+         assert item in seller.inventory
+
+      quantity = item.quantity.val
+      level    = item.level.val
 
       #if item.__class__.__name__ == 'Tool':
       #   print('Sell Tool Lvl: {}'.format(level))
@@ -164,8 +173,7 @@ class Exchange:
 
       #Update obs placeholder item
       if listings.placeholder is None or (current_price is not None and price < current_price):
-         listings.placeholder = item(realm, level, price=price)
-
+         listings.placeholder = item(realm, level, price=price, quantity=quantity)
 
       #print('{} Sold {} x {} for {} ea.'.format(seller.base.name, quantity, item.__name__, price))
       listings.sell(seller, quantity, price)

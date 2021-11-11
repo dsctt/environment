@@ -101,6 +101,6 @@ class Foraging(Achievement):
                        hard   = config.FORAGING_HARD)
 
    def update(self, realm, entity, dry):
-      lvl = (entity.skills.fishing.level + entity.skills.hunting.level)/2.0
+      lvl = (entity.skills.fishing.level + entity.skills.herbalism.level)/2.0
       return super().update(lvl, dry)
 

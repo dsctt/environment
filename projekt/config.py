@@ -32,7 +32,7 @@ class RLlibConfig:
    #Policy specification
    AGENTS      = [Agent]
    EVAL_AGENTS = [Agent,
-         baselines.Hunter, baselines.Fisher,                                     
+         baselines.Herbalist, baselines.Fisher,                                     
          baselines.Prospector, baselines.Carver, baselines.Alchemist,
          baselines.Melee, baselines.Range, baselines.Mage]
 
@@ -145,18 +145,18 @@ class SmallMaps(RLlibConfig, config.SmallMaps):
 
    @staticmethod
    def EQUIPMENT_DEFENSE(level):
-      return level / 4
+      return 5 * level
 
    @staticmethod
    def EQUIPMENT_OFFENSE(level):
-      return level / 4
+      return 10 * level
 
-   DAMAGE_BASE       = 3
+   DAMAGE_BASE       = 30
    DAMAGE_MULTIPLIER = 1.5
 
    @staticmethod
    def DAMAGE_AMMUNITION(level):
-      return level // 5 + 1, level // 3 + 1
+      return 5 * level
 
    @staticmethod
    def RESTORE(level):

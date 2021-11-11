@@ -11,6 +11,18 @@ from neural_mmo.forge.blade import item
 
 from collections import defaultdict
 
+class Item:
+    def __init__(self, item_ary): 
+        index    = io.Observation.attribute(item_ary, Stimulus.Item.Index)
+        self.cls = item.ItemID.get(int(index))
+
+        self.level    = io.Observation.attribute(item_ary, Stimulus.Item.Level)
+        self.quantity = io.Observation.attribute(item_ary, Stimulus.Item.Quantity)
+        self.price    = io.Observation.attribute(item_ary, Stimulus.Item.Price)
+        self.instance = io.Observation.attribute(item_ary, Stimulus.Item.ID)
+        self.equipped = io.Observation.attribute(item_ary, Stimulus.Item.Equipped)
+
+
 class Scripted(Agent):
     '''Template class for scripted models.
 
@@ -124,188 +136,142 @@ class Scripted(Agent):
         self.target_weak()
 
     def process_inventory(self):
-        self.inventory  = set()
-        self.best_items = {}
-        self.instances  = set()
+        self.inventory   = set()
+        self.best_items  = {}
+        self.item_counts = defaultdict(int)
 
         self.gold = io.Observation.attribute(self.ob.agent, Stimulus.Entity.Gold)
 
         for item_ary in self.ob.items:
-           index    = io.Observation.attribute(item_ary, Stimulus.Item.Index)
-           level    = io.Observation.attribute(item_ary, Stimulus.Item.Level)
-           quantity = io.Observation.attribute(item_ary, Stimulus.Item.Quantity)
-           instance = io.Observation.attribute(item_ary, Stimulus.Item.ID)
-           equipped = io.Observation.attribute(item_ary, Stimulus.Item.Equipped)
+           itm = Item(item_ary)
+           cls = itm.cls
 
-           self.instances.add(instance)
-           
-           if quantity == 0:
+           if itm.quantity == 0:
               continue
 
-           itm      = item.ItemID.get(int(index))
-           self.inventory.add((itm, instance, level, quantity))
+           self.item_counts[cls] += itm.quantity
+           self.inventory.add(itm)
 
-           if itm not in self.best_items:
-              self.best_items[itm] = (instance, level, quantity, equipped)
+           if cls not in self.best_items:
+              self.best_items[cls] = itm
 
-           _ , best, _, _ = self.best_items[itm]
-           if best < level:
-              self.best_items[itm] = (instance, level, quantity, equipped)
+           best_itm = self.best_items[cls]
+
+           if itm.level > best_itm.level:
+              self.best_items[cls] = itm
+
+           if __debug__:
+              err = 'Key {} must be an Item object'.format(cls)
+              assert isinstance(self.best_items[cls], Item), err
+
+    def upgrade_heuristic(self, current_level, upgrade_level, price):
+        return (upgrade_level - current_level) / price
 
     def process_market(self):
-        self.market          = set()
-        self.best_affordable = {}
+        self.market         = set()
+        self.best_heuristic = {}
 
         for item_ary in self.ob.market:
-           index    = io.Observation.attribute(item_ary, Stimulus.Item.Index)
-           level    = io.Observation.attribute(item_ary, Stimulus.Item.Level)
-           quantity = io.Observation.attribute(item_ary, Stimulus.Item.Quantity)
-           price    = io.Observation.attribute(item_ary, Stimulus.Item.Price)
-           instance = io.Observation.attribute(item_ary, Stimulus.Item.ID)
+           itm = Item(item_ary)
+           cls = itm.cls
 
-           itm      = item.ItemID.get(int(index))
+           self.market.add(itm)
 
-           self.market.add((itm, instance, level, quantity, price))
-
-           #Affordable
-           if price > self.gold:
+           #Prune Unaffordable
+           if itm.price > self.gold:
               continue
 
-           if itm not in self.best_affordable:
-               self.best_affordable[itm] = (instance, level, quantity, price)
+           #Current best item level
+           current_level = 0
+           if cls in self.best_items:
+               current_level = self.best_items[cls].level
 
-           _, best_level, _, best_price = self.best_affordable[itm]
+           itm.heuristic = self.upgrade_heuristic(current_level, itm.level, itm.price)
 
-           #Not lower level
-           if level < best_level:
+           #Always count first item
+           if cls not in self.best_heuristic:
+               self.best_heuristic[cls] = itm
                continue
 
-           #Not same level but more expensive
-           if level == best_level and price > best_price:
-               continue
-
-           self.best_affordable[itm] = (instance, level, quantity, price)
+           #Better heuristic value
+           if itm.heuristic > self.best_heuristic[cls].heuristic:
+               self.best_heuristic[cls] = itm
 
     def equip(self, items: set):
-        for itm, (instance, level, quantity, equipped) in self.best_items.items():
-            if itm not in items:
+        for cls, itm in self.best_items.items():
+            if cls not in items:
                continue
 
-            if equipped:
+            if itm.equipped:
                continue
 
             self.actions[Action.Inventory] = {
                Action.InventoryAction: Action.Use,
-               Action.Item: instance}
+               Action.Item: itm.instance}
            
             return True
  
 
-    def sell(self, keep_all: set, keep_best: set):
-        for itm, instance, level, quantity in self.inventory:
-            if itm in keep_all:
+    def sell(self, keep_k: dict, keep_best: set):
+        for itm in self.inventory:
+            cls = itm.cls
+
+            if cls in keep_k:
+                owned = self.item_counts[cls]
+                k     = keep_k[cls]
+                if owned <= k:
+                    continue
+ 
+            if cls == item.Gold:
                 continue
 
-            if itm == item.Gold:
+            best_itm = self.best_items[cls]
+
+            if cls in keep_best and itm.instance == best_itm.instance:
                 continue
 
-            best_instance, best_level, best_quantity, _ = self.best_items[itm]
-            if itm in keep_best and instance == best_instance:
-                continue
-
-            if quantity == 0:
+            if itm.quantity == 0:
                 continue
 
             self.actions[Action.Exchange] = {
                Action.ExchangeAction: Action.Sell,
-               Action.Item: instance,
-               Action.Quantity: quantity,
-               Action.Price: level}
+               Action.Item: itm.instance,
+               Action.Quantity: itm.quantity,
+               Action.Price: itm.level}
 
             return True
 
-    def buy(self, buy_best: set, buy_upgrade: set):
+    def buy(self, buy_k: dict, buy_upgrade: set):
         purchase = None
-        for item, (instance, level, quantity, price) in self.best_affordable.items():
-            if item in buy_best:
-                purchase = (item, instance, level, quantity, price)
-            if item not in buy_upgrade:
-                continue
-            if item not in self.best_items:
-                purchase = (item, instance, level, quantity, price)
+        for cls, itm in self.best_heuristic.items():
+            #Buy top k
+            if cls in buy_k:
+                owned = self.item_counts[cls]
+                k     = buy_k[cls]
+                if owned < k:
+                   purchase = itm
 
-            best_instance, best_level, best_quantity, _ = self.best_items[item]
-            if best_level < level:
-                purchase = (item, instance, level, quantity, price)
+            #Check if item desired
+            if cls not in buy_upgrade:
+                continue
+
+            #Check is is an upgrade
+            if itm.heuristic <= 0:
+                continue
+
+            #Buy best heuristic upgrade
+            purchase = itm
 
         if purchase is None:
             return
  
-        item, instance, level, quantity, price = purchase
         self.actions[Action.Exchange] = {
            Action.ExchangeAction: Action.Buy,
-           Action.Item: instance,
+           Action.Item: purchase.instance,
            Action.Quantity: 1}
 
         return True
  
-    def exchange(self):
-        rand = np.random.rand()
-        if rand < 0.25:
-           self.actions[Action.Exchange] = {
-                 Action.ExchangeAction: Action.Buy,
-                 Action.Item: item.Food,
-                 Action.Level: 1,
-                 Action.Quantity: 1,
-                 Action.Price: 1}
-        elif rand < 0.5:
-            self.actions[Action.Exchange] = {
-                 Action.ExchangeAction: Action.Sell,
-                 Action.Item: item.Food,
-                 Action.Level: 1,
-                 Action.Quantity: 1,
-                 Action.Price: 2}
-        elif rand < 0.75:
-            self.actions[Action.Inventory] = {
-                 Action.InventoryAction: Action.Use,
-                 Action.Item: item.Food}
-        else:
-            self.actions[Action.Inventory] = {
-                 Action.InventoryAction: Action.Discard,
-                 Action.Item: item.Food}
-
-    def exchange_resources(self, action):
-        rand = np.random.rand()
-        if rand < 1/3.0:
-            itm = item.Scrap
-        elif rand < 2/3.0:
-            itm = item.Shaving
-        else:
-            itm = item.Shard
-
-        self.actions[Action.Exchange] = {
-              Action.ExchangeAction: action,
-              Action.Item: itm,
-              Action.Level: 1,
-              Action.Quantity: 1,
-              Action.Price: 2}
-
-    def exchange_equipment(self, action):
-        rand = np.random.rand()
-        if rand < 1/3.0:
-            itm = item.Hat
-        elif rand < 2/3.0:
-            itm = item.Top
-        else:
-            itm = item.Bottom
-
-        self.actions[Action.Exchange] = {
-              Action.ExchangeAction: action,
-              Action.Level: 1,
-              Action.Item: itm,
-              Action.Quantity: 1,
-              Action.Price: 5}
-
     def __call__(self, obs):
         '''Process observations and return actions
 
@@ -421,7 +387,7 @@ class Gather(Scripted):
         self.process_inventory()
         self.process_market()
 
-        self.equip(items={item.Hat, item.Top, item.Bottom, item.Weapon})
+        self.equip(items={item.Hat, item.Top, item.Bottom, self.tool})
 
         if self.forage_criterion:
            self.forage()
@@ -432,42 +398,47 @@ class Gather(Scripted):
 
 
         item_sold = self.sell(
-                keep_all={},
-                keep_best={item.Hat, item.Top, item.Bottom, item.Tool})
+                keep_k={item.Ration: 2, item.Poultice: 2},
+                keep_best={item.Hat, item.Top, item.Bottom, self.tool})
 
         if item_sold:
            return self.actions
 
         item_bought = self.buy(
-                buy_best={item.Hat, item.Top, item.Bottom, item.Tool},
-                buy_upgrade={})
+                buy_k={item.Ration: 2, item.Poultice: 2},
+                buy_upgrade={item.Hat, item.Top, item.Bottom, self.tool})
 
         return self.actions
-
-class Prospector(Gather):
-    def __init__(self, config, idx):
-        super().__init__(config, idx)
-        self.resource = material.Ore
-
-class Hunter(Gather):
-    def __init__(self, config, idx):
-        super().__init__(config, idx)
-        self.resource = material.Herb
 
 class Fisher(Gather):
     def __init__(self, config, idx):
         super().__init__(config, idx)
         self.resource = material.Fish
+        self.tool     = item.Rod
+
+class Herbalist(Gather):
+    def __init__(self, config, idx):
+        super().__init__(config, idx)
+        self.resource = material.Herb
+        self.tool     = item.Gloves
+
+class Prospector(Gather):
+    def __init__(self, config, idx):
+        super().__init__(config, idx)
+        self.resource = material.Ore
+        self.tool     = item.Pickaxe
 
 class Carver(Gather):
     def __init__(self, config, idx):
         super().__init__(config, idx)
         self.resource = material.Tree
+        self.tool     = item.Chisel
 
 class Alchemist(Gather):
     def __init__(self, config, idx):
         super().__init__(config, idx)
         self.resource = material.Crystal
+        self.tool     = item.Arcane
 
 class CombatExchange(Combat):
     @property
@@ -479,18 +450,18 @@ class CombatExchange(Combat):
         self.process_inventory()
         self.process_market()
 
-        self.equip(items={item.Hat, item.Top, item.Bottom, item.Weapon})
+        self.equip(items={item.Hat, item.Top, item.Bottom, self.weapon})
 
         item_sold = self.sell(
-                keep_all={item.Ration, item.Potion, self.ammo},
-                keep_best={item.Hat, item.Top, item.Bottom, item.Weapon})
+                keep_k={item.Ration: 2, item.Poultice: 2, self.ammo: 2},
+                keep_best={item.Hat, item.Top, item.Bottom, self.weapon})
 
         if item_sold:
            return self.actions
 
         item_bought = self.buy(
-                buy_best={item.Ration, item.Potion, self.ammo},
-                buy_upgrade={})
+                buy_k={item.Ration: 2, item.Poultice: 2, self.ammo: 2},
+                buy_upgrade={item.Hat, item.Top, item.Bottom, self.weapon})
 
         return self.actions
 
@@ -498,20 +469,24 @@ class Melee(CombatExchange):
     policy = 'Melee'
     def __init__(self, config, idx):
         super().__init__(config, idx)
-        self.style = Action.Melee
-        self.ammo  = item.Scrap
+        self.weapon = item.Sword
+        self.style  = Action.Melee
+        self.ammo   = item.Scrap
 
 class Range(CombatExchange):
     policy = 'Range'
     def __init__(self, config, idx):
         super().__init__(config, idx)
-        self.style = Action.Range
-        self.ammo  = item.Shaving
+        self.weapon = item.Bow
+        self.style  = Action.Range
+        self.ammo   = item.Shaving
 
 class Mage(CombatExchange):
     policy = 'Mage'
     def __init__(self, config, idx):
         super().__init__(config, idx)
-        self.style = Action.Mage
-        self.ammo  = item.Shard
+        self.weapon = item.Wand
+        self.style  = Action.Mage
+        self.ammo   = item.Shard
+
 

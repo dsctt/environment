@@ -287,7 +287,7 @@ class Env:
 
       #Skills
       quill.stat('{}_Fishing'.format(policy), ent.skills.fishing.level)
-      quill.stat('{}_Hunting'.format(policy), ent.skills.hunting.level)
+      quill.stat('{}_Herbalism'.format(policy), ent.skills.herbalism.level)
       quill.stat('{}_Prospecting'.format(policy), ent.skills.prospecting.level)
       quill.stat('{}_Carving'.format(policy), ent.skills.carving.level)
       quill.stat('{}_Alchemy'.format(policy), ent.skills.alchemy.level)

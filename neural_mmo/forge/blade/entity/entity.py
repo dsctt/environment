@@ -14,10 +14,11 @@ class Resources:
       self.food   = Static.Entity.Food(  ent.dataframe, ent.entID)
 
    def update(self, realm, entity, actions):
+      config      = realm.config
+
       self.water.max  = entity.skills.water.level
       self.food.max   = entity.skills.food.level
 
-      config      = realm.config
       regen       = config.RESOURCE_HEALTH_RESTORE_FRACTION
       thresh      = config.RESOURCE_HEALTH_REGEN_THRESHOLD
 
@@ -176,7 +177,8 @@ class Entity:
       if not self.alive and source is not None:
          for item in list(self.inventory._items):
             self.inventory.remove(item)
-            source.inventory.receive(item)
+            if source.inventory.space:
+               source.inventory.receive(item)
          return False
 
       return True

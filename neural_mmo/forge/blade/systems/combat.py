@@ -4,6 +4,7 @@ from pdb import set_trace as T
 
 import numpy as np
 from neural_mmo.forge.blade.systems import skill as Skill
+from neural_mmo.forge.blade import item as Item
 
 def level(skills):
    melee   = skills.melee.level
@@ -26,14 +27,26 @@ def damage_multiplier(config, skill, targ):
 def attack(entity, targ, skillFn):
    config = entity.config
    skill  = skillFn(entity)
+   skill_type = type(skill)
 
    #Base damage
    base    = config.DAMAGE_BASE
 
    #Weapon mod
-   weapon  = entity.equipment.offense
+   held      = entity.equipment.held
+   held_type = type(held)
+   weapon    = 0
+   if skill_type == Skill.Melee and held_type != Item.Sword:
+       pass
+   elif skill_type == Skill.Range and held_type != Item.Bow:
+       pass
+   elif skill_type == Skill.Mage and held_type != Item.Wand:
+       pass
+   else:
+       weapon  = entity.equipment.offense
 
    #Ammo mod
+   ammo = 0
    if entity.equipment.ammunition:
       ammo = entity.equipment.ammunition.use(type(skill))
 
@@ -41,13 +54,12 @@ def attack(entity, targ, skillFn):
    mul     = damage_multiplier(config, skill, targ)
 
    #Attack and defense scores
-   attack  = base# + weapon + ammo
-   defense = entity.equipment.defense
+   attack  = base + weapon + ammo
+   defense = targ.equipment.defense
 
    #Total damage calculation
-   dmg     = mul * (attack - defense)
-   dmg     = max(int(dmg), 0)
-   dmg     = min(int(dmg), entity.resources.health.val)
+   dmg     = int(mul * (attack - defense))
+   dmg     = min(dmg, entity.resources.health.val)
 
    entity.applyDamage(dmg, skill.__class__.__name__.lower())
    targ.receiveDamage(entity, dmg)

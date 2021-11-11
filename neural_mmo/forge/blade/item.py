@@ -168,19 +168,24 @@ class Bottom(Armor):
       entity.inventory.equipment.bottom = None
 
 class Weapon(Equipment):
+   def equip(self, entity):
+      if entity.inventory.equipment.held:
+          entity.inventory.equipment.held.use(entity)
+      entity.inventory.equipment.held = self
+
+   def unequip(self, entity):
+      entity.inventory.equipment.held = None
+
+class Sword(Weapon):
    ITEM_ID = 5
 
-   def equip(self, entity):
-      if entity.inventory.equipment.held:
-          entity.inventory.equipment.held.use(entity)
-      entity.inventory.equipment.held = self
-
-   def unequip(self, entity):
-      entity.inventory.equipment.held = None
-
-class Tool(Armor):
+class Bow(Weapon):
    ITEM_ID = 6
 
+class Wand(Weapon):
+   ITEM_ID = 7
+
+class Tool(Armor):
    def equip(self, entity):
       if entity.inventory.equipment.held:
           entity.inventory.equipment.held.use(entity)
@@ -189,30 +194,51 @@ class Tool(Armor):
    def unequip(self, entity):
       entity.inventory.equipment.held = None
 
+class Rod(Tool):
+    ITEM_ID = 8
+
+class Gloves(Tool):
+    ITEM_ID = 9
+
+class Pickaxe(Tool):
+    ITEM_ID = 10
+
+class Chisel(Tool):
+    ITEM_ID = 11
+
+class Arcane(Tool):
+    ITEM_ID = 12
 
 class Ammunition(Stack):
    def __init__(self, realm, level, **kwargs):
-      minDmg, maxDmg = realm.config.DAMAGE_AMMUNITION(level)
+      #minDmg, maxDmg = realm.config.DAMAGE_AMMUNITION(level)
+      minDmg = maxDmg = realm.config.DAMAGE_AMMUNITION(level)
       super().__init__(realm, level, minDmg=minDmg, maxDmg=maxDmg, **kwargs)
 
    def damage(self):
       return random.randint(self.minDmg.val, self.maxDmg.val)
 
-   def use(self):
-      if self.quantity.val == 0:
-          return 0
+   def use(self, entity):
+      if __debug__:
+         err = 'Used ammunition with 0 quantity'
+         assert self.quantity.val > 0, err
+
       self.quantity.decrement()
+
+      if self.quantity.val == 0:
+         entity.inventory.remove(self)
+
       return self.damage()
       
   
 class Scrap(Ammunition):
-   ITEM_ID = 7
+   ITEM_ID = 13
 
 class Shaving(Ammunition):
-   ITEM_ID = 8
+   ITEM_ID = 14
 
 class Shard(Ammunition):
-   ITEM_ID = 9
+   ITEM_ID = 15
 
 class Consumable(Item):
    def __init__(self, realm, level, **kwargs):
@@ -220,13 +246,13 @@ class Consumable(Item):
       super().__init__(realm, level, restore=restore, **kwargs)
 
 class Ration(Consumable):
-   ITEM_ID = 10
+   ITEM_ID = 16
    def use(self, entity):
       entity.resources.food.increment(self.restore.val)
       entity.resources.water.increment(self.restore.val)
 
-class Potion(Consumable):
-   ITEM_ID = 11
+class Poultice(Consumable):
+   ITEM_ID = 17
    def use(self, entity):
       entity.resources.health.increment(self.restore.val)
  

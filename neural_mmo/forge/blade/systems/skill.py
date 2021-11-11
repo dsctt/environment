@@ -142,7 +142,7 @@ class Harvest(SkillGroup):
       super().__init__(realm)
 
       self.fishing      = Fishing(self)
-      self.hunting      = Hunting(self)
+      self.herbalism    = Herbalism(self)
       self.prospecting  = Prospecting(self)
       self.carving      = Carving(self)
       self.alchemy      = Alchemy(self)
@@ -150,7 +150,7 @@ class Harvest(SkillGroup):
    @property
    def harvestLevel(self):
       return max(self.fishing.level,
-                 self.hunting.level,
+                 self.herbalism.level,
                  self.prospecting.level,
                  self.carving.level,
                  self.alchemy.level)
@@ -215,12 +215,12 @@ class Constitution(CombatSkill):
       config = self.config
 
       if not config.game_system_enabled('Resource'):
-         health.increment(1)
+         health.increment(5)
          return
 
       # Heal if above fractional resource threshold
       regen       = config.RESOURCE_HEALTH_REGEN_THRESHOLD
-      foodThresh  = food > regen * entity.skills.hunting.level
+      foodThresh  = food > regen * entity.skills.herbalism.level
       waterThresh = water > regen * entity.skills.fishing.level
 
       if foodThresh and waterThresh:
@@ -229,10 +229,10 @@ class Constitution(CombatSkill):
          health.increment(restore)
 
       if food.empty:
-         health.decrement(1)
+         health.decrement(10)
 
       if water.empty:
-         health.decrement(1)
+         health.decrement(10)
 
 class Water(HarvestSkill):
    def __init__(self, skillGroup):
@@ -289,7 +289,7 @@ class Fishing(HarvestSkill):
    def update(self, realm, entity):
       self.harvestAdjacent(realm, entity, material.Fish)
 
-class Hunting(HarvestSkill):
+class Herbalism(HarvestSkill):
    def update(self, realm, entity):
       self.harvest(realm, entity, material.Herb)
 

@@ -138,12 +138,11 @@ class Config(Template):
 
    ############################################################################
    ### Agent Parameters                                                   
-   BASE_HEALTH                = 10
-   '''Initial Constitution level and agent health'''
+   BASE_HEALTH             = 100
+   '''Initial health capacity, not counting the level 1 bonus'''
 
-   BASE_RESOURCE              = 20
+   BASE_RESOURCE           = 20
    '''Initial level and capacity for Hunting + Fishing resource skills'''
-
 
    PLAYER_SPAWN_ATTEMPTS   = 16
    '''Number of player spawn attempts per tick
@@ -390,9 +389,7 @@ class SmallMaps(Config):
    PLAYER_SPAWN_ATTEMPTS   = 2
 
    #NPC parameters
-   NPC_LEVEL_MAX           = 30
-   NPC_LEVEL_SPREAD        = 5
-
+   NPC_LEVEL_MAX           = 10
 
 ############################################################################
 ### Game Systems (Static Mixins)
@@ -490,8 +487,11 @@ class Progression:
    PROGRESSION_BASE_RESOURCE           = 10
    '''Initial level and capacity for Hunting + Fishing resource skills'''
 
-   PROGRESSION_BASE_XP_SCALE           = 10
+   PROGRESSION_BASE_XP_SCALE           = 1
    '''Skill level progression speed as a multiplier of typical MMOs'''
+
+   PROGRESSION_HEALTH_PER_LEVEL        = 10
+   '''Health increment per constitution level'''
 
    PROGRESSION_CONSTITUTION_XP_SCALE   = 2
    '''Multiplier on top of XP_SCALE for the Constitution skill'''
@@ -522,11 +522,9 @@ class NPC:
    NPC_LEVEL_MIN                       = 1
    '''Minimum NPC level'''
 
-   NPC_LEVEL_MAX                       = 99
+   NPC_LEVEL_MAX                       = 20
    '''Maximum NPC level'''
 
-   NPC_LEVEL_SPREAD                    = 10 
-   '''Level range for NPC spawns'''
 
 class Achievement:
    '''Achievement Reward System'''

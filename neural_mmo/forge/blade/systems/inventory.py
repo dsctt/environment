@@ -355,13 +355,28 @@ class Inventory:
    def receive(self, item):
       if __debug__:
          assert not item.equipped.val, 'Received equipped item {}'.format(item)
+         assert self.space, 'Out of space for {}'.format(item)
 
       if not self.space:
          return
 
-      #space = self.space
-      #err = 'Out of space for {}'
-      #assert space, err.format(item) 
+      if isinstance(item, Item.Gold):
+         self.gold.quantity += item.quantity.val
+         return
+
+      if __debug__:
+         assert item.quantity.val, 'Received empty item {}'.format(item)
+
+      #TODO: reduce complexity
+      if isinstance(item, Item.Ammunition):
+         for itm in self._items:
+            if type(itm) != type(item):
+                continue
+            if itm.level != item.level:
+                continue
+            itm.quantity += item.quantity.val
+            return
+
       self._items.add(item)
 
    def remove(self, item, level=None):

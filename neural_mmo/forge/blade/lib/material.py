@@ -118,7 +118,7 @@ class Herb(Material):
          self.respawn  = config.RESOURCE_HERB_RESPAWN
 
    def harvest(self):
-      return droptable.Consumable(item.Potion) 
+      return droptable.Consumable(item.Poultice) 
 
 class Ocean(Material):
    tex     = 'ocean'
