@@ -147,7 +147,7 @@ class SmallMaps(RLlibConfig, config.SmallMaps):
 
    @staticmethod
    def TOOL_DEFENSE(level):
-      return 5 * level
+      return 15 * level
 
    @staticmethod
    def EQUIPMENT_DEFENSE(level):
@@ -155,7 +155,7 @@ class SmallMaps(RLlibConfig, config.SmallMaps):
 
    @staticmethod
    def EQUIPMENT_OFFENSE(level):
-      return 10 * level
+      return 15 * level
 
    DAMAGE_BASE       = 30
    DAMAGE_MULTIPLIER = 1.5

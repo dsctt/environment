@@ -84,6 +84,7 @@ class Item:
    def use(self, entity):
       return
 
+'''
 class Stack(Item):
    def __init__(self, realm, level, quantity=0, **kwargs):
        super().__init__(realm, level, quantity=quantity, **kwargs)
@@ -96,6 +97,7 @@ class Stack(Item):
          return
 
       entity.inventory.remove(self)
+'''
 
 class Gold(Item):
    ITEM_ID = 1
@@ -264,9 +266,13 @@ class Arcane(Tool):
        if entity.skills.alchemy.level >= self.level.val:
           super().equip(entity)
 
+class Ammunition(Item):
+   def equip(self, entity):
+      if entity.inventory.equipment.ammunition:
+          entity.inventory.equipment.ammunition.use(entity)
+      entity.inventory.equipment.ammunition = self
 
-class Ammunition(Stack):
-   def use(self, entity):
+   def fire(self, entity):
       if __debug__:
          err = 'Used ammunition with 0 quantity'
          assert self.quantity.val > 0, err
@@ -283,6 +289,10 @@ class Scrap(Ammunition):
    def __init__(self, realm, level, **kwargs):
       super().__init__(realm, level, melee_attack=realm.config.DAMAGE_AMMUNITION(level), **kwargs)
 
+   def equip(self, entity):
+      if entity.skills.melee.level >= self.level.val:
+          super().equip(entity)
+
    @property
    def damage(self):
       return self.melee_attack.val
@@ -292,6 +302,10 @@ class Shaving(Ammunition):
    def __init__(self, realm, level, **kwargs):
       super().__init__(realm, level, range_attack=realm.config.DAMAGE_AMMUNITION(level), **kwargs)
 
+   def equip(self, entity):
+      if entity.skills.range.level >= self.level.val:
+          super().equip(entity)
+
    @property
    def damage(self):
       return self.range_attack.val
@@ -300,6 +314,10 @@ class Shard(Ammunition):
    ITEM_ID = 15
    def __init__(self, realm, level, **kwargs):
       super().__init__(realm, level, mage_attack=realm.config.DAMAGE_AMMUNITION(level), **kwargs)
+
+   def equip(self, entity):
+      if entity.skills.mage.level >= self.level.val:
+          super().equip(entity)
 
    @property
    def damage(self):

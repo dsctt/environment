@@ -6,6 +6,7 @@ from typing import Dict, Callable
 
 from neural_mmo.forge.blade import core
 from neural_mmo.forge.blade.systems.simple_exchange import Exchange
+from neural_mmo.forge.blade.systems import combat
 from neural_mmo.forge.blade.lib.enums import Palette
 from neural_mmo.forge.blade.entity.npc import NPC
 from neural_mmo.forge.blade.entity import Player
@@ -99,21 +100,24 @@ class NPCManager(EntityGroup):
       self.realm = realm
       self.idx   = -1
 
-      self.spawn_positions = []
+      self.spawn_dangers = []
  
    def spawn(self):
-      if not self.config.game_system_enabled('NPC'):
+      config = self.config
+
+      if not config.game_system_enabled('NPC'):
          return
 
-      for _ in range(self.config.NPC_SPAWN_ATTEMPTS):
-         if len(self.entities) >= self.config.NMOB:
+      for _ in range(config.NPC_SPAWN_ATTEMPTS):
+         if len(self.entities) >= config.NMOB:
             break
 
-         if self.spawn_positions:
-            r, c = self.spawn_positions[-1]
+         if self.spawn_dangers:
+            danger = self.spawn_dangers[-1]
+            r, c   = combat.spawn(config, danger)
          else:
-            center = self.config.TERRAIN_CENTER
-            border = self.config.TERRAIN_BORDER
+            center = config.TERRAIN_CENTER
+            border = config.TERRAIN_BORDER
             r, c   = np.random.randint(border, center+border, 2).tolist()
 
          if self.realm.map.tiles[r, c].occupied:
@@ -124,12 +128,12 @@ class NPCManager(EntityGroup):
             super().spawn(npc)
             self.idx -= 1
 
-         if self.spawn_positions:
-            self.spawn_positions.pop()
+         if self.spawn_dangers:
+            self.spawn_dangers.pop()
 
    def cull(self):
       for entity in super().cull().values():
-         self.spawn_positions.append(entity.spawn_pos)
+         self.spawn_dangers.append(entity.spawn_danger)
 
    def actions(self, realm):
       actions = {}

@@ -29,22 +29,24 @@ def attack(entity, targ, skillFn):
    skill      = skillFn(entity)
    skill_type = type(skill)
 
+   #Note: the below damage calculation only holds for ammo
+   #granting a bonus to a single combat style
    ammunition = entity.equipment.ammunition
    if skill_type == Skill.Melee:
        offense = entity.equipment.total(lambda e: e.melee_attack)
        defense = entity.equipment.total(lambda e: e.melee_defense)
-       if type(ammunition) == Item.Scrap:
-           ammunition.use(entity)
+       #if type(ammunition) == Item.Scrap:
+       #    ammunition.fire(entity)
    elif skill_type == Skill.Range:
        offense = entity.equipment.total(lambda e: e.range_attack)
        defense = entity.equipment.total(lambda e: e.range_defense)
-       if type(ammunition) == Item.Shaving:
-           ammunition.use(entity)
+       #if type(ammunition) == Item.Shaving:
+       #    ammunition.fire(entity)
    elif skill_type == Skill.Mage:
        offense = entity.equipment.total(lambda e: e.mage_attack)
        defense = entity.equipment.total(lambda e: e.mage_defense)
-       if type(ammunition) == Item.Shard:
-           ammunition.use(entity)
+       #if type(ammunition) == Item.Shard:
+       #    ammunition.fire(entity)
    elif __debug__:
        assert False, 'Attack skill must be Melee, Range, or Mage'
 
@@ -71,3 +73,34 @@ def danger(config, pos, full=False):
       return norm, mag
 
    return norm
+
+def spawn(config, dnger):
+   border = config.TERRAIN_BORDER
+   center = config.TERRAIN_CENTER
+   mid    = center // 2
+
+   dist       = dnger * center / 2
+   max_offset = mid - dist
+   offset     = mid + border + np.random.randint(-max_offset, max_offset)
+
+   rng = np.random.rand()
+   if rng < 0.25:
+      r = border + dist
+      c = offset
+   elif rng < 0.5:
+      r = border + center - dist - 1
+      c = offset
+   elif rng < 0.75:
+      c = border + dist
+      r = offset
+   else:
+      c = border + center - dist - 1
+      r = offset
+
+   if __debug__:
+      assert dnger == danger(config, (r,c)), 'Agent spawned at incorrect radius'
+
+   r = int(r)
+   c = int(c)
+
+   return r, c

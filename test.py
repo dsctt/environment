@@ -16,7 +16,7 @@ DEV_AGENTS  = [
 
 config         = SmallMultimodalSkills()
 config.AGENTS  = DEV_AGENTS
-config.NMOB    = 32
+config.NMOB    = 64
 config.NENT    = 32
 config.EVALUTE = True
 config.RENDER  = True

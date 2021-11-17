@@ -29,14 +29,15 @@ class NPC(entity.Entity):
       config = realm.config
 
       #Select AI Policy
-      danger = combat.danger(config, pos)
+      danger           = combat.danger(config, pos)
       if danger >= config.NPC_SPAWN_AGGRESSIVE:
          ent = Aggressive(realm, pos, iden)
       elif danger >= config.NPC_SPAWN_NEUTRAL:
          ent = PassiveAggressive(realm, pos, iden)
       else:
          ent = Passive(realm, pos, iden)
-      ent.spawn_pos = pos
+
+      ent.spawn_danger = danger
 
       #Compute level
       level_min = config.NPC_LEVEL_MIN

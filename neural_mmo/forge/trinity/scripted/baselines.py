@@ -265,7 +265,7 @@ class Scripted(Agent):
                Action.Quantity: itm.quantity,
                Action.Price: itm.level}
 
-            return True
+            return itm
 
     def buy(self, buy_k: dict, buy_upgrade: set):
         purchase = None
@@ -296,7 +296,7 @@ class Scripted(Agent):
            Action.Item: purchase.instance,
            Action.Quantity: 1}
 
-        return True
+        return purchase
  
     def __call__(self, obs):
         '''Process observations and return actions
@@ -446,14 +446,14 @@ class Gather(Scripted):
 
         item_sold = self.sell(
                 keep_k={item.Ration: 2, item.Poultice: 2},
-                keep_best={item.Hat, item.Top, item.Bottom, self.tool})
+                keep_best={self.tool, item.Hat, item.Top, item.Bottom})
 
         if item_sold:
            return self.actions
 
         item_bought = self.buy(
                 buy_k={item.Ration: 2, item.Poultice: 2},
-                buy_upgrade={item.Hat, item.Top, item.Bottom, self.tool})
+                buy_upgrade={self.tool, item.Hat, item.Top, item.Bottom})
 
         return self.actions
 
@@ -497,18 +497,18 @@ class CombatExchange(Combat):
         self.process_inventory()
         self.process_market()
 
-        self.equip(items={item.Hat, item.Top, item.Bottom, self.weapon})
+        self.equip(items={item.Hat, item.Top, item.Bottom, self.weapon, self.ammo})
 
         item_sold = self.sell(
                 keep_k={item.Ration: 2, item.Poultice: 2, self.ammo: 10},
-                keep_best={item.Hat, item.Top, item.Bottom, self.weapon})
+                keep_best={self.weapon, item.Hat, item.Top, item.Bottom})
 
         if item_sold:
            return self.actions
 
         item_bought = self.buy(
                 buy_k={item.Ration: 2, item.Poultice: 2, self.ammo: 10},
-                buy_upgrade={item.Hat, item.Top, item.Bottom, self.weapon})
+                buy_upgrade={self.weapon, item.Hat, item.Top, item.Bottom})
 
         return self.actions
 
