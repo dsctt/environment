@@ -18,7 +18,9 @@ class RLlibConfig:
    def MODEL(self):
       return self.__class__.__name__
 
-   N_ITEM = 100
+   N_INVENTORY = 200 #12 (Limitation: trinity pulling items from Items dataframe, no seperate Market dataframe)
+   N_ITEM      = 17
+   N_MARKET    = 200
 
    #Paths
    EXPERIMENT_DIR          = 'experiment'
@@ -144,6 +146,10 @@ class SmallMaps(RLlibConfig, config.SmallMaps):
    DEV_COMBAT = True
 
    @staticmethod
+   def TOOL_DEFENSE(level):
+      return 5 * level
+
+   @staticmethod
    def EQUIPMENT_DEFENSE(level):
       return 5 * level
 
@@ -160,7 +166,7 @@ class SmallMaps(RLlibConfig, config.SmallMaps):
 
    @staticmethod
    def RESTORE(level):
-      return level
+      return 50 + 5*level
 
 class Debug(SmallMaps, config.AllGameSystems):
    '''Debug Neural MMO training setting

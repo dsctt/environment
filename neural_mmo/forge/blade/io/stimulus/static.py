@@ -43,7 +43,12 @@ class Stimulus(Config):
 
       class Level(node.Continuous):
          def init(self, config):
-            self.scale = 0.05
+            self.scale = 0.1
+
+      class ItemLevel(node.Continuous):
+         def init(self, config):
+            self.scale = 0.025
+            self.max   = 5 * config.NPC_LEVEL_MAX
 
       class Population(node.Discrete):
          def init(self, config):
@@ -75,42 +80,6 @@ class Stimulus(Config):
             self.val = 0
             self.scale = 0.01
 
-      #Resources -- Redo the max/min scaling. You can't change these
-      #after init without messing up the embeddings
-      class Food(node.Continuous):
-         def init(self, config):
-            if config.game_system_enabled('Progression'):
-               self.val = config.PROGRESSION_BASE_RESOURCE
-               self.max = config.PROGRESSION_BASE_RESOURCE
-            elif config.game_system_enabled('Resource'):
-               self.val = config.RESOURCE_BASE_RESOURCE
-               self.max = config.RESOURCE_BASE_RESOURCE
-            else:
-               self.val = 1
-               self.max = 1
-    
-            self.scale = 0.1
-
-      class Water(node.Continuous):
-         def init(self, config):
-            if config.game_system_enabled('Progression'):
-               self.val = config.PROGRESSION_BASE_RESOURCE
-               self.max = config.PROGRESSION_BASE_RESOURCE
-            elif config.game_system_enabled('Resource'):
-               self.val = config.RESOURCE_BASE_RESOURCE
-               self.max = config.RESOURCE_BASE_RESOURCE
-            else:
-               self.val = 1
-               self.max = 1
- 
-            self.scale = 0.1
-
-      class Health(node.Continuous):
-         def init(self, config):
-            self.val = config.BASE_HEALTH
-            self.max = config.BASE_HEALTH
-            self.scale = 0.1
-
       #Status effects
       class Freeze(node.Continuous):
          def init(self, config):
@@ -123,6 +92,91 @@ class Stimulus(Config):
             self.val = 0
             self.scale = 0.01
 
+      #Resources -- Redo the max/min scaling. You can't change these
+      #after init without messing up the embeddings
+      class Health(node.Continuous):
+         def init(self, config):
+            self.val = config.BASE_HEALTH
+            self.max = config.BASE_HEALTH
+            self.scale = 0.1
+
+      class Food(node.Continuous):
+         def init(self, config):
+            if config.game_system_enabled('Resource'):
+               self.val = config.RESOURCE_BASE
+               self.max = config.RESOURCE_BASE
+            else:
+               self.val = 1
+               self.max = 1
+    
+            self.scale = 0.1
+
+      class Water(node.Continuous):
+         def init(self, config):
+            if config.game_system_enabled('Resource'):
+               self.val = config.RESOURCE_BASE
+               self.max = config.RESOURCE_BASE
+            else:
+               self.val = 1
+               self.max = 1
+ 
+            self.scale = 0.1
+
+      class Melee(node.Continuous):
+         def init(self, config):
+            self.val = 1
+            self.max = 1
+            if config.game_system_enabled('Progression'):
+               self.max = config.PROGRESSION_LEVEL_MAX
+
+      class Range(node.Continuous):
+         def init(self, config):
+            self.val = 1
+            self.max = 1
+            if config.game_system_enabled('Progression'):
+               self.max = config.PROGRESSION_LEVEL_MAX
+
+      class Mage(node.Continuous):
+         def init(self, config):
+            self.val = 1
+            self.max = 1
+            if config.game_system_enabled('Progression'):
+               self.max = config.PROGRESSION_LEVEL_MAX
+
+      class Fishing(node.Continuous):
+         def init(self, config):
+            self.val = 1
+            self.max = 1
+            if config.game_system_enabled('Progression'):
+               self.max = config.PROGRESSION_LEVEL_MAX
+
+      class Herbalism(node.Continuous):
+         def init(self, config):
+            self.val = 1
+            self.max = 1
+            if config.game_system_enabled('Progression'):
+               self.max = config.PROGRESSION_LEVEL_MAX
+
+      class Prospecting(node.Continuous):
+         def init(self, config):
+            self.val = 1
+            self.max = 1
+            if config.game_system_enabled('Progression'):
+               self.max = config.PROGRESSION_LEVEL_MAX
+
+      class Carving(node.Continuous):
+         def init(self, config):
+            self.val = 1
+            self.max = 1
+            if config.game_system_enabled('Progression'):
+               self.max = config.PROGRESSION_LEVEL_MAX
+
+      class Alchemy(node.Continuous):
+         def init(self, config):
+            self.val = 1
+            self.max = 1
+            if config.game_system_enabled('Progression'):
+               self.max = config.PROGRESSION_LEVEL_MAX
 
    class Tile(Config):
       @staticmethod
@@ -153,7 +207,7 @@ class Stimulus(Config):
    class Item(Config):
       @staticmethod
       def N(config):
-         return config.N_ITEM
+         return config.N_INVENTORY
 
       class ID(node.Continuous):
          def init(self, config):
@@ -184,29 +238,44 @@ class Stimulus(Config):
             self.max   = 1
             self.scale = 1.0
 
-      class Offense(node.Discrete):
+      class MeleeAttack(node.Continuous):
          def init(self, config):
-            self.max   = 99
+            self.max   = 100
             self.scale = 1.0 / self.max
 
-      class Defense(node.Discrete):
+      class RangeAttack(node.Continuous):
          def init(self, config):
-            self.max   = 99
+            self.max   = 100
             self.scale = 1.0 / self.max
 
-      class MinDmg(node.Discrete):
+      class MageAttack(node.Continuous):
          def init(self, config):
-            self.max   = 99
+            self.max   = 100
             self.scale = 1.0 / self.max
 
-      class MaxDmg(node.Discrete):
+      class MeleeDefense(node.Continuous):
          def init(self, config):
-            self.max   = 99
+            self.max   = 100
             self.scale = 1.0 / self.max
 
-      class Restore(node.Discrete):
+      class RangeDefense(node.Continuous):
          def init(self, config):
-            self.max   = 99
+            self.max   = 100
+            self.scale = 1.0 / self.max
+
+      class MageDefense(node.Continuous):
+         def init(self, config):
+            self.max   = 100
+            self.scale = 1.0 / self.max
+
+      class HealthRestore(node.Continuous):
+         def init(self, config):
+            self.max   = 100 
+            self.scale = 1.0 / self.max
+
+      class ResourceRestore(node.Continuous):
+         def init(self, config):
+            self.max   = 100
             self.scale = 1.0 / self.max
 
       class Price(node.Continuous):
@@ -222,7 +291,7 @@ class Stimulus(Config):
    class Market(Config):
       @staticmethod
       def N(config):
-         return config.N_ITEM
+         return config.N_MARKET
 
       class ID(node.Continuous):
          def init(self, config):
@@ -253,29 +322,44 @@ class Stimulus(Config):
             self.max   = 1
             self.scale = 1.0
 
-      class Offense(node.Discrete):
+      class MeleeAttack(node.Continuous):
          def init(self, config):
-            self.max   = 99
+            self.max   = 100
             self.scale = 1.0 / self.max
 
-      class Defense(node.Discrete):
+      class RangeAttack(node.Continuous):
          def init(self, config):
-            self.max   = 99
+            self.max   = 100
             self.scale = 1.0 / self.max
 
-      class MinDmg(node.Discrete):
+      class MageAttack(node.Continuous):
          def init(self, config):
-            self.max   = 99
+            self.max   = 100
             self.scale = 1.0 / self.max
 
-      class MaxDmg(node.Discrete):
+      class MeleeDefense(node.Continuous):
          def init(self, config):
-            self.max   = 99
+            self.max   = 100
             self.scale = 1.0 / self.max
 
-      class Restore(node.Discrete):
+      class RangeDefense(node.Continuous):
          def init(self, config):
-            self.max   = 99
+            self.max   = 100
+            self.scale = 1.0 / self.max
+
+      class MageDefense(node.Continuous):
+         def init(self, config):
+            self.max   = 100
+            self.scale = 1.0 / self.max
+
+      class HealthRestore(node.Continuous):
+         def init(self, config):
+            self.max   = 100 
+            self.scale = 1.0 / self.max
+
+      class ResourceRestore(node.Continuous):
+         def init(self, config):
+            self.max   = 100
             self.scale = 1.0 / self.max
 
       class Price(node.Continuous):
@@ -284,7 +368,7 @@ class Stimulus(Config):
 
       class Equipped(node.Discrete):
          def init(self, config):
-            self.max   = 1
+            self.scale = 1.0
 
 
 for objName, obj in Stimulus:

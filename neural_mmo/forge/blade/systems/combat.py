@@ -7,9 +7,9 @@ from neural_mmo.forge.blade.systems import skill as Skill
 from neural_mmo.forge.blade import item as Item
 
 def level(skills):
-   melee   = skills.melee.level
-   ranged  = skills.range.level
-   mage    = skills.mage.level
+   melee   = skills.melee.level.val
+   ranged  = skills.range.level.val
+   mage    = skills.mage.level.val
    
    final = max(melee, ranged, mage)
    return final
@@ -25,46 +25,36 @@ def damage_multiplier(config, skill, targ):
    return 1.0
 
 def attack(entity, targ, skillFn):
-   config = entity.config
-   skill  = skillFn(entity)
+   config     = entity.config
+   skill      = skillFn(entity)
    skill_type = type(skill)
 
-   #Base damage
-   base    = config.DAMAGE_BASE
-
-   #Weapon mod
-   held      = entity.equipment.held
-   held_type = type(held)
-   weapon    = 0
-   if skill_type == Skill.Melee and held_type != Item.Sword:
-       pass
-   elif skill_type == Skill.Range and held_type != Item.Bow:
-       pass
-   elif skill_type == Skill.Mage and held_type != Item.Wand:
-       pass
-   else:
-       weapon  = entity.equipment.offense
-
-   #Ammo mod
-   ammo = 0
-   if entity.equipment.ammunition:
-      ammo = entity.equipment.ammunition.use(type(skill))
-
-   #Style dominance multiplier
-   mul     = damage_multiplier(config, skill, targ)
-
-   #Attack and defense scores
-   attack  = base + weapon + ammo
-   defense = targ.equipment.defense
+   ammunition = entity.equipment.ammunition
+   if skill_type == Skill.Melee:
+       offense = entity.equipment.total(lambda e: e.melee_attack)
+       defense = entity.equipment.total(lambda e: e.melee_defense)
+       if type(ammunition) == Item.Scrap:
+           ammunition.use(entity)
+   elif skill_type == Skill.Range:
+       offense = entity.equipment.total(lambda e: e.range_attack)
+       defense = entity.equipment.total(lambda e: e.range_defense)
+       if type(ammunition) == Item.Shaving:
+           ammunition.use(entity)
+   elif skill_type == Skill.Mage:
+       offense = entity.equipment.total(lambda e: e.mage_attack)
+       defense = entity.equipment.total(lambda e: e.mage_defense)
+       if type(ammunition) == Item.Shard:
+           ammunition.use(entity)
+   elif __debug__:
+       assert False, 'Attack skill must be Melee, Range, or Mage'
 
    #Total damage calculation
-   dmg     = int(mul * (attack - defense))
-   dmg     = min(dmg, entity.resources.health.val)
+   damage = config.DAMAGE_BASE + offense - defense
 
-   entity.applyDamage(dmg, skill.__class__.__name__.lower())
-   targ.receiveDamage(entity, dmg)
+   entity.applyDamage(damage, skill.__class__.__name__.lower())
+   targ.receiveDamage(entity, damage)
 
-   return dmg
+   return damage
 
 def danger(config, pos, full=False):
    border = config.TERRAIN_BORDER

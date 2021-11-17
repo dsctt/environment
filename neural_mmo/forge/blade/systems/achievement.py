@@ -83,7 +83,7 @@ class Equipment(Achievement):
                        hard   = config.EQUIPMENT_HARD)
 
    def update(self, realm, entity, dry):
-      return super().update(entity.equipment.defense, dry)
+       return super().update(entity.equipment.total(lambda e: e.level), dry)
 
 class Exploration(Achievement):
    def __init__(self, config):
@@ -101,6 +101,6 @@ class Foraging(Achievement):
                        hard   = config.FORAGING_HARD)
 
    def update(self, realm, entity, dry):
-      lvl = (entity.skills.fishing.level + entity.skills.herbalism.level)/2.0
+      lvl = (entity.skills.fishing.level.val + entity.skills.herbalism.level.val)/2.0
       return super().update(lvl, dry)
 

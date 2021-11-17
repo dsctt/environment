@@ -3,6 +3,7 @@ import numpy as np
 
 from neural_mmo.forge.trinity.agent import Agent
 from neural_mmo.forge.trinity.scripted import behavior, move, attack, utils, io
+from neural_mmo.forge.blade.systems import skill
 from neural_mmo.forge.blade.io.stimulus.static import Stimulus
 from neural_mmo.forge.blade.io.action import static as Action
 from neural_mmo.forge.blade.lib import material
@@ -35,8 +36,8 @@ class Scripted(Agent):
            config : A forge.blade.core.Config object or subclass object
         ''' 
         super().__init__(config, idx)
-        self.food_max  = 0
-        self.water_max = 0
+        self.food_max  = config.RESOURCE_BASE
+        self.water_max = config.RESOURCE_BASE
 
         self.spawnR    = None
         self.spawnC    = None
@@ -44,7 +45,7 @@ class Scripted(Agent):
     @property
     def forage_criterion(self) -> bool:
         '''Return true if low on food or water'''
-        min_level = 7
+        min_level = 7 * self.config.RESOURCE_DEPLETION_RATE
         return self.food <= min_level or self.water <= min_level
 
     def forage(self):
@@ -140,6 +141,23 @@ class Scripted(Agent):
         self.best_items  = {}
         self.item_counts = defaultdict(int)
 
+        self.item_levels = {
+                item.Hat: self.level,
+                item.Top: self.level,
+                item.Bottom: self.level,
+                item.Sword: self.melee,
+                item.Bow: self.range,
+                item.Wand: self.mage,
+                item.Rod: self.fishing,
+                item.Gloves: self.herbalism,
+                item.Pickaxe: self.prospecting,
+                item.Chisel: self.carving,
+                item.Arcane: self.alchemy,
+                item.Scrap: self.melee,
+                item.Shaving: self.range,
+                item.Shard: self.mage}
+
+
         self.gold = io.Observation.attribute(self.ob.agent, Stimulus.Entity.Gold)
 
         for item_ary in self.ob.items:
@@ -152,6 +170,11 @@ class Scripted(Agent):
            self.item_counts[cls] += itm.quantity
            self.inventory.add(itm)
 
+           #Too high level to equip
+           if cls in self.item_levels and itm.level > self.item_levels[cls] :
+              continue
+
+           #Best by default
            if cls not in self.best_items:
               self.best_items[cls] = itm
 
@@ -179,6 +202,10 @@ class Scripted(Agent):
 
            #Prune Unaffordable
            if itm.price > self.gold:
+              continue
+
+           #Too high level to equip
+           if cls in self.item_levels and itm.level > self.item_levels[cls] :
               continue
 
            #Current best item level
@@ -225,9 +252,8 @@ class Scripted(Agent):
             if cls == item.Gold:
                 continue
 
-            best_itm = self.best_items[cls]
-
-            if cls in keep_best and itm.instance == best_itm.instance:
+            #Exists an equippable of the current class, best needs to be kept, and this is the best item
+            if cls in self.best_items and cls in keep_best and itm.instance == self.best_items[cls].instance:
                 continue
 
             if itm.quantity == 0:
@@ -283,13 +309,34 @@ class Scripted(Agent):
         self.ob = io.Observation(self.config, obs)
         agent   = self.ob.agent
 
+        #Resources
+        self.health = io.Observation.attribute(agent, Stimulus.Entity.Health)
         self.food   = io.Observation.attribute(agent, Stimulus.Entity.Food)
         self.water  = io.Observation.attribute(agent, Stimulus.Entity.Water)
 
-        if self.food > self.food_max:
-           self.food_max = self.food
-        if self.water > self.water_max:
-           self.water_max = self.water
+       
+        #Skills
+        self.melee       = io.Observation.attribute(agent, Stimulus.Entity.Melee)
+        self.range       = io.Observation.attribute(agent, Stimulus.Entity.Range)
+        self.mage        = io.Observation.attribute(agent, Stimulus.Entity.Mage)
+        self.fishing     = io.Observation.attribute(agent, Stimulus.Entity.Fishing)
+        self.herbalism   = io.Observation.attribute(agent, Stimulus.Entity.Herbalism)
+        self.prospecting = io.Observation.attribute(agent, Stimulus.Entity.Prospecting)
+        self.carving     = io.Observation.attribute(agent, Stimulus.Entity.Carving)
+        self.alchemy     = io.Observation.attribute(agent, Stimulus.Entity.Alchemy)
+
+        #Combat level
+        self.level       = max(self.melee, self.range, self.mage)
+ 
+        self.skills = {
+              skill.Melee: self.melee,
+              skill.Range: self.range,
+              skill.Mage: self.mage,
+              skill.Fishing: self.fishing,
+              skill.Herbalism: self.herbalism,
+              skill.Prospecting: self.prospecting,
+              skill.Carving: self.carving,
+              skill.Alchemy: self.alchemy}
 
         if self.spawnR is None:
             self.spawnR = io.Observation.attribute(agent, Stimulus.Entity.R)
@@ -453,14 +500,14 @@ class CombatExchange(Combat):
         self.equip(items={item.Hat, item.Top, item.Bottom, self.weapon})
 
         item_sold = self.sell(
-                keep_k={item.Ration: 2, item.Poultice: 2, self.ammo: 2},
+                keep_k={item.Ration: 2, item.Poultice: 2, self.ammo: 10},
                 keep_best={item.Hat, item.Top, item.Bottom, self.weapon})
 
         if item_sold:
            return self.actions
 
         item_bought = self.buy(
-                buy_k={item.Ration: 2, item.Poultice: 2, self.ammo: 2},
+                buy_k={item.Ration: 2, item.Poultice: 2, self.ammo: 10},
                 buy_upgrade={item.Hat, item.Top, item.Bottom, self.weapon})
 
         return self.actions

@@ -72,8 +72,9 @@ class Stim:
 
       self.dataframe = dataframe
       self.init(config)
-      err = 'Must set a default val upon instantiation or init()'
-      assert self.val is not None, err
+
+      if __debug__:
+         assert self.val is not None, 'Must set a default val upon instantiation or init()'
 
       #Update dataframe
       if dataframe is not None:

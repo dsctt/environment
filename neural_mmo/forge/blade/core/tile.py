@@ -81,11 +81,9 @@ class Tile:
       self.index.update(self.state.index)
 
    def harvest(self, deplete=True):
-      err1 = '{} is depleted'.format(self.state)
-      err2 = '{} not harvestable'.format(self.state)
-
-      assert not self.depleted, err1
-      assert self.state in material.Harvestable, err2
+      if __debug__:
+         assert not self.depleted, '{} is depleted'.format(self.state)
+         assert self.state in material.Harvestable, '{} not harvestable'.format(self.state)
 
       if deplete:
          self.depleted = True

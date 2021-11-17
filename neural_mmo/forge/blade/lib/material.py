@@ -4,6 +4,7 @@ from neural_mmo.forge.blade import item
 
 class Material:
    capacity = 0
+   tool     = None
 
    def __init__(self, config):
       pass
@@ -62,6 +63,7 @@ class Ore(Material):
    tex     = 'ore'
    index   = 7
 
+   tool    = item.Pickaxe
    deplete = Slag
    def __init__(self, config):
       self.respawn  = config.ORE_RESPAWN
@@ -77,6 +79,7 @@ class Tree(Material):
    tex     = 'tree'
    index   = 9
 
+   tool    = item.Chisel
    deplete = Stump
    def __init__(self, config):
       if config.game_system_enabled('Resource'):
@@ -94,6 +97,7 @@ class Crystal(Material):
    tex     = 'crystal'
    index   = 11
 
+   tool    = item.Arcane
    deplete = Fragment
    def __init__(self, config):
       if config.game_system_enabled('Resource'):
@@ -111,6 +115,7 @@ class Herb(Material):
    tex     = 'herb'
    index   = 13
 
+   tool    = item.Gloves
    deplete = Weeds
    def __init__(self, config):
       if config.game_system_enabled('Resource'):
@@ -128,6 +133,7 @@ class Fish(Material):
    tex     = 'fish'
    index   = 15
 
+   tool    = item.Rod
    deplete = Ocean
    def __init__(self, config):
       if config.game_system_enabled('Resource'):

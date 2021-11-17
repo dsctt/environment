@@ -298,7 +298,7 @@ class Env:
       quill.stat('{}_Market_Sells'.format(policy), ent.sells)
       quill.stat('{}_Market_Buys'.format(policy), ent.buys)
 
-      quill.stat('{}_Defense_Level'.format(policy), ent.inventory.equipment.defense)
+      quill.stat('{}_Item_Level'.format(policy), ent.equipment.total(lambda e: e.level))
 
       held_item = ent.inventory.equipment.held
       if isinstance(held_item, Item.Weapon):

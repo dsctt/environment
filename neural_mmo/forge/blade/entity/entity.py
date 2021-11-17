@@ -16,24 +16,24 @@ class Resources:
    def update(self, realm, entity, actions):
       config      = realm.config
 
-      self.water.max  = entity.skills.water.level
-      self.food.max   = entity.skills.food.level
+      self.water.max  = config.RESOURCE_BASE
+      self.food.max   = config.RESOURCE_BASE
 
       regen       = config.RESOURCE_HEALTH_RESTORE_FRACTION
       thresh      = config.RESOURCE_HEALTH_REGEN_THRESHOLD
 
-      foodThresh  = self.food  > thresh * entity.skills.food.level
-      waterThresh = self.water > thresh * entity.skills.water.level
+      foodThresh  = self.food  > thresh * config.RESOURCE_BASE
+      waterThresh = self.water > thresh * config.RESOURCE_BASE
 
       if foodThresh and waterThresh:
          restore = np.floor(self.health.max * regen)
          self.health.increment(restore)
 
       if self.food.empty:
-         self.health.decrement(1)
+         self.health.decrement(config.RESOURCE_STARVATION_RATE)
 
       if self.water.empty:
-         self.health.decrement(1)
+         self.health.decrement(config.RESOURCE_DEHYDRATION_RATE)
 
    def packet(self):
       data = {}
@@ -101,13 +101,15 @@ class Base:
       self.population = Static.Entity.Population(ent.dataframe, ent.entID, pop)
       self.self       = Static.Entity.Self(      ent.dataframe, ent.entID, 1)
       self.identity   = Static.Entity.ID(        ent.dataframe, ent.entID, ent.entID)
-      self.level      = Static.Entity.Level(     ent.dataframe, ent.entID, 3)
+      self.level      = Static.Entity.Level(     ent.dataframe, ent.entID, 1)
+      self.item_level = Static.Entity.ItemLevel( ent.dataframe, ent.entID, 0)
       self.gold       = Static.Entity.Gold(      ent.dataframe, ent.entID, 0)
 
       ent.dataframe.init(Static.Entity, ent.entID, (r, c))
 
    def update(self, realm, entity, actions):
       self.level.update(combat.level(entity.skills))
+      self.item_level.update(entity.equipment.total(lambda e: e.level))
       self.gold.update(entity.inventory.gold.quantity.val)
 
    @property
@@ -120,6 +122,8 @@ class Base:
       data['r']          = self.r.val
       data['c']          = self.c.val
       data['name']       = self.name
+      data['level']      = self.level.val
+      data['item_level'] = self.item_level.val
       data['color']      = self.color.packet()
       data['population'] = self.population.val
       data['self']       = self.self.val
@@ -204,6 +208,14 @@ class Entity:
    @property
    def isNPC(self) -> bool:
       return False
+
+   @property
+   def level(self) -> int:
+      melee  = self.skills.melee.level.val
+      ranged = self.skills.range.level.val
+      mage   = self.skills.mage.level.val
+
+      return int(max(melee, ranged, mage))
 
    @property
    def equipment(self):

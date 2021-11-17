@@ -79,7 +79,8 @@ class NPC(entity.Entity):
               itm = equip(realm, level - 1)
 
           ent.inventory.receive(itm)
-          itm.use(ent)
+          if not isinstance(itm, Item.Tool):
+             itm.use(ent)
 
       ent.inventory.gold.quantity.update(level)
       return ent

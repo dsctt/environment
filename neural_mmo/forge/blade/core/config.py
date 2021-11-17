@@ -139,10 +139,7 @@ class Config(Template):
    ############################################################################
    ### Agent Parameters                                                   
    BASE_HEALTH             = 100
-   '''Initial health capacity, not counting the level 1 bonus'''
-
-   BASE_RESOURCE           = 20
-   '''Initial level and capacity for Hunting + Fishing resource skills'''
+   '''Health capacity'''
 
    PLAYER_SPAWN_ATTEMPTS   = 16
    '''Number of player spawn attempts per tick
@@ -400,8 +397,18 @@ class Resource:
    def Resource(self):
       return True
 
-   RESOURCE_BASE_RESOURCE              = 25
-   '''Initial level and capacity for Hunting + Fishing resource skills'''
+   RESOURCE_BASE                       = 100
+   '''Resource capacity'''
+
+   RESOURCE_DEPLETION_RATE             = 5
+   '''Depletion rate for food and water'''
+
+   RESOURCE_STARVATION_RATE            = 10
+   '''Damage per tick without food'''
+
+   RESOURCE_DEHYDRATION_RATE           = 10
+   '''Damage per tick without water'''
+
 
    RESOURCE_FOREST_CAPACITY            = 1
    '''Maximum number of harvests before a forest tile decays'''
@@ -490,14 +497,14 @@ class Progression:
    PROGRESSION_BASE_XP_SCALE           = 1
    '''Skill level progression speed as a multiplier of typical MMOs'''
 
-   PROGRESSION_HEALTH_PER_LEVEL        = 10
-   '''Health increment per constitution level'''
-
-   PROGRESSION_CONSTITUTION_XP_SCALE   = 2
-   '''Multiplier on top of XP_SCALE for the Constitution skill'''
-
-   PROGRESSION_COMBAT_XP_SCALE         = 4
+   PROGRESSION_COMBAT_XP_SCALE         = 0.25
    '''Multiplier on top of XP_SCALE for Combat skills'''
+
+   PROGRESSION_HARVEST_XP_SCALE        = 10
+   '''Multiplier on top of XP_SCALE for harvesting skills'''
+
+   PROGRESSION_LEVEL_MAX               = 10
+   '''Max skill level'''
 
 
 class NPC:
