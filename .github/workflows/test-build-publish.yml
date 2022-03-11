@@ -24,7 +24,7 @@ jobs:
       with:
         python-version: '3.x'
     - name: Install dependencies
-      run: pip install .[all] & pip install --upgrade pytest
+      run: pip install .[all]
     - name: Run tests
       run: ./run_tests.sh
 
