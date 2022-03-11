@@ -27,7 +27,7 @@ extra = {
 extra['all'] = list(set(chain.from_iterable(extra.values())))
  
 setup(
-    name="nmmo",
+    name="d-nmmo",
     description="Neural MMO is a platform for multiagent intelligence research inspired by "
     "Massively Multiplayer Online (MMO) role-playing games. Documentation hosted at neuralmmo.github.io.",
     long_description_content_type="text/markdown",
