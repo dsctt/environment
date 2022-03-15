@@ -84,17 +84,17 @@ LargeMapsAll = nmmo.Env(create_config(Large, AllGameSystems))
 def test_fps_large_rcp_1_pop(benchmark):
     benchmark_env(benchmark, LargeMapsRCP, 1)
 
-#def test_fps_large_rcp_100_pop(benchmark):
-#    benchmark_env(benchmark, LargeMapsRCP, 100)
+def test_fps_large_rcp_100_pop(benchmark):
+    benchmark_env(benchmark, LargeMapsRCP, 100)
 
-#def test_fps_large_rcp_1000_pop(benchmark):
-#    benchmark_env(benchmark, LargeMapsRCP, 1000)
+def test_fps_large_rcp_1000_pop(benchmark):
+    benchmark_env(benchmark, LargeMapsRCP, 1000)
 
 def test_fps_large_all_1_pop(benchmark):
     benchmark_env(benchmark, LargeMapsAll, 1)
 
-#def test_fps_large_all_100_pop(benchmark):
-#    benchmark_env(benchmark, LargeMapsAll, 100)
+def test_fps_large_all_100_pop(benchmark):
+    benchmark_env(benchmark, LargeMapsAll, 100)
 
-#def test_fps_large_all_1000_pop(benchmark):
-#    benchmark_env(benchmark, LargeMapsAll, 1000)
+def test_fps_large_all_1000_pop(benchmark):
+    benchmark_env(benchmark, LargeMapsAll, 1000)
