@@ -71,30 +71,30 @@ def test_fps_small_all_1_pop(benchmark):
 #    benchmark_config(benchmark, Small, 100, AllGameSystems)
 
 # Reuse large maps since we aren't benchmarking the reset function
-def test_large_env_creation(benchmark):
-    benchmark(lambda: nmmo.Env(Large()))
-
-def test_large_env_reset(benchmark):
-    env = nmmo.Env(Large())
-    benchmark(lambda: env.reset(idx=1))
-
-LargeMapsRCP = nmmo.Env(create_config(Large, Resource, Combat, Progression))
-LargeMapsAll = nmmo.Env(create_config(Large, AllGameSystems))
-
-def test_fps_large_rcp_1_pop(benchmark):
-    benchmark_env(benchmark, LargeMapsRCP, 1)
-
+#def test_large_env_creation(benchmark):
+#    benchmark(lambda: nmmo.Env(Large()))
+#
+#def test_large_env_reset(benchmark):
+#    env = nmmo.Env(Large())
+#    benchmark(lambda: env.reset(idx=1))
+#
+#LargeMapsRCP = nmmo.Env(create_config(Large, Resource, Combat, Progression))
+#LargeMapsAll = nmmo.Env(create_config(Large, AllGameSystems))
+#
+#def test_fps_large_rcp_1_pop(benchmark):
+#    benchmark_env(benchmark, LargeMapsRCP, 1)
+#
 #def test_fps_large_rcp_100_pop(benchmark):
 #    benchmark_env(benchmark, LargeMapsRCP, 100)
-
+#
 #def test_fps_large_rcp_1000_pop(benchmark):
 #    benchmark_env(benchmark, LargeMapsRCP, 1000)
-
-def test_fps_large_all_1_pop(benchmark):
-    benchmark_env(benchmark, LargeMapsAll, 1)
-
+#
+#def test_fps_large_all_1_pop(benchmark):
+#    benchmark_env(benchmark, LargeMapsAll, 1)
+#
 #def test_fps_large_all_100_pop(benchmark):
 #    benchmark_env(benchmark, LargeMapsAll, 100)
-
+#
 #def test_fps_large_all_1000_pop(benchmark):
 #    benchmark_env(benchmark, LargeMapsAll, 1000)
