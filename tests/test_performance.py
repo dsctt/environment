@@ -64,11 +64,11 @@ def test_fps_small_npc_1_pop(benchmark):
 def test_fps_small_all_1_pop(benchmark):
     benchmark_config(benchmark, Small, 1, AllGameSystems)
 
-#def test_fps_small_rcp_100_pop(benchmark):
-#    benchmark_config(benchmark, Small, 100, Resource, Combat, Progression) 
+def test_fps_small_rcp_100_pop(benchmark):
+    benchmark_config(benchmark, Small, 100, Resource, Combat, Progression) 
 
-#def test_fps_small_all_100_pop(benchmark):
-#    benchmark_config(benchmark, Small, 100, AllGameSystems)
+def test_fps_small_all_100_pop(benchmark):
+    benchmark_config(benchmark, Small, 100, AllGameSystems)
 
 # Reuse large maps since we aren't benchmarking the reset function
 #def test_large_env_creation(benchmark):
