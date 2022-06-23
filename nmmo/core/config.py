@@ -177,6 +177,9 @@ class Config(Template):
 
    ############################################################################
    ### Agent Parameters                                                   
+   IMMORTAL = False
+   '''Debug parameter: prevents agents from dying except by lava'''
+
    BASE_HEALTH                = 10
    '''Initial Constitution level and agent health'''
 

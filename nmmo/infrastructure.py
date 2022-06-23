@@ -22,6 +22,7 @@ class DataType:
 class Index:
    '''Lookup index of attribute names'''
    def __init__(self, prealloc):
+      # Key 0 is reserved as padding
       self.free  = {idx for idx in range(1, prealloc)}
       self.index = {}
       self.back  = {}
@@ -90,7 +91,10 @@ class ContinuousTable:
 
    def get(self, rows, pad=None):
       data = self.data[rows]
-      data[rows==0] = 0
+
+      # This call is expensive
+      # Padding index 0 should make this redundant
+      # data[rows==0] = 0
 
       if pad is not None:
          data = np.pad(data, ((0, pad-len(data)), (0, 0)))
@@ -158,33 +162,6 @@ class GridTables:
       self.radius     = config.NSTIM
       self.pad        = pad
 
-   def get(self, ent, radius=None, entity=False):
-      if radius is None:
-         radius = self.radius
-
-      r, c = ent.pos
-      cent = self.grid.data[r, c]
-      assert cent != 0
-
-      rows = self.grid.window(
-            r-radius, r+radius+1,
-            c-radius, c+radius+1)
-
-      #Self entity first
-      if entity:
-         rows.remove(cent)
-         rows.insert(0, cent)
-
-      values = {'Continuous': self.continuous.get(rows, self.pad),
-                'Discrete':   self.discrete.get(rows, self.pad)}
-
-      if entity:
-         ents = [self.index.teg(e) for e in rows]
-         assert ents[0] == ent.entID
-         return values, ents
-
-      return values
-
    def update(self, obj, val):
       key, attr = obj.key, obj.attr
       if self.index.full():
@@ -217,8 +194,28 @@ class Dataframe:
    '''Infrastructure wrapper class'''
    def __init__(self, config):
       self.config, self.data = config, defaultdict(dict)
+
       for (objKey,), obj in nmmo.Serialized:
          self.data[objKey] = GridTables(config, obj, pad=obj.N(config))
+
+      # Preallocate index buffers
+      radius = config.NSTIM
+      self.N = int(config.WINDOW ** 2)
+      cent = self.N // 2
+
+      rr, cc = np.meshgrid(np.arange(-radius, radius+1), np.arange(-radius, radius+1))
+      rr, cc = rr.ravel(), cc.ravel()
+      rr = np.repeat(rr[None, :], 255, axis=0)
+      cc = np.repeat(cc[None, :], 255, axis=0)
+      self.tile_grid = (rr, cc)
+
+      rr, cc = np.meshgrid(np.arange(-radius, radius+1), np.arange(-radius, radius+1))
+      rr, cc = rr.ravel(), cc.ravel()
+      rr[0], rr[cent] = rr[cent], rr[0]
+      cc[0], cc[cent] = cc[cent], cc[0]
+      rr = np.repeat(rr[None, :], config.NENT, axis=0)
+      cc = np.repeat(cc[None, :], config.NENT, axis=0)
+      self.player_grid = (rr, cc)
 
    def update(self, node, val):
       self.data[node.obj].update(node, val)
@@ -232,14 +229,37 @@ class Dataframe:
    def move(self, obj, key, pos, nxt):
       self.data[obj.__name__].move(key, pos, nxt)
 
-   def get(self, ent):
-      stim = {}
-     
-      stim['Entity'], ents = self.data['Entity'].get(ent, entity=True)
-      stim['Entity']['N']  = np.array([len(ents)], dtype=np.int32)
+   def get(self, players):
+      obs, action_lookup = {}, {}
 
-      ent.targets          = ents
-      stim['Tile']         = self.data['Tile'].get(ent)
-      stim['Tile']['N']    = np.array([int(self.config.WINDOW**2)], dtype=np.int32)
+      n = len(players)
+      r_offsets = np.zeros((n, 1), dtype=int)
+      c_offsets = np.zeros((n, 1), dtype=int)
+      for idx, (playerID, player) in enumerate(players.items()):
+          obs[playerID] = {}
+          action_lookup[playerID] = {}
+          
+          r, c = player.pos
+          r_offsets[idx] = r
+          c_offsets[idx] = c
 
-      return stim
+      for key, (rr, cc) in (('Entity', self.player_grid), ('Tile', self.tile_grid)):
+          data = self.data[key]
+
+          #TODO: Optimize this line with flat dataframes + np.take or ranges
+          dat = data.grid.data[rr[:n] + r_offsets, cc[:n] + c_offsets]#.ravel()
+          key_mask = dat != 0
+
+          # TODO: Optimize these two lines with some sort of jit... it's a dict lookup
+          continuous = data.continuous.get(dat, None)
+          discrete = data.discrete.get(dat, None)
+
+          for idx, (playerID, _) in enumerate(players.items()):
+              obs[playerID][key] = {
+                      'Continuous': continuous[idx],
+                      'Discrete': discrete[idx],
+                      'Mask': key_mask[idx]}
+
+              action_lookup[playerID][key] = dat[idx]
+
+      return obs, action_lookup

@@ -135,6 +135,9 @@ class Constitution(CombatSkill):
          restore = np.floor(restore * self.level)
          health.increment(restore)
 
+      if self.config.IMMORTAL:
+         return
+
       if food.empty:
          health.decrement(1)
 

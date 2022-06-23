@@ -225,7 +225,7 @@ class Env(ParallelEnv):
 
    ############################################################################
    ### Core API
-   def reset(self, idx=None, step=True):
+   def reset(self, idx=None):
       '''OpenAI Gym API reset function
 
       Loads a new game map and returns initial observations
@@ -233,7 +233,6 @@ class Env(ParallelEnv):
       Args:
          idx: Map index to load. Selects a random map by default
 
-         step: Whether to step the environment and return initial obs
 
       Returns:
          obs: Initial obs if step=True, None otherwise 
@@ -266,8 +265,7 @@ class Env(ParallelEnv):
       self.worldIdx = idx
       self.realm.reset(idx)
 
-      if step:
-         self.obs, _, _, _ = self.step({})
+      self.obs, self.action_lookup = self.realm.dataframe.get(self.realm.players)
 
       return self.obs
 
@@ -408,13 +406,13 @@ class Env(ParallelEnv):
             self.actions[entID][atn] = {}
             args.items()
             for arg, val in args.items():
-               if len(arg.edges) > 0:
+               if arg.argType == nmmo.action.Fixed:
                   self.actions[entID][atn][arg] = arg.edges[val]
-               elif val < len(ent.targets):
-                  targ                          = ent.targets[val]
+               elif arg == nmmo.action.Target:
+                  targ = self.action_lookup[val]
                   self.actions[entID][atn][arg] = self.realm.entity(targ)
-               else: #Need to fix -inf in classifier before removing this
-                  self.actions[entID][atn][arg] = ent
+               else:
+                  assert False
 
       #Step: Realm, Observations, Logs
       self.dead    = self.realm.step(self.actions)
@@ -422,9 +420,10 @@ class Env(ParallelEnv):
       self.obs     = {}
       infos        = {}
 
-      obs, rewards, dones, self.raw = {}, {}, {}, {}
+      rewards, dones, self.raw = {}, {}, {}
+      obs, self.action_lookup = self.realm.dataframe.get(self.realm.players)
       for entID, ent in self.realm.players.items():
-         ob = self.realm.dataframe.get(ent)
+         ob = obs[entID] 
          self.obs[entID] = ob
          if ent.agent.scripted:
             atns = ent.agent(ob)
