@@ -76,6 +76,19 @@ class Template(metaclass=utils.StaticIterable):
       for k, v in self.data.items():
          print('   {:{}s}: {}'.format(k, keyLen, v))
 
+   def items(self):
+       return self.data.items()
+
+   def __iter__(self):
+       for k in self.data:
+           yield k
+
+   def keys(self):
+       return self.data.keys()
+
+   def values(self):
+       return self.data.values()
+
 class Config(Template):
    '''An environment configuration object
 
@@ -183,6 +196,8 @@ class Config(Template):
    BASE_HEALTH                = 10
    '''Initial Constitution level and agent health'''
 
+   RESPAWN = False
+
    PLAYER_SPAWN_ATTEMPTS      = None
    '''Number of player spawn attempts per tick
 
@@ -212,7 +227,7 @@ class Config(Template):
           r, c = c, r 
       return (r, c)
 
-   def SPAWN_CONCURRENT(self, shuffle=True):
+   def SPAWN_CONCURRENT(self, shuffle=False):
       left   = self.TERRAIN_BORDER
       right  = self.TERRAIN_CENTER + self.TERRAIN_BORDER
       rrange = np.arange(left+2, right, 4).tolist()
@@ -234,12 +249,16 @@ class Config(Template):
         ret = np.array_split(ret, self.NPOP)
         np.random.shuffle(ret)
         ret = np.concatenate(ret, axis=0).tolist()
+
+      # TEMP HACK FOR EXPERIMENT -- IMPLEMENT PROPERLY
+      np.random.shuffle(ret)
+
       n = int(self.NENT * len(self.AGENTS))
       return ret[:n]
     
    @property
    def SPAWN(self):
-      return self.SPAWN_CONTINUOUS
+      return self.SPAWN_CONCURRENT
 
 
    ############################################################################

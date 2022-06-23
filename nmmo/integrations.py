@@ -74,23 +74,76 @@ def sb3_vec_envs(config_cls, num_envs, num_cpus):
 
     return env
 
-def cleanrl_vec_envs(config_cls, num_envs, num_cpus):
+def cleanrl_vec_envs(config_classes, verbose=True):
+    '''Creates a vector environment object from a list of configs.
+
+    Each subenv points to a single agent, but many agents can share the same env.
+    All envs must have the same observation and action space, but they can have
+    different numbers of agents'''
+
     try:
         import supersuit as ss
     except ImportError:
         raise ImportError('CleanRL integration depend on supersuit. Install and then retry')
 
-    config = config_cls()
-    env    = CleanRLEnv(config)
+    def make_env_fn(config_cls):
+        '''Wraps the make_env fn to add a a config argument'''
+        def make_env():
+            config = config_cls()
+            env    = CleanRLEnv(config)
 
-    env = ss.pettingzoo_env_to_vec_env_v1(env)
-    env.black_death = True #We provide our own black_death emulation
+            env = ss.pettingzoo_env_to_vec_env_v1(env)
+            env.black_death = True #We provide our own black_death emulation
 
-    env = ss.concat_vec_envs_v1(env, num_envs, num_cpus,
-            base_class='gym')
+            env = ss.concat_vec_envs_v1(env,
+                    config.NUM_ENVS // config.NENT,
+                    config.NUM_CPUS,
+                    base_class='gym')
 
-    env.single_observation_space = env.observation_space
-    env.single_action_space      = env.action_space
-    env.is_vector_env            = True
+            env.single_observation_space = env.observation_space
+            env.single_action_space      = env.action_space
+            env.is_vector_env            = True
 
-    return env
+            return env
+        return make_env
+
+    dummy_env = None
+    all_envs = [] 
+
+    num_cpus   = 0
+    num_envs   = 0
+    num_agents = 0
+
+    if type(config_classes) != list:
+        config_classes = [config_classes]
+
+    for idx, cls in enumerate(config_classes):
+        assert isinstance(cls, type), 'config_cls must be a type (did ytou pass an instance?)'
+        assert hasattr(cls, 'NUM_ENVS'), f'config class {cls} must define NUM_ENVS'
+        assert hasattr(cls, 'NUM_CPUS'), f'config class {cls} must define NUM_CPUS'
+        assert isinstance(cls, type), f'config class {cls} must be a type (did you pass an instance?)'
+
+        if dummy_env is None:
+            config    = cls()
+            dummy_env = CleanRLEnv(config)
+
+        envs = make_env_fn(cls)
+        all_envs.append(envs)
+
+        # TODO: Find a cleaner way to specify env scale that enables multiple envs per CPU
+        # without having to pass multiple configs
+        num_cpus    += cls.NUM_CPUS
+        num_envs    += cls.NUM_CPUS
+        num_agents  += cls.NUM_CPUS * cls.NENT
+
+    envs = ss.vector.ProcConcatVec(all_envs,
+            dummy_env.observation_space(1),
+            dummy_env.action_space(1),
+            num_agents,
+            dummy_env.metadata)
+    envs.is_vector_env = True
+
+    if verbose:
+        print(f'nmmo.integrations.cleanrl_vec_envs created {num_envs} envs across {num_cpus} cores')
+
+    return envs

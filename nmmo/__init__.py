@@ -14,7 +14,6 @@ motd = r'''      ___           ___           ___           ___
      \__\/         \__\/         \__\/         \__\/      Phillip Isola's lab '''.format(__version__)
 
 from .lib import material
-from .lib.rating import OpenSkillRating
 from .overlay import Overlay, OverlayRegistry
 from .io import action
 from .io.stimulus import Serialized
@@ -30,3 +29,9 @@ __all__ = ['Env', 'config', 'scripting', 'emulation', 'integrations', 'agent', '
         'Serialized', 'action', 'Action', 'scripting', 'material',
         'Task', 'Overlay', 'OverlayRegistry', 'Replay']
 
+try:
+    import openskill
+    from .lib.rating import OpenSkillRating
+    __all__.append('OpenSkillRating')
+except:
+    print('Warning: OpenSkill not installed. Ignore if you do not need this feature')

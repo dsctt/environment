@@ -97,9 +97,7 @@ class Env(ParallelEnv):
       if config is None:
           config = nmmo.config.Default()
 
-      if __debug__:
-         err = 'Config {} is not a config instance (did you pass the class?)'
-         assert isinstance(config, nmmo.config.Config), err.format(config)
+      assert isinstance(config, nmmo.config.Config), f'Config {config} is not a config instance (did you pass the class?)'
 
       if not config.AGENTS:
           from nmmo import agent
@@ -210,10 +208,15 @@ class Env(ParallelEnv):
          observation space (such as targeting)'''
 
       if self.config.EMULATE_FLAT_ATN:
-         return gym.spaces.Discrete(len(self.flat_actions))
+         lens = []
+         for atn in nmmo.Action.edges(self.config):
+             for arg in atn.edges:
+                 lens.append(arg.N(self.config))
+         return gym.spaces.MultiDiscrete(lens)
+         #return gym.spaces.Discrete(len(self.flat_actions))
 
       actions = {}
-      for atn in sorted(nmmo.Action.edges):
+      for atn in sorted(nmmo.Action.edges(self.config)):
          actions[atn] = {}
          for arg in sorted(atn.edges):
             n                 = arg.N(self.config)
@@ -249,9 +252,6 @@ class Env(ParallelEnv):
       Returns:
          observations, as documented by step()
       '''
-      if self.has_reset:
-         print('Resetting env')
-
       self.has_reset = True
 
       self.actions = {}
@@ -377,7 +377,6 @@ class Env(ParallelEnv):
           packet = {**self.realm.packet(), **packet}
 
           if self.overlay is not None:
-             print('Overlay data: ', len(self.overlay))
              packet['overlay'] = self.overlay
              self.overlay      = None
 
@@ -394,12 +393,22 @@ class Env(ParallelEnv):
 
          ent = self.realm.players[entID]
 
+         # Fix later -- don't allow action inputs for scripted agents
+         if ent.agent.scripted:
+             continue
+
          if not ent.alive:
             continue
 
          if self.config.EMULATE_FLAT_ATN:
-            assert actions[entID] in self.flat_actions, f'Invalid action {actions[entID]}'
-            actions[entID] = self.flat_actions[actions[entID]]
+            ent_action = {}
+            idx = 0
+            for atn in nmmo.Action.edges(self.config):
+                ent_action[atn] = {}
+                for arg in atn.edges:
+                    ent_action[atn][arg] = actions[entID][idx]
+                    idx += 1
+            actions[entID] = ent_action
 
          self.actions[entID] = {}
          for atn, args in actions[entID].items():
@@ -446,7 +455,7 @@ class Env(ParallelEnv):
          rewards[ent.entID], infos[ent.entID] = self.reward(ent)
 
          dones[ent.entID] = False #TODO: Is this correct behavior?
-         if not self.config.EMULATE_CONST_HORIZON:
+         if not self.config.EMULATE_CONST_HORIZON and not self.config.RESPAWN:
             dones[ent.entID] = True
 
          obs[ent.entID]     = self.dummy_ob
@@ -485,37 +494,41 @@ class Env(ParallelEnv):
       '''
 
       quill = self.quill
+      name = ent.agent.name
 
       blob = quill.register('Population', self.realm.tick)
       blob.log(self.realm.population)
 
       blob = quill.register('Lifetime', self.realm.tick)
-      blob.log(ent.history.timeAlive.val)
+      blob.log(ent.history.timeAlive.val, name + 'Lifetime')
 
       blob = quill.register('Skill Level', self.realm.tick)
-      blob.log(ent.skills.range.level,        'Range')
-      blob.log(ent.skills.mage.level,         'Mage')
-      blob.log(ent.skills.melee.level,        'Melee')
-      blob.log(ent.skills.constitution.level, 'Constitution')
-      blob.log(ent.skills.defense.level,      'Defense')
-      blob.log(ent.skills.fishing.level,      'Fishing')
-      blob.log(ent.skills.hunting.level,      'Hunting')
+      blob.log(ent.skills.range.level,        name + 'Range')
+      blob.log(ent.skills.mage.level,         name + 'Mage')
+      blob.log(ent.skills.melee.level,        name + 'Melee')
+      blob.log(ent.skills.constitution.level, name + 'Constitution')
+      blob.log(ent.skills.defense.level,      name + 'Defense')
+      blob.log(ent.skills.fishing.level,      name + 'Fishing')
+      blob.log(ent.skills.hunting.level,      name + 'Hunting')
 
       blob = quill.register('Equipment', self.realm.tick)
-      blob.log(ent.loadout.chestplate.level, 'Chestplate')
-      blob.log(ent.loadout.platelegs.level,  'Platelegs')
+      blob.log(ent.loadout.chestplate.level, name + 'Chestplate')
+      blob.log(ent.loadout.platelegs.level,  name + 'Platelegs')
 
       blob = quill.register('Exploration', self.realm.tick)
-      blob.log(ent.history.exploration)
+      blob.log(ent.history.exploration, name + 'Exploration')
 
-      quill.stat('Lifetime',  ent.history.timeAlive.val)
+      quill.stat(name + 'Lifetime',  ent.history.timeAlive.val)
 
+      # Duplicated task reward with/without name
       if ent.diary:
-         quill.stat('Tasks_Completed', ent.diary.completed)
+         quill.stat(name + 'Tasks_Completed', ent.diary.completed)
+         quill.stat(name + 'Task_Reward', ent.diary.cumulative_reward)
          quill.stat('Task_Reward', ent.diary.cumulative_reward)
          for achievement in ent.diary.achievements:
-            quill.stat(achievement.name, float(achievement.completed))
+            quill.stat(name + achievement.name, float(achievement.completed))
       else:
+         quill.stat(name + 'Task_Reward', ent.history.timeAlive.val)
          quill.stat('Task_Reward', ent.history.timeAlive.val)
 
       quill.stat('PolicyID', ent.agent.policyID)

@@ -10,6 +10,7 @@ from nmmo import core, infrastructure
 from nmmo.entity.npc import NPC
 from nmmo.entity import Player
 from nmmo.lib import colors
+from nmmo.io.action import Action
 
 def prioritized(entities: Dict, merged: Dict):
    '''Sort actions into merged according to priority'''
@@ -53,7 +54,6 @@ class EntityGroup(Mapping):
       for entID, ent in self.entities.items():
          self.dataframe.remove(nmmo.Serialized.Entity, entID, ent.pos)
 
-      self.spawned  = False
       self.entities = {}
       self.dead     = {}
 
@@ -127,33 +127,40 @@ class PlayerManager(EntityGroup):
    def __init__(self, config, realm):
       super().__init__(config, realm)
 
-      self.loader  = config.AGENT_LOADER
-      self.palette = colors.Palette()
-      self.realm   = realm
+      self.loader   = config.AGENT_LOADER
+      self.palette  = colors.Palette()
+      self.realm    = realm
 
    def reset(self):
       super().reset()
       self.agents  = self.loader(self.config)
-      self.idx     = 1
+      self.spawned = set()
 
-   def spawnIndividual(self, r, c):
+   def spawnIndividual(self, r, c, idx):
       pop, agent = next(self.agents)
-      agent      = agent(self.config, self.idx)
+      agent      = agent(self.config, idx)
       player     = Player(self.realm, (r, c), agent, self.palette.color(pop), pop)
       super().spawn(player)
-      self.idx   += 1
 
    def spawn(self):
       if self.config.SPAWN == self.config.SPAWN_CONCURRENT:
-         if self.spawned:
-            return 
-
-         self.spawned = True
          idx = 0
          for r, c in self.config.SPAWN():
             idx += 1
-            assert not self.realm.map.tiles[r, c].occupied
-            self.spawnIndividual(r, c)
+
+            if idx in self.entities:
+                continue
+
+            if idx in self.spawned and not self.config.RESPAWN:
+                continue
+
+            self.spawned.add(idx)
+            
+            if self.realm.map.tiles[r, c].occupied:
+                continue
+
+            self.spawnIndividual(r, c, idx)
+
          return
           
       #MMO-style spawning
@@ -174,6 +181,7 @@ class Realm:
    '''Top-level world object'''
    def __init__(self, config):
       self.config   = config
+      Action.hook(config)
 
       #Generate maps if they do not exist
       config.MAP_GENERATOR(config).generate_all_maps()
