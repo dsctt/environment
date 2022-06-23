@@ -11,7 +11,7 @@ class Observation:
       self.delta  = config.NSTIM
       self.tiles  = self.obs['Tile']['Continuous']
       self.agents = self.obs['Entity']['Continuous']
-      self.n      = int(self.obs['Entity']['N'])
+      self.mask   = self.obs['Entity']['Mask']
 
    def tile(self, rDelta, cDelta):
       '''Return the array object corresponding to a nearby tile

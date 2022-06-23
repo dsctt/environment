@@ -205,8 +205,8 @@ class Dataframe:
 
       rr, cc = np.meshgrid(np.arange(-radius, radius+1), np.arange(-radius, radius+1))
       rr, cc = rr.ravel(), cc.ravel()
-      rr = np.repeat(rr[None, :], 255, axis=0)
-      cc = np.repeat(cc[None, :], 255, axis=0)
+      rr = np.repeat(rr[None, :], config.NENT, axis=0)
+      cc = np.repeat(cc[None, :], config.NENT, axis=0)
       self.tile_grid = (rr, cc)
 
       rr, cc = np.meshgrid(np.arange(-radius, radius+1), np.arange(-radius, radius+1))
@@ -247,7 +247,10 @@ class Dataframe:
           data = self.data[key]
 
           #TODO: Optimize this line with flat dataframes + np.take or ranges
-          dat = data.grid.data[rr[:n] + r_offsets, cc[:n] + c_offsets]#.ravel()
+          try:
+            dat = data.grid.data[rr[:n] + r_offsets, cc[:n] + c_offsets]#.ravel()
+          except:
+            T()
           key_mask = dat != 0
 
           # TODO: Optimize these two lines with some sort of jit... it's a dict lookup
