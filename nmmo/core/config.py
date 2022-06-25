@@ -174,9 +174,6 @@ class Config(Template):
        '''Number of distinct populations spawnable in the environment'''
        return len(self.AGENTS)
 
-   N_AGENT_OBS             = 100
-   '''Number of distinct agent observations'''
-
    @property
    def TEAM_SIZE(self):
       assert not self.NENT % self.NPOP

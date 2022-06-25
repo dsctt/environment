@@ -93,7 +93,7 @@ class Serialized(metaclass=utils.IterableNameComparable):
    class Entity(metaclass=utils.IterableNameComparable):
       @staticmethod
       def N(config):
-         return config.N_AGENT_OBS
+         return config.WINDOW**2
 
       class Self(Discrete):
          def init(self, config):

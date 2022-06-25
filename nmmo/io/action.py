@@ -226,8 +226,7 @@ class Target(Node):
 
    @classmethod
    def N(cls, config):
-      #return config.WINDOW ** 2
-      return config.N_AGENT_OBS
+      return config.WINDOW ** 2
 
    def args(stim, entity, config):
       #Should pass max range?

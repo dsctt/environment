@@ -203,6 +203,8 @@ class Realm:
       self.map.reset(self, idx)
       self.players.reset()
       self.npcs.reset()
+      self.players.spawn()
+      self.npcs.spawn()
       self.tick = 0
  
    def packet(self):
@@ -250,11 +252,11 @@ class Realm:
 
       #Spawn new agent and cull dead ones
       #TODO: Place cull before spawn once PettingZoo API fixes respawn on same tick as death bug
-      self.players.spawn()
-      self.npcs.spawn()
-
       dead = self.players.cull()
       self.npcs.cull()
+
+      self.players.spawn()
+      self.npcs.spawn()
 
       #Update map
       self.map.step()

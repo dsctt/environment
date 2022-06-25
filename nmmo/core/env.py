@@ -158,26 +158,20 @@ class Env(ParallelEnv):
                continuous += 1
 
          name = entity.__name__
-         observation[name] = {
+         observation[name] = gym.spaces.Dict({
                'Continuous': gym.spaces.Box(
                         low=-2**20, high=2**20,
                         shape=(rows, continuous),
                         dtype=DataType.CONTINUOUS),
-               'Discrete'  : gym.spaces.Box(
+               'Discrete': gym.spaces.Box(
                         low=0, high=4096,
                         shape=(rows, discrete),
-                        dtype=DataType.DISCRETE)}
-
-         if name == 'Entity':
-            observation['Entity']['N'] = gym.spaces.Box(
-                    low=0, high=self.config.N_AGENT_OBS,
-                    shape=(1,), dtype=DataType.DISCRETE)
-         if name == 'Tile':
-            observation['Tile']['N'] = gym.spaces.Box(
-                    low=0, high=self.config.WINDOW**2,
-                    shape=(1,), dtype=DataType.DISCRETE)
-
-         observation[name] = gym.spaces.Dict(observation[name])
+                        dtype=DataType.DISCRETE),
+               'Mask': gym.spaces.Box(
+                        low=0, high=1,
+                        shape=(rows,),
+                        dtype=DataType.DISCRETE),
+               })
 
       observation   = gym.spaces.Dict(observation)
 
@@ -185,8 +179,7 @@ class Env(ParallelEnv):
          self.dummy_ob = observation.sample()
          for ent_key, ent_val in self.dummy_ob.items():
              for attr_key, attr_val in ent_val.items():
-                 self.dummy_ob[ent_key][attr_key] *= 0                
-
+                 self.dummy_ob[ent_key][attr_key].fill(0)
 
       if not self.config.EMULATE_FLAT_OBS:
          return observation
@@ -265,13 +258,25 @@ class Env(ParallelEnv):
       self.worldIdx = idx
       self.realm.reset(idx)
 
-      self.obs, self.action_lookup = self.realm.dataframe.get(self.realm.players)
+      obs, self.action_lookup = self.realm.dataframe.get(self.realm.players)
+
+      self.obs = self._preprocess_obs(obs, {}, {}, {})
+      self.agents = list(self.realm.players.keys())
 
       return self.obs
 
    def close(self):
        '''For conformity with the PettingZoo API only; rendering is external'''
        pass
+
+   def _preprocess_obs(self, obs, rewards, dones, infos):
+      if self.config.EMULATE_CONST_NENT:
+         emulation.pad_const_nent(self.config, self.dummy_ob, obs, rewards, dones, infos)
+
+      if self.config.EMULATE_FLAT_OBS:
+         obs = nmmo.emulation.pack_obs(obs)
+
+      return obs
 
    def step(self, actions):
       '''Simulates one game tick or timestep
@@ -418,7 +423,8 @@ class Env(ParallelEnv):
                if arg.argType == nmmo.action.Fixed:
                   self.actions[entID][atn][arg] = arg.edges[val]
                elif arg == nmmo.action.Target:
-                  targ = self.action_lookup[val]
+                  targ = self.action_lookup[entID]['Entity'][val]
+                  print(list(self.realm.players.keys()))
                   self.actions[entID][atn][arg] = self.realm.entity(targ)
                else:
                   assert False
@@ -460,11 +466,7 @@ class Env(ParallelEnv):
 
          obs[ent.entID]     = self.dummy_ob
 
-      if self.config.EMULATE_CONST_NENT:
-         emulation.pad_const_nent(self.config, self.dummy_ob, obs, rewards, dones, infos)
-
-      if self.config.EMULATE_FLAT_OBS:
-         obs = nmmo.emulation.pack_obs(obs)
+      obs = self._preprocess_obs(obs, rewards, dones, infos)
 
       if self.config.EMULATE_CONST_HORIZON:
          assert self.realm.tick <= self.config.HORIZON
