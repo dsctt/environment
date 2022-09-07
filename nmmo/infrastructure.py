@@ -152,15 +152,55 @@ class GridTables:
    flat tensor representation of an entire class of observations,
    such as agents or tiles'''
    def __init__(self, config, obj, pad, prealloc=1000, expansion=2):
-      self.grid       = Grid(config.TERRAIN_SIZE, config.TERRAIN_SIZE)
+      self.grid       = Grid(config.MAP_SIZE, config.MAP_SIZE)
       self.continuous = ContinuousTable(config, obj, prealloc)
       self.discrete   = DiscreteTable(config, obj, prealloc)
       self.index      = Index(prealloc)
 
       self.nRows      = prealloc
       self.expansion  = expansion
-      self.radius     = config.NSTIM
+      self.radius     = config.PLAYER_VISION_RADIUS
       self.pad        = pad
+
+   def get(self, ent, radius=None, entity=False):
+      if radius is None:
+         radius = self.radius
+
+      r, c = ent.pos
+      cent = self.grid.data[r, c]
+
+      if __debug__:
+          assert cent != 0
+
+      rows = self.grid.window(
+            r-radius, r+radius+1,
+            c-radius, c+radius+1)
+
+      #Self entity first
+      if entity:
+         rows.remove(cent)
+         rows.insert(0, cent)
+
+      values = {'Continuous': self.continuous.get(rows, self.pad),
+                'Discrete':   self.discrete.get(rows, self.pad)}
+
+      if entity:
+         ents = [self.index.teg(e) for e in rows]
+         if __debug__:
+             assert ents[0] == ent.entID
+         return values, ents
+
+      return values
+
+   def getFlat(self, keys):
+      if __debug__:
+          err = f'Dataframe got {len(keys)} keys with pad {self.pad}'
+          assert len(keys) <= self.pad, err
+
+      rows = [self.index.get(key) for key in keys[:self.pad]]
+      values = {'Continuous': self.continuous.get(rows, self.pad),
+                'Discrete':   self.discrete.get(rows, self.pad)}
+      return values
 
    def update(self, obj, val):
       key, attr = obj.key, obj.attr
@@ -183,6 +223,9 @@ class GridTables:
       self.grid.move(pos, nxt, row)
 
    def init(self, key, pos):
+      if pos is None:
+          return
+
       row = self.index.get(key)
       self.grid.set(pos, row)
 
@@ -192,10 +235,14 @@ class GridTables:
 
 class Dataframe:
    '''Infrastructure wrapper class'''
-   def __init__(self, config):
-      self.config, self.data = config, defaultdict(dict)
+   def __init__(self, realm):
+      config      = realm.config
+      self.config = config
+      self.data   = defaultdict(dict)
 
       for (objKey,), obj in nmmo.Serialized:
+         if not obj.enabled(config):
+             continue
          self.data[objKey] = GridTables(config, obj, pad=obj.N(config))
 
       # Preallocate index buffers
@@ -216,6 +263,7 @@ class Dataframe:
       rr = np.repeat(rr[None, :], config.NENT, axis=0)
       cc = np.repeat(cc[None, :], config.NENT, axis=0)
       self.player_grid = (rr, cc)
+      self.realm = realm
 
    def update(self, node, val):
       self.data[node.obj].update(node, val)
@@ -266,3 +314,4 @@ class Dataframe:
               action_lookup[playerID][key] = dat[idx]
 
       return obs, action_lookup
+

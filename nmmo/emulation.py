@@ -30,15 +30,15 @@ class SingleAgentEnv:
         return self.obs[i], self.rewards[i], self.dones[i], self.infos[i]
 
 def multiagent_to_singleagent(config):
-    assert config.EMULATE_CONST_NENT, "Wrapper requires constant num agents"
+    assert config.EMULATE_CONST_PLAYER_N, "Wrapper requires constant num agents"
 
     base_env = nmmo.Env(config)
-    n = config.NENT
+    n = config.PLAYER_N
 
     return [SingleAgentEnv(base_env, i, n) for i in range(1, n+1)]
         
 def pad_const_nent(config, dummy_ob, obs, rewards, dones, infos):
-    for i in range(1, config.NENT+1):                               
+    for i in range(1, config.PLAYER_N+1):                               
         if i not in obs:                                                  
             obs[i]     = dummy_ob                                         
             rewards[i] = 0                                                 
@@ -53,10 +53,10 @@ def const_horizon(dones):
 
 def pack_atn_space(config):
    actions = defaultdict(dict)                                             
-   for atn in sorted(nmmo.Action.edges(config)):                                   
-      for arg in sorted(atn.edges):                                        
-         actions[atn][arg] = arg.N(config)                            
-                                                                           
+   for atn in sorted(nmmo.Action.edges(config)):
+      for arg in sorted(atn.edges):
+         actions[atn][arg] = arg.N(config)
+
    n = 0                                                                   
    flat_actions = {}                                                  
    for atn, args in actions.items():                                       
@@ -80,9 +80,12 @@ def pack_obs_space(observation):
            shape=(int(n),), dtype=DataType.CONTINUOUS)
 
 
-def batch_obs(obs):
+def batch_obs(config, obs):
     batched = {}
     for (entity_name,), entity in nmmo.io.stimulus.Serialized:
+        if not entity.enabled(config):
+            continue
+
         batched[entity_name] = {}
         for dtype in 'Continuous Discrete'.split():
             attr_obs = [obs[k][entity_name][dtype] for k in obs]
@@ -105,6 +108,9 @@ def unpack_obs(config, packed_obs):
     obs, idx = {}, 0
     batch = len(packed_obs)
     for (entity_name,), entity in nmmo.io.stimulus.Serialized:
+        if not entity.enabled(config):
+            continue
+
         n_entity = entity.N(config)
         n_continuous, n_discrete = 0, 0
         obs[entity_name] = {}

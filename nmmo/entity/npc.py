@@ -7,11 +7,51 @@ import nmmo
 from nmmo.entity import entity
 from nmmo.systems import combat, equipment, ai, combat, skill
 from nmmo.lib.colors import Neon
+from nmmo.systems import item as Item
+from nmmo.systems import droptable
+from nmmo.io import action as Action
+
+
+class Equipment:
+   def __init__(self, total,
+           melee_attack, range_attack, mage_attack,
+           melee_defense, range_defense, mage_defense):
+
+      self.level         = total
+      self.ammunition    = None
+
+      self.melee_attack  = melee_attack
+      self.range_attack  = range_attack
+      self.mage_attack   = mage_attack
+      self.melee_defense = melee_defense
+      self.range_defense = range_defense
+      self.mage_defense  = mage_defense
+
+   def total(self, getter):
+      return getter(self)
+
+   @property
+   def packet(self):
+      packet = {}
+
+      packet['item_level']    = self.total
+
+      packet['melee_attack']  = self.melee_attack
+      packet['range_attack']  = self.range_attack
+      packet['mage_attack']   = self.mage_attack
+      packet['melee_defense'] = self.melee_defense
+      packet['range_defense'] = self.range_defense
+      packet['mage_defense']  = self.mage_defense
+
+      return packet
+
 
 class NPC(entity.Entity):
    def __init__(self, realm, pos, iden, name, color, pop):
       super().__init__(realm, pos, iden, name, color, pop)
-      self.skills = skill.Combat(self)
+      self.skills = skill.Combat(realm, self)
+      self.realm = realm
+      
 
    def update(self, realm, actions):
       super().update(realm, actions)
@@ -22,11 +62,19 @@ class NPC(entity.Entity):
       self.resources.health.increment(1)
       self.lastAction = actions
 
+   def receiveDamage(self, source, dmg):
+       if super().receiveDamage(source, dmg):
+           return True
+
+       for item in self.droptable.roll(self.realm, self.level):
+           if source.inventory.space:
+               source.inventory.receive(item)
+
    @staticmethod
    def spawn(realm, pos, iden):
       config = realm.config
 
-      #Select AI Policy
+      # Select AI Policy
       danger = combat.danger(config, pos)
       if danger >= config.NPC_SPAWN_AGGRESSIVE:
          ent = Aggressive(realm, pos, iden)
@@ -37,55 +85,52 @@ class NPC(entity.Entity):
       else:
          return
 
-      #Set levels
-      levels = NPC.clippedLevels(config, danger, n=5)
-      constitution, defense, melee, ranged, mage = levels
+      ent.spawn_danger = danger
 
-      ent.resources.health.max = constitution
-      ent.resources.health.update(constitution)
+      # Select combat focus
+      style = random.choice((Action.Melee, Action.Range, Action.Mage))
+      ent.skills.style = style
 
-      ent.skills.constitution.setExpByLevel(constitution)
-      ent.skills.defense.setExpByLevel(defense)
-      ent.skills.melee.setExpByLevel(melee)
-      ent.skills.range.setExpByLevel(ranged)
-      ent.skills.mage.setExpByLevel(mage)
+      # Compute level
+      level = 0
+      if config.PROGRESSION_SYSTEM_ENABLED:
+          level_min = config.NPC_LEVEL_MIN
+          level_max = config.NPC_LEVEL_MAX
+          level     = int(danger * (level_max - level_min) + level_min)
 
-      ent.skills.style = random.choice(
-         (nmmo.action.Melee, nmmo.action.Range, nmmo.action.Mage))
+          # Set skill levels
+          if style == Action.Melee:
+              ent.skills.melee.setExpByLevel(level)
+          elif style == Action.Range:
+              ent.skills.range.setExpByLevel(level)
+          elif style == Action.Mage:
+              ent.skills.mage.setExpByLevel(level)
 
-      #Set equipment levels
-      ent.loadout.chestplate.level = NPC.gearLevel(defense)
-      ent.loadout.platelegs.level  = NPC.gearLevel(defense)
+      # Gold
+      if config.EXCHANGE_SYSTEM_ENABLED:
+          ent.inventory.gold.quantity.update(level)
 
-      return ent
+      ent.droptable = droptable.Standard()
 
-   def yieldDrops(self):
-      self.lastAttacker.receiveDrops(self.drops.roll())
+      # Equipment to instantiate
+      if config.EQUIPMENT_SYSTEM_ENABLED:
+          lvl     = level - random.random()
+          ilvl    = int(5 * lvl)
 
-   @staticmethod
-   def gearLevel(lvl, offset=10):
-      proposed = random.gauss(lvl-offset, offset)
-      lvl      = np.clip(proposed, 0, lvl)
-      return int(lvl)
+          offense = int(config.NPC_BASE_DAMAGE + lvl*config.NPC_LEVEL_DAMAGE)
+          defense = int(config.NPC_BASE_DEFENSE + lvl*config.NPC_LEVEL_DEFENSE)
 
-   @staticmethod
-   def clippedLevels(config, danger, n=1):
-      lmin    = config.NPC_LEVEL_MIN
-      lmax    = config.NPC_LEVEL_MAX
+          ent.equipment = Equipment(ilvl, offense, offense, offense, defense, defense, defense)
 
-      lbase   = danger*(lmax-lmin) + lmin
-      lspread = config.NPC_LEVEL_SPREAD
+          armor =  [Item.Hat, Item.Top, Item.Bottom]
+          ent.droptable.add(random.choice(armor))
 
-      lvlMin  = int(max(lmin, lbase - lspread))
-      lvlMax  = int(min(lmax, lbase + lspread))
+      if config.PROFESSION_SYSTEM_ENABLED:
+         tools =  [Item.Rod, Item.Gloves, Item.Pickaxe, Item.Chisel, Item.Arcane]
+         ent.droptable.add(random.choice(tools))
 
-      lvls = [random.randint(lvlMin, lvlMax) for _ in range(n)]
+      return ent 
 
-      if n == 1:
-         return lvls[0]
-
-      return lvls
- 
    def packet(self):
       data = super().packet()
 
@@ -119,8 +164,6 @@ class Aggressive(NPC):
    def __init__(self, realm, pos, iden):
       super().__init__(realm, pos, iden, 'Hostile', Neon.RED, -3)
       self.dataframe.init(nmmo.Serialized.Entity, iden, pos)
-      self.vision = int(max(self.vision, 1 + combat.level(self.skills) // 10))
-      self.dataframe.init(nmmo.Serialized.Entity, self.entID, self.pos)
 
    def decide(self, realm):
       return ai.policy.hostile(realm, self)

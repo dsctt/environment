@@ -13,7 +13,7 @@ from nmmo.systems.ai.dynamic_programming import map_to_rewards, \
 def validTarget(ent, targ, rng):
    if targ is None or not targ.alive:
       return False
-   if lInf(ent, targ) > rng:
+   if lInfty(ent.pos, targ.pos) > rng:
       return False
    return True
 
@@ -165,7 +165,7 @@ def aStar(tiles, start, goal, cutoff=100):
       for nxt in adjacentPos(cur):
          if not inBounds(*nxt, tiles.shape):
             continue
-         if tiles[nxt].impassible:
+         if tiles[nxt].occupied:
             continue
 
          newCost = cost[cur] + 1

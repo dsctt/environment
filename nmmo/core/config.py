@@ -3,44 +3,7 @@ import numpy as np
 import os
 
 import nmmo
-from nmmo.lib import utils
-
-class SequentialLoader:
-    '''config.AGENT_LOADER that spreads out agent populations'''
-    def __init__(self, config):
-        items = config.AGENTS
-        for idx, itm in enumerate(items):
-           itm.policyID = idx 
-
-        self.items = items
-        self.idx   = -1
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        self.idx = (self.idx + 1) % len(self.items)
-        return self.idx, self.items[self.idx]
-
-class TeamLoader:
-    '''config.AGENT_LOADER that loads agent populations adjacent'''
-    def __init__(self, config):
-        items = config.AGENTS
-        self.team_size = config.NENT // config.NPOP
-
-        for idx, itm in enumerate(items):
-           itm.policyID = idx 
-
-        self.items = items
-        self.idx   = -1
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        self.idx += 1
-        team_idx  = self.idx // self.team_size
-        return team_idx, self.items[team_idx]
+from nmmo.lib import utils, material, spawn
 
 
 class Template(metaclass=utils.StaticIterable):
@@ -89,6 +52,26 @@ class Template(metaclass=utils.StaticIterable):
    def values(self):
        return self.data.values()
 
+def validate(config):
+    err = 'config.Config is a base class. Use config.{Small, Medium Large}'''
+    assert type(config) != Config, err
+
+    if not config.TERRAIN_SYSTEM_ENABLED:
+        err = 'Invalid Config: {} requires Terrain'
+        assert not config.RESOURCE_SYSTEM_ENABLED, err.format('Resource')
+        assert not config.PROFESSION_SYSTEM_ENABLED, err.format('Profession')
+ 
+    if not config.COMBAT_SYSTEM_ENABLED:
+        err = 'Invalid Config: {} requires Combat'
+        assert not config.NPC_SYSTEM_ENABLED, err.format('NPC')
+ 
+    if not config.ITEM_SYSTEM_ENABLED:
+        err = 'Invalid Config: {} requires Inventory'
+        assert not config.EQUIPMENT_SYSTEM_ENABLED, err.format('Equipment')
+        assert not config.PROFESSION_SYSTEM_ENABLED, err.format('Profession')
+        assert not config.EXCHANGE_SYSTEM_ENABLED, err.format('Exchange')
+
+
 class Config(Template):
    '''An environment configuration object
 
@@ -109,23 +92,67 @@ class Config(Template):
    def __init__(self):
       super().__init__()
 
+      # TODO: Come up with a better way
+      # to resolve mixin MRO conflicts
+      if not hasattr(self, 'TERRAIN_SYSTEM_ENABLED'):
+          self.TERRAIN_SYSTEM_ENABLED = False
+
+      if not hasattr(self, 'RESOURCE_SYSTEM_ENABLED'):
+          self.RESOURCE_SYSTEM_ENABLED = False
+
+      if not hasattr(self, 'COMBAT_SYSTEM_ENABLED'):
+          self.COMBAT_SYSTEM_ENABLED = False
+
+      if not hasattr(self, 'NPC_SYSTEM_ENABLED'):
+          self.NPC_SYSTEM_ENABLED = False
+
+      if not hasattr(self, 'PROGRESSION_SYSTEM_ENABLED'):
+          self.PROGRESSION_SYSTEM_ENABLED = False
+
+      if not hasattr(self, 'ITEM_SYSTEM_ENABLED'):
+          self.ITEM_SYSTEM_ENABLED = False
+
+      if not hasattr(self, 'EQUIPMENT_SYSTEM_ENABLED'):
+          self.EQUIPMENT_SYSTEM_ENABLED = False
+
+      if not hasattr(self, 'PROFESSION_SYSTEM_ENABLED'):
+          self.PROFESSION_SYSTEM_ENABLED = False
+
+      if not hasattr(self, 'EXCHANGE_SYSTEM_ENABLED'):
+          self.EXCHANGE_SYSTEM_ENABLED = False
+
+      if not hasattr(self, 'COMMUNICATION_SYSTEM_ENABLED'):  
+          self.COMMUNICATION_SYSTEM_ENABLED = False
+ 
       if __debug__:
-         err = 'config.Config is a base class. Use config.{Small, Medium Large}'''
-         assert type(self) != Config, err
+         validate(self)
+
+      deprecated_attrs = [
+            'NENT', 'NPOP', 'AGENTS', 'NMAPS', 'FORCE_MAP_GENERATION', 'SPAWN']
+
+      for attr in deprecated_attrs:
+          assert not hasattr(self, attr), f'{attr} has been deprecated or renamed'
+
 
    ############################################################################
    ### Meta-Parameters
-   RENDER                 = False
-   '''Flag used by render mode'''
-
-   SAVE_REPLAY            = False
-   '''Flag used to save replays'''
-
    def game_system_enabled(self, name) -> bool:
       return hasattr(self, name)
 
    def population_mapping_fn(self, idx) -> int:
       return idx % self.NPOP
+
+   RENDER                       = False
+   '''Flag used by render mode'''
+
+   SAVE_REPLAY            = False
+   '''Flag used to save replays'''
+
+   PLAYERS                      = []
+   '''Player classes from which to spawn'''
+
+   TASKS                        = []
+   '''Tasks for which to compute rewards'''
 
    ############################################################################
    ### Emulation Parameters
@@ -136,53 +163,63 @@ class Config(Template):
    EMULATE_FLAT_ATN       = False
    '''Emulate a flat action space'''
 
-   EMULATE_CONST_NENT     = False
+   EMULATE_CONST_PLAYER_N = False
    '''Emulate a constant number of agents'''
 
    EMULATE_CONST_HORIZON  = False
    '''Emulate a constant HORIZON simulations steps'''
 
+
    ############################################################################
    ### Population Parameters                                                   
-   AGENT_LOADER            = SequentialLoader
-   '''Agent loader class specifying spawn sampling'''
+   LOG_VERBOSE                  = False
+   '''Whether to log server messages or just stats'''
 
-   AGENTS = []
-   '''Agent classes from which to spawn'''
+   LOG_ENV                      = False
+   '''Whether to log env steps (expensive)'''
 
-   TASKS = []
+   LOG_MILESTONES               = True
+   '''Whether to log server-firsts (semi-expensive)'''
+
+   LOG_EVENTS                   = True
+   '''Whether to log events (semi-expensive)'''
+
+   LOG_FILE                     = None
+   '''Where to write logs (defaults to console)'''
+
+   PLAYERS                      = []
+   '''Player classes from which to spawn'''
+
+   TASKS                        = []
    '''Tasks for which to compute rewards'''
 
-   NMAPS                   = 1
-   '''Number of maps to generate'''
 
-   NTILE                   = 6
-   #TODO: Find a way to auto-compute this
-   '''Number of distinct terrain tile types'''
+   ############################################################################
+   ### Player Parameters                                                   
+   PLAYER_N                     = None                  
+   '''Maximum number of players spawnable in the environment'''
 
-   NSTIM                   = 7
+   PLAYER_N_OBS                 = 100
+   '''Number of distinct agent observations'''
+
+   @property
+   def PLAYER_POLICIES(self):
+      '''Number of player policies'''
+      return len(self.PLAYERS)
+
+   PLAYER_BASE_HEALTH           = 100
+   '''Initial agent health'''
+
+   PLAYER_VISION_RADIUS         = 7
    '''Number of tiles an agent can see in any direction'''
 
-   NMOB                    = None
-   '''Maximum number of NPCs spawnable in the environment'''
-
-   NENT                    = None
-   '''Maximum number of agents spawnable in the environment'''
-
    @property
-   def NPOP(self):
-       '''Number of distinct populations spawnable in the environment'''
-       return len(self.AGENTS)
-
-   @property
-   def TEAM_SIZE(self):
-      assert not self.NENT % self.NPOP
-      return self.NENT // self.NPOP
-
-   @property
-   def WINDOW(self):
+   def PLAYER_VISION_DIAMETER(self):
       '''Size of the square tile crop visible to an agent'''
-      return 2*self.NSTIM + 1
+      return 2*self.PLAYER_VISION_RADIUS + 1
+
+   PLAYER_DEATH_FOG             = None
+   '''How long before spawning death fog. None for no death fog'''
 
 
    ############################################################################
@@ -193,158 +230,152 @@ class Config(Template):
    BASE_HEALTH                = 10
    '''Initial Constitution level and agent health'''
 
+   PLAYER_DEATH_FOG_SPEED       = 1
+   '''Number of tiles per tick that the fog moves in'''
+
+   PLAYER_DEATH_FOG_FINAL_SIZE  = 8
+   '''Number of tiles from the center that the fog stops'''
+
    RESPAWN = False
 
-   PLAYER_SPAWN_ATTEMPTS      = None
+   PLAYER_LOADER                = spawn.SequentialLoader
+   '''Agent loader class specifying spawn sampling'''
+
+   PLAYER_SPAWN_ATTEMPTS        = None
    '''Number of player spawn attempts per tick
 
    Note that the env will attempt to spawn agents until success
    if the current population size is zero.'''
 
-   def SPAWN_CONTINUOUS(self):
-      '''Generates spawn positions for new agents
-
-      Default behavior randomly selects a tile position
-      along the borders of the square game map
-
-      Returns:
-         tuple(int, int):
-
-         position:
-            The position (row, col) to spawn the given agent
-      '''
-      #Spawn at edges
-      mmax = self.TERRAIN_CENTER + self.TERRAIN_BORDER
-      mmin = self.TERRAIN_BORDER
-
-      var  = np.random.randint(mmin, mmax)
-      fixed = np.random.choice([mmin, mmax])
-      r, c = int(var), int(fixed)
-      if np.random.rand() > 0.5:
-          r, c = c, r 
-      return (r, c)
-
-   def SPAWN_CONCURRENT(self, shuffle=False):
-      left   = self.TERRAIN_BORDER
-      right  = self.TERRAIN_CENTER + self.TERRAIN_BORDER
-      rrange = np.arange(left+2, right, 4).tolist()
-
-      assert not self.TERRAIN_CENTER % 4
-      per_side = self.TERRAIN_CENTER // 4
-      
-      lows   = (left+np.zeros(per_side, dtype=np.int)).tolist()
-      highs  = (right+np.zeros(per_side, dtype=np.int)).tolist()
-
-      s1     = list(zip(rrange, lows))
-      s2     = list(zip(lows, rrange))
-      s3     = list(zip(rrange, highs))
-      s4     = list(zip(highs, rrange))
-
-      ret = s1 + s2 + s3 + s4
-      if shuffle:
-        assert not len(ret) % self.NPOP
-        ret = np.array_split(ret, self.NPOP)
-        np.random.shuffle(ret)
-        ret = np.concatenate(ret, axis=0).tolist()
-
-      # TEMP HACK FOR EXPERIMENT -- IMPLEMENT PROPERLY
-      np.random.shuffle(ret)
-
-      n = int(self.NENT * len(self.AGENTS))
-      return ret[:n]
-    
+   PLAYER_SPAWN_TEAMMATE_DISTANCE = 1
+   '''Buffer tiles between teammates at spawn'''
+   
    @property
-   def SPAWN(self):
-      return self.SPAWN_CONCURRENT
+   def PLAYER_SPAWN_FUNCTION(self):
+      return spawn.spawn_concurrent
 
+   @property
+   def PLAYER_TEAM_SIZE(self):
+      if __debug__:
+         assert not self.PLAYER_N % len(self.PLAYERS)
+      return self.PLAYER_N // len(self.PLAYERS)
 
    ############################################################################
-   ### Terrain Generation Parameters
-   MAP_GENERATOR          = None
-   '''Specifies a user map generator. Uses default generator if unspecified.'''
+   ### Map Parameters
+   MAP_N                        = 1
+   '''Number of maps to generate'''
 
-   FORCE_MAP_GENERATION   = False
-   '''Whether to regenerate and overwrite existing maps'''
+   MAP_N_TILE                   = len(material.All.materials)
+   '''Number of distinct terrain tile types'''
 
-   GENERATE_MAP_PREVIEWS  = False
-   '''Whether map generation should also save .png previews (slow + large file size)'''
+   @property
+   def MAP_N_OBS(self):
+      '''Number of distinct tile observations'''
+      return int(self.PLAYER_VISION_DIAMETER ** 2)
 
-   MAP_PREVIEW_DOWNSCALE  = 1
-   '''Downscaling factor for png previews'''
-
-   TERRAIN_CENTER             = None
+   MAP_CENTER                   = None
    '''Size of each map (number of tiles along each side)'''
 
-   TERRAIN_BORDER             = 16
+   MAP_BORDER                   = 16
    '''Number of lava border tiles surrounding each side of the map'''
 
    @property
-   def TERRAIN_SIZE(self):
-      return int(self.TERRAIN_CENTER + 2*self.TERRAIN_BORDER)
+   def MAP_SIZE(self):
+      return int(self.MAP_CENTER + 2*self.MAP_BORDER)
 
-   TERRAIN_FLIP_SEED          = False
-   '''Whether to negate the seed used for generation (useful for unique heldout maps)'''
+   MAP_GENERATOR                = None
+   '''Specifies a user map generator. Uses default generator if unspecified.'''
 
-   TERRAIN_FREQUENCY          = -3
-   '''Base noise frequency range (log2 space)'''
+   MAP_FORCE_GENERATION         = True
+   '''Whether to regenerate and overwrite existing maps'''
 
-   TERRAIN_FREQUENCY_OFFSET   = 7
-   '''Noise frequency octave offset (log2 space)'''
+   MAP_GENERATE_PREVIEWS        = False
+   '''Whether map generation should also save .png previews (slow + large file size)'''
 
-   TERRAIN_LOG_INTERPOLATE_MIN = -2 
-   '''Minimum interpolation log-strength for noise frequencies'''
-
-   TERRAIN_LOG_INTERPOLATE_MAX= 0
-   '''Maximum interpolation log-strength for noise frequencies'''
-
-   TERRAIN_TILES_PER_OCTAVE   = 8
-   '''Number of octaves sampled from log2 spaced TERRAIN_FREQUENCY range'''
-
-   TERRAIN_LAVA               = 0.0
-   '''Noise threshold for lava generation'''
-
-   TERRAIN_WATER              = 0.30
-   '''Noise threshold for water generation'''
-
-   TERRAIN_GRASS              = 0.70
-   '''Noise threshold for grass'''
-
-   TERRAIN_FOREST             = 0.85
-   '''Noise threshold for forest'''
+   MAP_PREVIEW_DOWNSCALE        = 1
+   '''Downscaling factor for png previews'''
 
 
    ############################################################################
    ### Path Parameters
-   PATH_ROOT            = os.path.dirname(nmmo.__file__)
+   PATH_ROOT                = os.path.dirname(nmmo.__file__)
    '''Global repository directory'''
 
-   PATH_CWD             = os.getcwd()
+   PATH_CWD                 = os.getcwd()
    '''Working directory'''
 
-   PATH_RESOURCE        = os.path.join(PATH_ROOT, 'resource')
+   PATH_RESOURCE            = os.path.join(PATH_ROOT, 'resource')
    '''Resource directory'''
 
-   PATH_TILE            = os.path.join(PATH_RESOURCE, '{}.png')
+   PATH_TILE                = os.path.join(PATH_RESOURCE, '{}.png')
    '''Tile path -- format me with tile name'''
 
-   PATH_MAPS            = None
+   PATH_MAPS                = None
    '''Generated map directory'''
 
-   PATH_MAP_SUFFIX      = 'map{}/map.npy'
+   PATH_MAP_SUFFIX          = 'map{}/map.npy'
+   '''Map file name'''
+
+   PATH_MAP_SUFFIX          = 'map{}/map.npy'
    '''Map file name'''
 
 
 ############################################################################
 ### Game Systems (Static Mixins)
+class Terrain:
+   '''Terrain Game System'''
+
+   TERRAIN_SYSTEM_ENABLED       = True
+   '''Game system flag'''
+
+   TERRAIN_FLIP_SEED            = False
+   '''Whether to negate the seed used for generation (useful for unique heldout maps)'''
+
+   TERRAIN_FREQUENCY            = -3
+   '''Base noise frequency range (log2 space)'''
+
+   TERRAIN_FREQUENCY_OFFSET     = 7
+   '''Noise frequency octave offset (log2 space)'''
+
+   TERRAIN_LOG_INTERPOLATE_MIN  = -2 
+   '''Minimum interpolation log-strength for noise frequencies'''
+
+   TERRAIN_LOG_INTERPOLATE_MAX  = 0
+   '''Maximum interpolation log-strength for noise frequencies'''
+
+   TERRAIN_TILES_PER_OCTAVE     = 8
+   '''Number of octaves sampled from log2 spaced TERRAIN_FREQUENCY range'''
+
+   TERRAIN_LAVA                 = 0.0
+   '''Noise threshold for lava generation'''
+
+   TERRAIN_WATER                = 0.30
+   '''Noise threshold for water generation'''
+
+   TERRAIN_GRASS                = 0.70
+   '''Noise threshold for grass'''
+
+   TERRAIN_FOREST               = 0.85
+   '''Noise threshold for forest'''
+
+
 class Resource:
    '''Resource Game System'''
 
-   @property #Reserved flag
-   def Resource(self):
-      return True
+   RESOURCE_SYSTEM_ENABLED             = True
+   '''Game system flag'''
 
-   RESOURCE_BASE_RESOURCE              = 10
+   RESOURCE_BASE                       = 100
    '''Initial level and capacity for Hunting + Fishing resource skills'''
+
+   RESOURCE_DEPLETION_RATE             = 5
+   '''Depletion rate for food and water'''
+
+   RESOURCE_STARVATION_RATE            = 10
+   '''Damage per tick without food'''
+
+   RESOURCE_DEHYDRATION_RATE           = 10
+   '''Damage per tick without water'''
 
    RESOURCE_FOREST_CAPACITY            = 1
    '''Maximum number of harvests before a forest tile decays'''
@@ -361,62 +392,99 @@ class Resource:
    RESOURCE_HEALTH_RESTORE_FRACTION    = 0.1
    '''Fraction of health restored per tick when above half food+water'''
 
+
 class Combat:
    '''Combat Game System'''
 
-   @property #Reserved flag
-   def Combat(self):
-      return True
+   COMBAT_SYSTEM_ENABLED              = True
+   '''Game system flag'''
 
-   COMBAT_DICE_SIDES                   = 20
-   '''Number of sides for combat dice
+   COMBAT_FRIENDLY_FIRE               = True
+   '''Whether agents with the same population index can hit each other'''
 
-   Attacks can only hit opponents up to the attacker's level plus
-   DICE_SIDES/2. Increasing this value makes attacks more accurate
-   and allows lower level attackers to hit stronger opponents'''
+   COMBAT_SPAWN_IMMUNITY              = 20
+   '''Agents older than this many ticks cannot attack agents younger than this many ticks'''
 
-   COMBAT_DEFENSE_WEIGHT               = 0.3 
-   '''Fraction of defense that comes from the Defense skill'''   
+   COMBAT_WEAKNESS_MULTIPLIER         = 1.5
+   '''Multiplier for super-effective attacks'''
 
-   COMBAT_MELEE_REACH                  = 1
+   def COMBAT_DAMAGE_FORMULA(self, offense, defense, multiplier):
+       '''Damage formula'''
+       return int(multiplier * (offense * (15 / (15 + defense))))
+
+   COMBAT_MELEE_DAMAGE                = 30
+   '''Melee attack damage'''
+
+   COMBAT_MELEE_REACH                 = 3
    '''Reach of attacks using the Melee skill'''
 
-   COMBAT_RANGE_REACH                  = 3
+   COMBAT_RANGE_DAMAGE                = 30
+   '''Range attack damage'''
+
+   COMBAT_RANGE_REACH                 = 3
    '''Reach of attacks using the Range skill'''
 
-   COMBAT_MAGE_REACH                   = 4
-   '''Reach of attacks using the Mage skill'''
+   COMBAT_MAGE_DAMAGE                 = 30
+   '''Mage attack damage'''
 
-   COMBAT_FREEZE_TIME                  = 3
-   '''Number of ticks successful Mage attacks freeze a target'''
+   COMBAT_MAGE_REACH                  = 3
+   '''Reach of attacks using the Mage skill'''
 
 
 class Progression:
    '''Progression Game System'''
 
-   @property #Reserved flag
-   def Progression(self):
-      return True
+   PROGRESSION_SYSTEM_ENABLED        = True
+   '''Game system flag'''
 
-   PROGRESSION_BASE_RESOURCE           = 10
-   '''Initial level and capacity for Hunting + Fishing resource skills'''
+   PROGRESSION_BASE_XP_SCALE         = 1
+   '''Base XP awarded for each skill usage -- multiplied by skill level'''
 
-   PROGRESSION_BASE_XP_SCALE           = 10
-   '''Skill level progression speed as a multiplier of typical MMOs'''
+   PROGRESSION_COMBAT_XP_SCALE       = 1
+   '''Multiplier on top of XP_SCALE for Melee, Range, and Mage'''
 
-   PROGRESSION_CONSTITUTION_XP_SCALE   = 2
-   '''Multiplier on top of XP_SCALE for the Constitution skill'''
+   PROGRESSION_AMMUNITION_XP_SCALE   = 1
+   '''Multiplier on top of XP_SCALE for Prospecting, Carving, and Alchemy'''
 
-   PROGRESSION_COMBAT_XP_SCALE         = 4
-   '''Multiplier on top of XP_SCALE for Combat skills'''
+   PROGRESSION_CONSUMABLE_XP_SCALE   = 5
+   '''Multiplier on top of XP_SCALE for Fishing and Herbalism'''
+
+   PROGRESSION_LEVEL_MAX             = 10
+   '''Max skill level'''
+
+   PROGRESSION_MELEE_BASE_DAMAGE     = 0
+   '''Base Melee attack damage'''
+
+   PROGRESSION_MELEE_LEVEL_DAMAGE    = 5
+   '''Bonus Melee attack damage per level'''
+
+   PROGRESSION_RANGE_BASE_DAMAGE     = 0
+   '''Base Range attack damage'''
+
+   PROGRESSION_RANGE_LEVEL_DAMAGE    = 5
+   '''Bonus Range attack damage per level'''
+
+   PROGRESSION_MAGE_BASE_DAMAGE      = 0
+   '''Base Mage attack damage '''
+
+   PROGRESSION_MAGE_LEVEL_DAMAGE     = 5
+   '''Bonus Mage attack damage per level'''
+
+   PROGRESSION_BASE_DEFENSE          = 0
+   '''Base defense'''
+
+   PROGRESSION_LEVEL_DEFENSE         = 5
+   '''Bonus defense per level'''
 
 
-class NPC(Combat):
-   '''NPC & Equipment Game System'''
+class NPC:
+   '''NPC Game System'''
 
-   @property #Reserved flag
-   def NPC(self):
-      return True
+   NPC_SYSTEM_ENABLED                  = True
+   '''Game system flag'''
+
+   NPC_N                               = None
+   '''Maximum number of NPCs spawnable in the environment'''
 
    NPC_SPAWN_ATTEMPTS                  = 25
    '''Number of NPC spawn attempts per tick'''
@@ -433,69 +501,207 @@ class NPC(Combat):
    NPC_LEVEL_MIN                       = 1
    '''Minimum NPC level'''
 
-   NPC_LEVEL_MAX                       = None
+   NPC_LEVEL_MAX                       = 10
    '''Maximum NPC level'''
 
-   NPC_LEVEL_SPREAD                    = None
-   '''Level range for NPC spawns'''
+   NPC_BASE_DEFENSE                    = 0
+   '''Base NPC defense'''
+
+   NPC_LEVEL_DEFENSE                   = 30
+   '''Bonus NPC defense per level'''
+
+   NPC_BASE_DAMAGE                     = 15
+   '''Base NPC damage'''
+
+   NPC_LEVEL_DAMAGE                    = 30
+   '''Bonus NPC damage per level'''
 
 
-class AllGameSystems(Resource, Progression, NPC): pass
+class Item:
+   '''Inventory Game System'''
+
+   ITEM_SYSTEM_ENABLED                 = True
+   '''Game system flag'''
+
+   ITEM_N                              = 17
+   '''Number of unique base item classes'''
+
+   ITEM_INVENTORY_CAPACITY             = 12
+   '''Number of inventory spaces'''
+
+   @property
+   def ITEM_N_OBS(self):
+       '''Number of distinct item observations'''
+       return self.ITEM_N * self.NPC_LEVEL_MAX
+       #return self.INVENTORY_CAPACITY
+
+
+class Equipment:
+   '''Equipment Game System'''
+
+   EQUIPMENT_SYSTEM_ENABLED             = True
+   '''Game system flag'''
+
+   WEAPON_DROP_PROB = 0.025
+   '''Chance of getting a weapon while harvesting ammunition'''
+
+   EQUIPMENT_WEAPON_BASE_DAMAGE         = 15
+   '''Base weapon damage'''
+
+   EQUIPMENT_WEAPON_LEVEL_DAMAGE        = 15
+   '''Added weapon damage per level'''
+
+   EQUIPMENT_AMMUNITION_BASE_DAMAGE     = 15
+   '''Base ammunition damage'''
+
+   EQUIPMENT_AMMUNITION_LEVEL_DAMAGE    = 15
+   '''Added ammunition damage per level'''
+
+   EQUIPMENT_TOOL_BASE_DEFENSE          = 30
+   '''Base tool defense'''
+
+   EQUIPMENT_TOOL_LEVEL_DEFENSE         = 0
+   '''Added tool defense per level'''
+
+   EQUIPMENT_ARMOR_BASE_DEFENSE         = 0
+   '''Base armor defense'''
+
+   EQUIPMENT_ARMOR_LEVEL_DEFENSE        = 10
+   '''Base equipment defense'''
+
+
+class Profession:
+   '''Profession Game System'''
+
+   PROFESSION_SYSTEM_ENABLED           = True
+   '''Game system flag'''
+
+   PROFESSION_TREE_CAPACITY            = 1
+   '''Maximum number of harvests before a tree tile decays'''
+
+   PROFESSION_TREE_RESPAWN             = 0.105
+   '''Probability that a harvested tree tile will regenerate each tick'''
+
+   PROFESSION_ORE_CAPACITY             = 1
+   '''Maximum number of harvests before an ore tile decays'''
+
+   PROFESSION_ORE_RESPAWN              = 0.10
+   '''Probability that a harvested ore tile will regenerate each tick'''
+
+   PROFESSION_CRYSTAL_CAPACITY         = 1
+   '''Maximum number of harvests before a crystal tile decays'''
+
+   PROFESSION_CRYSTAL_RESPAWN          = 0.10
+   '''Probability that a harvested crystal tile will regenerate each tick'''
+
+   PROFESSION_HERB_CAPACITY            = 1
+   '''Maximum number of harvests before an herb tile decays'''
+
+   PROFESSION_HERB_RESPAWN             = 0.01
+   '''Probability that a harvested herb tile will regenerate each tick'''
+
+   PROFESSION_FISH_CAPACITY            = 1
+   '''Maximum number of harvests before a fish tile decays'''
+
+   PROFESSION_FISH_RESPAWN             = 0.01
+   '''Probability that a harvested fish tile will regenerate each tick'''
+
+   @staticmethod
+   def PROFESSION_CONSUMABLE_RESTORE(level):
+       return 50 + 5*level
+
+
+class Exchange:
+   '''Exchange Game System'''
+
+   EXCHANGE_SYSTEM_ENABLED             = True
+   '''Game system flag'''
+
+   @property
+   def EXCHANGE_N_OBS(self):
+       '''Number of distinct item observations'''
+       return self.ITEM_N * self.NPC_LEVEL_MAX
+
+class Communication:
+   '''Exchange Game System'''
+
+   COMMUNICATION_SYSTEM_ENABLED             = True
+   '''Game system flag'''
+
+   @property
+   def COMMUNICATION_NUM_TOKENS(self):
+       '''Number of distinct item observations'''
+       return self.ITEM_N * self.NPC_LEVEL_MAX
+
+
+class AllGameSystems(Terrain, Resource, Combat, NPC, Progression, Item, Equipment, Profession, Exchange, Communication): pass
+
 
 ############################################################################
 ### Config presets
 class Small(Config):
    '''A small config for debugging and experiments with an expensive outer loop'''
 
-   PATH_MAPS               = 'maps/small' 
-   MAP_PREVIEW_DOWNSCALE   = 4
+   PATH_MAPS                    = 'maps/small' 
 
-   TERRAIN_LOG_INTERPOLATE_MIN = 0
+   PLAYER_N                     = 64
+   PLAYER_SPAWN_ATTEMPTS        = 1
 
-   TERRAIN_CENTER          = 32
-   NENT                    = 64
-   NMOB                    = 32
+   MAP_PREVIEW_DOWNSCALE        = 4
+   MAP_CENTER                   = 32
 
-   PLAYER_SPAWN_ATTEMPTS   = 1
+   TERRAIN_LOG_INTERPOLATE_MIN  = 0
 
-   NPC_LEVEL_MAX           = 10
-   NPC_LEVEL_SPREAD        = 1
-   
-   HORIZON                 = 128
+   NPC_N                        = 32
+   NPC_LEVEL_MAX                = 5
+   NPC_LEVEL_SPREAD             = 1
+
+   PROGRESSION_SPAWN_CLUSTERS   = 4
+   PROGRESSION_SPAWN_UNIFORMS   = 16
+
+   HORIZON                      = 128
+
 
 class Medium(Config):
    '''A medium config suitable for most academic-scale research'''
 
-   PATH_MAPS               = 'maps/medium' 
-   MAP_PREVIEW_DOWNSCALE   = 16
+   PATH_MAPS                    = 'maps/medium' 
 
-   TERRAIN_CENTER          = 128
-   NENT                    = 256
-   NMOB                    = 128
+   PLAYER_N                     = 256
+   PLAYER_SPAWN_ATTEMPTS        = 2
 
-   PLAYER_SPAWN_ATTEMPTS   = 2
+   MAP_PREVIEW_DOWNSCALE        = 16
+   MAP_CENTER                   = 128
 
-   NPC_LEVEL_MAX           = 30
-   NPC_LEVEL_SPREAD        = 5
+   NPC_N                        = 128
+   NPC_LEVEL_MAX                = 10
+   NPC_LEVEL_SPREAD             = 1
 
-   HORIZON                 = 1024
+   PROGRESSION_SPAWN_CLUSTERS   = 64
+   PROGRESSION_SPAWN_UNIFORMS   = 256
+
+   HORIZON                      = 1024
 
 
 class Large(Config):
    '''A large config suitable for large-scale research or fast models'''
 
-   PATH_MAPS               = 'maps/large' 
-   MAP_PREVIEW_DOWNSCALE   = 64
+   PATH_MAPS                    = 'maps/large' 
 
-   TERRAIN_CENTER          = 1024
-   NENT                    = 2048
-   NMOB                    = 1024
+   PLAYER_N                     = 2048
+   PLAYER_SPAWN_ATTEMPTS        = 16
 
-   PLAYER_SPAWN_ATTEMPTS   = 16
+   MAP_PREVIEW_DOWNSCALE        = 64
+   MAP_CENTER                   = 1024
 
-   NPC_LEVEL_MAX           = 99
-   NPC_LEVEL_SPREAD        = 10
+   NPC_N                        = 1024
+   NPC_LEVEL_MAX                = 15
+   NPC_LEVEL_SPREAD             = 3
+
+   PROGRESSION_SPAWN_CLUSTERS   = 1024
+   PROGRESSION_SPAWN_UNIFORMS   = 4096
 
    HORIZON                 = 8192
+
 
 class Default(Medium, AllGameSystems): pass

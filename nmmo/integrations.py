@@ -1,5 +1,6 @@
 from pdb import set_trace as T
 
+import nmmo
 from nmmo import Env
 
 def rllib_env_cls():
@@ -38,7 +39,7 @@ class SB3Env(Env):
     def __init__(self, config):
         config.EMULATE_FLAT_OBS      = True
         config.EMULATE_FLAT_ATN      = True
-        config.EMULATE_CONST_NENT    = True
+        config.EMULATE_CONST_PLAYER_N = True
         config.EMULATE_CONST_HORIZON = True
 
         super().__init__(config)
@@ -50,7 +51,10 @@ class SB3Env(Env):
 
         if self.realm.tick >= self.config.HORIZON or len(self.realm.players) == 0:
             # Cheat logs into infos
-            infos[1]['logs'] = self.terminal()['Stats']
+            stats = self.terminal()
+            stats = {**stats['Env'], **stats['Player'], **stats['Milestone'], **stats['Event']}
+
+            infos[1]['logs'] = stats
 
         return obs, rewards, dones, infos 
 
@@ -96,7 +100,7 @@ def cleanrl_vec_envs(config_classes, verbose=True):
             env.black_death = True #We provide our own black_death emulation
 
             env = ss.concat_vec_envs_v1(env,
-                    config.NUM_ENVS // config.NENT,
+                    config.NUM_ENVS // config.PLAYER_N,
                     config.NUM_CPUS,
                     base_class='gym')
 
@@ -127,14 +131,21 @@ def cleanrl_vec_envs(config_classes, verbose=True):
             config    = cls()
             dummy_env = CleanRLEnv(config)
 
-        envs = make_env_fn(cls)
+        #neural = [e == nmmo.Agent for e in cls.PLAYERS]
+        #n_neural = sum(neural) / len(neural) * config.NUM_ENVS
+        #assert int(n_neural) == n_neural, f'{sum(neural)} neural agents and {cls.PLAYER_N} classes'
+        #n_neural = int(n_neural)
+        
+        envs = make_env_fn(cls)#, n_neural)
         all_envs.append(envs)
 
         # TODO: Find a cleaner way to specify env scale that enables multiple envs per CPU
         # without having to pass multiple configs
         num_cpus    += cls.NUM_CPUS
         num_envs    += cls.NUM_CPUS
-        num_agents  += cls.NUM_CPUS * cls.NENT
+        num_agents  += cls.NUM_CPUS * cls.PLAYER_N
+
+
 
     envs = ss.vector.ProcConcatVec(all_envs,
             dummy_env.observation_space(1),
