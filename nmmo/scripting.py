@@ -12,6 +12,8 @@ class Observation:
       self.obs    = obs
       self.delta  = config.PLAYER_VISION_RADIUS
       self.tiles  = self.obs['Tile']['Continuous']
+      self.agents = self.obs['Entity']['Continuous']
+      self.mask   = self.obs['Entity']['Mask']
 
       n = int(self.obs['Entity']['N'])
       self.agents  = self.obs['Entity']['Continuous'][:n]

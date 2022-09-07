@@ -97,6 +97,7 @@ class Serialized(metaclass=utils.IterableNameComparable):
 
       @staticmethod
       def N(config):
+         return config.WINDOW**2
          return config.PLAYER_N_OBS
 
       class Self(Discrete):

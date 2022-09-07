@@ -68,12 +68,10 @@ def pack_atn_space(config):
    return flat_actions
 
 def pack_obs_space(observation):
-   n = 0                                                                   
-   #for entity, obs in observation.items():                                 
-   for entity in observation:                                 
+   n = 0
+   for entity in observation:
       obs = observation[entity]
-      #for attr_name, attr_box in obs.items():                              
-      for attr_name in obs:                              
+      for attr_name in obs:
          attr_box = obs[attr_name]
          n += np.prod(observation[entity][attr_name].shape)                
                                                                            
@@ -89,7 +87,7 @@ def batch_obs(config, obs):
             continue
 
         batched[entity_name] = {}
-        for dtype in 'Continuous Discrete N'.split():
+        for dtype in 'Continuous Discrete'.split():
             attr_obs = [obs[k][entity_name][dtype] for k in obs]
             batched[entity_name][dtype] = np.stack(attr_obs, 0)
 
@@ -99,7 +97,6 @@ def pack_obs(obs):
     packed = {}
     for key in obs:
         ary = []
-        obs[key].items()
         for ent_name, ent_attrs in obs[key].items():
             for attr_name, attr in ent_attrs.items():
                 ary.append(attr.ravel())
@@ -132,8 +129,8 @@ def unpack_obs(config, packed_obs):
         obs[entity_name]['Discrete'] = packed_obs[:, idx: idx + inc].reshape(batch, n_entity, n_discrete)
         idx += inc
 
-        inc = 1
-        obs[entity_name]['N'] = packed_obs[:, idx: idx + inc].reshape(batch, 1)
+        inc = n_entity
+        obs[entity_name]['Mask'] = packed_obs[:, idx: idx + inc].reshape(batch, n_entity)
         idx += inc
 
     return obs

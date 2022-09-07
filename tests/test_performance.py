@@ -17,6 +17,7 @@ def create_config(base, *systems):
 
     conf.TERRAIN_TRAIN_MAPS = 1
     conf.TERRAIN_EVAL_MAPS  = 1
+    conf.IMMORTAL = True
 
     return conf
 

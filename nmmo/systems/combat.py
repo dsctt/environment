@@ -98,6 +98,7 @@ def attack(realm, player, target, skillFn):
 
     return damage
 
+
 def danger(config, pos, full=False):
    border = config.MAP_BORDER
    center = config.MAP_CENTER

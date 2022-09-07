@@ -22,6 +22,7 @@ class DataType:
 class Index:
    '''Lookup index of attribute names'''
    def __init__(self, prealloc):
+      # Key 0 is reserved as padding
       self.free  = {idx for idx in range(1, prealloc)}
       self.index = {}
       self.back  = {}
@@ -90,7 +91,10 @@ class ContinuousTable:
 
    def get(self, rows, pad=None):
       data = self.data[rows]
-      data[rows==0] = 0
+
+      # This call is expensive
+      # Padding index 0 should make this redundant
+      # data[rows==0] = 0
 
       if pad is not None:
          data = np.pad(data, ((0, pad-len(data)), (0, 0)))
@@ -241,6 +245,24 @@ class Dataframe:
              continue
          self.data[objKey] = GridTables(config, obj, pad=obj.N(config))
 
+      # Preallocate index buffers
+      radius = config.NSTIM
+      self.N = int(config.WINDOW ** 2)
+      cent = self.N // 2
+
+      rr, cc = np.meshgrid(np.arange(-radius, radius+1), np.arange(-radius, radius+1))
+      rr, cc = rr.ravel(), cc.ravel()
+      rr = np.repeat(rr[None, :], config.NENT, axis=0)
+      cc = np.repeat(cc[None, :], config.NENT, axis=0)
+      self.tile_grid = (rr, cc)
+
+      rr, cc = np.meshgrid(np.arange(-radius, radius+1), np.arange(-radius, radius+1))
+      rr, cc = rr.ravel(), cc.ravel()
+      rr[0], rr[cent] = rr[cent], rr[0]
+      cc[0], cc[cent] = cc[cent], cc[0]
+      rr = np.repeat(rr[None, :], config.NENT, axis=0)
+      cc = np.repeat(cc[None, :], config.NENT, axis=0)
+      self.player_grid = (rr, cc)
       self.realm = realm
 
    def update(self, node, val):
@@ -255,25 +277,41 @@ class Dataframe:
    def move(self, obj, key, pos, nxt):
       self.data[obj.__name__].move(key, pos, nxt)
 
-   def get(self, ent):
-      stim = {}
-     
-      stim['Entity'], ents = self.data['Entity'].get(ent, entity=True)
-      stim['Entity']['N']  = np.array([len(ents)], dtype=np.int32)
+   def get(self, players):
+      obs, action_lookup = {}, {}
 
-      ent.targets          = ents
-      stim['Tile']         = self.data['Tile'].get(ent)
-      stim['Tile']['N']    = np.array([self.config.PLAYER_VISION_DIAMETER], dtype=np.int32)
+      n = len(players)
+      r_offsets = np.zeros((n, 1), dtype=int)
+      c_offsets = np.zeros((n, 1), dtype=int)
+      for idx, (playerID, player) in enumerate(players.items()):
+          obs[playerID] = {}
+          action_lookup[playerID] = {}
+          
+          r, c = player.pos
+          r_offsets[idx] = r
+          c_offsets[idx] = c
 
-      #Current must have the same pad
-      if self.config.ITEM_SYSTEM_ENABLED:
-         items                = ent.inventory.dataframeKeys
-         stim['Item']         = self.data['Item'].getFlat(items)
-         stim['Item']['N']    = np.array([len(items)], dtype=np.int32)
+      for key, (rr, cc) in (('Entity', self.player_grid), ('Tile', self.tile_grid)):
+          data = self.data[key]
 
-      if self.config.EXCHANGE_SYSTEM_ENABLED:
-         market               = self.realm.exchange.dataframeKeys
-         stim['Market']       = self.data['Item'].getFlat(market)
-         stim['Market']['N']  = np.array([len(market)], dtype=np.int32)
+          #TODO: Optimize this line with flat dataframes + np.take or ranges
+          try:
+            dat = data.grid.data[rr[:n] + r_offsets, cc[:n] + c_offsets]#.ravel()
+          except:
+            T()
+          key_mask = dat != 0
 
-      return stim
+          # TODO: Optimize these two lines with some sort of jit... it's a dict lookup
+          continuous = data.continuous.get(dat, None)
+          discrete = data.discrete.get(dat, None)
+
+          for idx, (playerID, _) in enumerate(players.items()):
+              obs[playerID][key] = {
+                      'Continuous': continuous[idx],
+                      'Discrete': discrete[idx],
+                      'Mask': key_mask[idx]}
+
+              action_lookup[playerID][key] = dat[idx]
+
+      return obs, action_lookup
+

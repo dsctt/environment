@@ -12,9 +12,11 @@ from nmmo.entity import entity
 
 class Player(entity.Entity):
    def __init__(self, realm, pos, agent, color, pop):
-      super().__init__(realm, pos, agent.iden, agent.policy, color, pop)
-      self.agent  = agent
-      self.pop    = pop
+      super().__init__(realm, pos, agent.iden, agent.name, color, pop)
+
+      self.agent    = agent
+      self.pop      = pop
+      self.immortal = realm.config.IMMORTAL
 
       # Scripted hooks
       self.target = None
@@ -63,6 +65,9 @@ class Player(entity.Entity):
       self.skills.applyDamage(dmg, style)
       
    def receiveDamage(self, source, dmg):
+      if self.immortal:
+         return
+
       if super().receiveDamage(source, dmg):
           return True
      
