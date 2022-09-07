@@ -199,7 +199,8 @@ class GridTables:
 
       rows = [self.index.get(key) for key in keys[:self.pad]]
       values = {'Continuous': self.continuous.get(rows, self.pad),
-                'Discrete':   self.discrete.get(rows, self.pad)}
+                'Discrete':   self.discrete.get(rows, self.pad),
+                'Mask': len(rows)*[True] + (self.pad - len(rows))*[False]}
       return values
 
    def update(self, obj, val):
@@ -246,22 +247,25 @@ class Dataframe:
          self.data[objKey] = GridTables(config, obj, pad=obj.N(config))
 
       # Preallocate index buffers
-      radius = config.NSTIM
-      self.N = int(config.WINDOW ** 2)
+      radius = config.PLAYER_VISION_RADIUS
+      self.N = int(config.PLAYER_VISION_DIAMETER ** 2)
       cent = self.N // 2
 
       rr, cc = np.meshgrid(np.arange(-radius, radius+1), np.arange(-radius, radius+1))
       rr, cc = rr.ravel(), cc.ravel()
-      rr = np.repeat(rr[None, :], config.NENT, axis=0)
-      cc = np.repeat(cc[None, :], config.NENT, axis=0)
+      rr = np.repeat(rr[None, :], config.PLAYER_N, axis=0)
+      cc = np.repeat(cc[None, :], config.PLAYER_N, axis=0)
       self.tile_grid = (rr, cc)
 
+      '''
       rr, cc = np.meshgrid(np.arange(-radius, radius+1), np.arange(-radius, radius+1))
       rr, cc = rr.ravel(), cc.ravel()
       rr[0], rr[cent] = rr[cent], rr[0]
       cc[0], cc[cent] = cc[cent], cc[0]
-      rr = np.repeat(rr[None, :], config.NENT, axis=0)
-      cc = np.repeat(cc[None, :], config.NENT, axis=0)
+      rr = np.repeat(rr[None, :], config.PLAYER_N, axis=0)
+      cc = np.repeat(cc[None, :], config.PLAYER_N, axis=0)
+      '''
+
       self.player_grid = (rr, cc)
       self.realm = realm
 
@@ -313,5 +317,17 @@ class Dataframe:
 
               action_lookup[playerID][key] = dat[idx]
 
-      return obs, action_lookup
+      if self.config.EXCHANGE_SYSTEM_ENABLED:
+         market     = self.realm.exchange.dataframeKeys
+         market_obs = self.data['Item'].getFlat(market)
 
+      for playerID, player in players.items():
+          if self.config.ITEM_SYSTEM_ENABLED:
+             items = player.inventory.dataframeKeys
+             obs[playerID]['Item'] = self.data['Item'].getFlat(items)
+
+          if self.config.EXCHANGE_SYSTEM_ENABLED:
+             obs[playerID]['Market'] = market_obs
+
+
+      return obs, action_lookup

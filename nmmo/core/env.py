@@ -290,8 +290,7 @@ class Env(ParallelEnv):
       # Set up logs
       self.register_logs()
  
-      if step:
-         self.obs, _, _, _ = self.step({})
+      self.obs, _, _, _ = self.step({})
 
       return self.obs
 
@@ -300,7 +299,7 @@ class Env(ParallelEnv):
        pass
 
    def _preprocess_obs(self, obs, rewards, dones, infos):
-      if self.config.EMULATE_CONST_NENT:
+      if self.config.EMULATE_CONST_PLAYER_N:
          emulation.pad_const_nent(self.config, self.dummy_ob, obs, rewards, dones, infos)
 
       if self.config.EMULATE_FLAT_OBS:
@@ -456,13 +455,6 @@ class Env(ParallelEnv):
                   targ = self.action_lookup[entID]['Entity'][val]
                   print(list(self.realm.players.keys()))
                   self.actions[entID][atn][arg] = self.realm.entity(targ)
-               else:
-                  assert False
-                  if val >= len(ent.targets):
-                      drop = True
-                      continue
-                  targ = ent.targets[val]
-                  self.actions[entID][atn][arg] = self.realm.entity(targ)
                elif atn in (nmmo.action.Sell, nmmo.action.Use, nmmo.action.Give) and arg == nmmo.action.Item:
                   if val >= len(ent.inventory.dataframeKeys):
                       drop = True
@@ -480,6 +472,8 @@ class Env(ParallelEnv):
                   self.actions[entID][atn][arg] = itm
                elif __debug__: #Fix -inf in classifier and assert err on bad atns
                   assert False, f'Argument {arg} invalid for action {atn}'
+               else:
+                  assert False
 
             # Cull actions with bad args
             if drop and atn in self.actions[entID]:
