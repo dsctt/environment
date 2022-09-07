@@ -84,7 +84,7 @@ def batch_obs(obs):
     batched = {}
     for (entity_name,), entity in nmmo.io.stimulus.Serialized:
         batched[entity_name] = {}
-        for dtype in 'Continuous Discrete N'.split():
+        for dtype in 'Continuous Discrete'.split():
             attr_obs = [obs[k][entity_name][dtype] for k in obs]
             batched[entity_name][dtype] = np.stack(attr_obs, 0)
 

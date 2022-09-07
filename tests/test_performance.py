@@ -68,7 +68,6 @@ def test_fps_small_all_1_pop(benchmark):
 def test_fps_small_rcp_100_pop(benchmark):
     benchmark_config(benchmark, Small, 100, Resource, Combat, Progression) 
 
-'''
 def test_fps_small_all_100_pop(benchmark):
     benchmark_config(benchmark, Small, 100, AllGameSystems)
 
@@ -100,4 +99,3 @@ def test_fps_large_all_100_pop(benchmark):
 
 def test_fps_large_all_1000_pop(benchmark):
     benchmark_env(benchmark, LargeMapsAll, 1000)
-'''
