@@ -14,7 +14,6 @@ extra = {
     'cleanrl': [
         'wandb==0.12.9',
         'supersuit==3.3.5',
-        'pettingzoo==1.15.0',
         'gym==0.23.0',
         'tensorboard',
         'torch',
@@ -44,7 +43,7 @@ setup(
         'imageio==2.8.0',
         'tqdm==4.61.1',
         'lz4==4.0.0',
-        'pettingzoo',
+        'pettingzoo==1.15.0',
     ],
     extras_require=extra,
     python_requires=">=3.7",

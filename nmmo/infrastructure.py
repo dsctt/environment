@@ -200,7 +200,7 @@ class GridTables:
       rows = [self.index.get(key) for key in keys[:self.pad]]
       values = {'Continuous': self.continuous.get(rows, self.pad),
                 'Discrete':   self.discrete.get(rows, self.pad),
-                'Mask': len(rows)*[True] + (self.pad - len(rows))*[False]}
+                'Mask': np.array(len(rows)*[True] + (self.pad - len(rows))*[False])}
       return values
 
    def update(self, obj, val):
@@ -315,7 +315,8 @@ class Dataframe:
                       'Discrete': discrete[idx],
                       'Mask': key_mask[idx]}
 
-              action_lookup[playerID][key] = dat[idx]
+              #Reverse lookup index in dataframe to convert to entID
+              action_lookup[playerID][key] = [data.index.teg(e) if e != 0 else 0 for e in dat[idx]]
 
       if self.config.EXCHANGE_SYSTEM_ENABLED:
          market     = self.realm.exchange.dataframeKeys
