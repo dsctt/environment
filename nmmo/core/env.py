@@ -129,19 +129,8 @@ class Env(ParallelEnv):
 
       self.has_reset  = False
 
-      # Populate dummy ob
-      self.dummy_ob   = None
-      self.observation_space(0)
-
       if self.config.SAVE_REPLAY:
          self.replay = Replay(config)
-
-      if config.EMULATE_CONST_PLAYER_N:
-         self.possible_agents = [i for i in range(1, config.PLAYER_N + 1)]
-
-      # Flat index actions
-      if config.EMULATE_FLAT_ATN:
-         self.flat_actions = emulation.pack_atn_space(config)
 
    @functools.lru_cache(maxsize=None)
    def observation_space(self, agent: int):
@@ -199,19 +188,7 @@ class Env(ParallelEnv):
 
          observation[name] = gym.spaces.Dict(observation[name])
 
-      observation   = gym.spaces.Dict(observation)
-
-      if not self.dummy_ob:
-         self.dummy_ob = observation.sample()
-         for ent_key, ent_val in self.dummy_ob.items():
-             for attr_key, attr_val in ent_val.items():
-                 self.dummy_ob[ent_key][attr_key] *= 0                
-
-
-      if not self.config.EMULATE_FLAT_OBS:
-         return observation
-
-      return emulation.pack_obs_space(observation)
+      return gym.spaces.Dict(observation)
 
    @functools.lru_cache(maxsize=None)
    def action_space(self, agent):
@@ -226,15 +203,6 @@ class Env(ParallelEnv):
          of discrete-valued arguments. These consist of both fixed, k-way
          choices (such as movement direction) and selections from the
          observation space (such as targeting)'''
-
-      if self.config.EMULATE_FLAT_ATN:
-         lens = []
-         for atn in nmmo.Action.edges(self.config):
-             for arg in atn.edges:
-                 lens.append(arg.N(self.config))
-         return gym.spaces.MultiDiscrete(lens)
-         #return gym.spaces.Discrete(len(self.flat_actions))
-
       actions = {}
       for atn in sorted(nmmo.Action.edges(self.config)):
          actions[atn] = {}
@@ -423,16 +391,6 @@ class Env(ParallelEnv):
          if not ent.alive:
             continue
 
-         if self.config.EMULATE_FLAT_ATN:
-            ent_action = {}
-            idx = 0
-            for atn in nmmo.Action.edges(self.config):
-                ent_action[atn] = {}
-                for arg in atn.edges:
-                    ent_action[atn][arg] = actions[entID][idx]
-                    idx += 1
-            actions[entID] = ent_action
-
          self.actions[entID] = {}
          for atn, args in actions[entID].items():
             self.actions[entID][atn] = {}
@@ -501,25 +459,9 @@ class Env(ParallelEnv):
             continue
          rewards[ent.entID], infos[ent.entID] = self.reward(ent)
 
-         dones[ent.entID] = False #TODO: Is this correct behavior?
-         if not self.config.EMULATE_CONST_HORIZON and not self.config.RESPAWN:
-            dones[ent.entID] = True
+         dones[ent.entID] = not self.config.RESPAWN #TODO: Is this correct behavior?
 
-         obs[ent.entID]     = self.dummy_ob
-
-      if self.config.EMULATE_CONST_PLAYER_N:
-         emulation.pad_const_nent(self.config, self.dummy_ob, obs, rewards, dones, infos)
-
-      if self.config.EMULATE_FLAT_OBS:
-         obs = nmmo.emulation.pack_obs(obs)
-
-      if self.config.EMULATE_CONST_HORIZON:
-         assert self.realm.tick <= self.config.HORIZON
-         if self.realm.tick == self.config.HORIZON:
-            emulation.const_horizon(dones)
-
-      if not len(self.realm.players.items()):
-         emulation.const_horizon(dones)
+         #obs[ent.entID]     = self.dummy_ob
 
       #Pettingzoo API
       self.agents = list(self.realm.players.keys())
