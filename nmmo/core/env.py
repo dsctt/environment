@@ -132,6 +132,8 @@ class Env(ParallelEnv):
       if self.config.SAVE_REPLAY:
          self.replay = Replay(config)
 
+      self.possible_agents = [_ for _ in range(1, config.PLAYER_N + 1)]
+
    @functools.lru_cache(maxsize=None)
    def observation_space(self, agent: int):
       '''Neural MMO Observation Space
