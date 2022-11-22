@@ -4,7 +4,7 @@ from typing import Dict, List
 from nmmo.core.realm import Realm
 
 class Task():
-  def completed(self, realm: Realm):
+  def completed(self, realm: Realm) -> bool:
     raise NotImplementedError
 
   def to_string(self) -> str:
@@ -33,7 +33,7 @@ class TargetTask(Task):
 ###############################################################
 
 class TeamHelper(object):
-  def __init__(self, agents: list(int), num_teams: int) -> None:
+  def __init__(self, agents: List[int], num_teams: int) -> None:
     assert len(agents) % num_teams == 0
     self._teams = np.array_split(agents, num_teams)
     self._agent_to_team = {a: t for t in self._teams for a in t}
@@ -100,27 +100,27 @@ class Defend(TargetTask):
 
 ###############################################################
 
-class TaskParser():
-  def __init__(self) -> None:
-    self.parsers = dict()
+# class TaskParser():
+#   def __init__(self) -> None:
+#     self.parsers = dict()
 
-    self.register(InflictDamage)
-    self.register(Defend)
+#     self.register(InflictDamage)
+#     self.register(Defend)
 
-    self.register(AND)
+#     self.register(AND)
     
-    self.register(Team)
+#     self.register(Team)
   
-  def register(self, task_class):
-    self.parsers[task_class.__name__] = task_class
+#   def register(self, task_class):
+#     self.parsers[task_class.__name__] = task_class
 
-  def parse(task_string: str):
-    assert task_string.startswith("(") and task_string.endswith(")")
-    parts = task_string[1:-1].split(" ")
+#   def parse(task_string: str):
+#     assert task_string.startswith("(") and task_string.endswith(")")
+#     parts = task_string[1:-1].split(" ")
 
 
-AND(InflictDamage(Team.LEFT, 1, 10), Defend(Team.SELF.Member(0)))
+# AND(InflictDamage(Team.LEFT, 1, 10), Defend(Team.SELF.Member(0)))
     
-"""
-  (AND (InflictDamage Team.LEFT MELEE 5) (Defend Team.SELF.1))
-"""
+# """
+#   (AND (InflictDamage Team.LEFT MELEE 5) (Defend Team.SELF.1))
+# """
