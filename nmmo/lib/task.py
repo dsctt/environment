@@ -23,6 +23,10 @@ class TaskTarget(object):
   def to_string(self) -> str:
     return self._name
 
+  def member(self, member):
+    assert member < len(self._agents)
+    return TaskTarget(f"{self.to_string()}.{member}", [self._agents[member]])
+
 class TargetTask(Task):
   def __init__(self, target: TaskTarget) -> None:
     self._target = target
@@ -35,33 +39,54 @@ class TargetTask(Task):
 class TeamHelper(object):
   def __init__(self, agents: List[int], num_teams: int) -> None:
     assert len(agents) % num_teams == 0
-    self._teams = np.array_split(agents, num_teams)
-    self._agent_to_team = {a: t for t in self._teams for a in t}
+    team_size = len(agents) // num_teams
+    self._teams = [
+      list(agents[i * team_size : (i+1)*team_size]) 
+      for i in range(num_teams)
+    ]
+    self._agent_to_team = {a: tid for tid, t in enumerate(self._teams) for a in t}
 
+  def own_team(self, agent_id: int) -> TaskTarget:
+    return TaskTarget("Team.Self", self._teams[self._agent_to_team[agent_id]])
+
+  def left_team(self, agent_id: int) -> TaskTarget:
+    return TaskTarget("Team.Left", self._teams[
+      (self._agent_to_team[agent_id] -1) % len(self._teams)
+    ])
+
+  def right_team(self, agent_id: int) -> TaskTarget:
+    return TaskTarget("Team.Right", self._teams[
+      (self._agent_to_team[agent_id] + 1) % len(self._teams)
+    ])
+
+  def all(self) -> TaskTarget:
+    return TaskTarget("All", list(self._agent_to_team.keys()))
 
 ###############################################################
 
 class AND(Task):
   def __init__(self, *tasks: Task) -> None:
     super().__init__()
+    assert len(tasks)
     self._tasks = tasks
 
   def completed(self, realm: Realm) -> bool:
     return all([t.completed(realm) for t in self._tasks])
 
   def to_string(self) -> str:
-    return "(AND " + [t.to_string() for t in self._tasks] + ")"
+    return "(AND " + " ".join([t.to_string() for t in self._tasks]) + ")"
 
 class OR(Task):
   def __init__(self, *tasks: Task) -> None:
     super().__init__()
+    assert len(tasks)
     self._tasks = tasks
 
   def completed(self, realm: Realm) -> bool:
     return any([t.completed(realm) for t in self._tasks])
 
   def to_string(self) -> str:
-    return "(OR " + [t.to_string() for t in self._tasks] + ")"
+    return "(OR " + " ".join([t.to_string() for t in self._tasks]) + ")"
 
 class NOT(Task):
   def __init__(self, task: Task) -> None:
@@ -98,29 +123,3 @@ class Defend(TargetTask):
       realm.players[a].alive for a in self._target.agents()
     ])
 
-###############################################################
-
-# class TaskParser():
-#   def __init__(self) -> None:
-#     self.parsers = dict()
-
-#     self.register(InflictDamage)
-#     self.register(Defend)
-
-#     self.register(AND)
-    
-#     self.register(Team)
-  
-#   def register(self, task_class):
-#     self.parsers[task_class.__name__] = task_class
-
-#   def parse(task_string: str):
-#     assert task_string.startswith("(") and task_string.endswith(")")
-#     parts = task_string[1:-1].split(" ")
-
-
-# AND(InflictDamage(Team.LEFT, 1, 10), Defend(Team.SELF.Member(0)))
-    
-# """
-#   (AND (InflictDamage Team.LEFT MELEE 5) (Defend Team.SELF.1))
-# """
