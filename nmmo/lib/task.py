@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Dict, List, Tuple
+from typing import Dict, List
 import json
 import random
 
@@ -36,8 +36,8 @@ class TargetTask(Task):
   def __init__(self, target: TaskTarget) -> None:
     self._target = target
 
-  def description(self) -> Tuple:
-    return (super().description(), self._target.description())
+  def description(self) -> List:
+    return [super().description(), self._target.description()]
 
   def completed(self, realm: Realm) -> bool:
     raise NotImplementedError
@@ -122,7 +122,7 @@ class InflictDamage(TargetTask):
     ]) >= self._quantity
 
   def description(self) -> List:
-    return [super().description(), self._damage_type, self._quantity]
+    return super().description() + [self._damage_type, self._quantity]
 
 class Defend(TargetTask):
   def __init__(self, target, num_steps) -> None:
@@ -136,7 +136,7 @@ class Defend(TargetTask):
     ])
 
   def description(self) -> List:
-    return [super().description(), self._num_steps]
+    return super().description() + [self._num_steps]
 
 ###############################################################
 
