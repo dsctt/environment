@@ -19,8 +19,8 @@ class TestTask(task.TargetTask):
   def completed(self, realm: Realm) -> bool:
     return False
   
-  def to_string(self) -> str:
-    return f"(TestTask {self._target.to_string()} {self._param1} {self._param2})"
+  def description(self):
+    return [super().description(), self._param1, self._param2]
 
 class MockRealm(Realm):
   def __init__(self):
@@ -35,9 +35,12 @@ class TestTasks(unittest.TestCase):
       self.assertTrue(task.OR(Success(), Failure(), Success()).completed(realm))
       self.assertTrue(task.AND(Success(), task.NOT(Failure()), Success()).completed(realm))
 
-    def test_strings(self):
-      self.assertEqual(task.AND(Success(), task.NOT(task.OR(Success(), Failure()))).to_string(),
-      "(AND Success (NOT (OR Success Failure)))"
+    def test_descriptions(self):
+      self.assertEqual(
+        task.AND(Success(), 
+        task.NOT(task.OR(Success(), 
+                         TestTask(task.TaskTarget("t1", []), 123, 3.45)))).description(),
+        ['AND', 'Success', ['NOT', ['OR', 'Success', [('TestTask', 't1'), 123, 3.45]]]]
       )
 
     def test_team_helper(self):
@@ -57,7 +60,7 @@ class TestTasks(unittest.TestCase):
     def test_task_target(self):
       tt = task.TaskTarget("Foo", [1, 2, 8, 9])
 
-      self.assertEqual(tt.member(2).to_string(), "Foo.2")
+      self.assertEqual(tt.member(2).description(), "Foo.2")
       self.assertEqual(tt.member(2).agents(), [8])
 
     def test_sample(self):

@@ -1,5 +1,6 @@
 import numpy as np
-from typing import Dict, List
+from typing import Dict, List, Tuple
+import json
 import random
 
 from nmmo.core.realm import Realm
@@ -8,8 +9,11 @@ class Task():
   def completed(self, realm: Realm) -> bool:
     raise NotImplementedError
 
-  def to_string(self) -> str:
+  def description(self) -> List:
     return self.__class__.__name__
+
+  def to_string(self) -> str:
+    return json.dumps(self.description())
 
 ###############################################################
 
@@ -21,19 +25,19 @@ class TaskTarget(object):
   def agents(self) ->  List[int]:
     return self._agents
 
-  def to_string(self) -> str:
+  def description(self) -> List:
     return self._name
 
   def member(self, member):
     assert member < len(self._agents)
-    return TaskTarget(f"{self.to_string()}.{member}", [self._agents[member]])
+    return TaskTarget(f"{self.description()}.{member}", [self._agents[member]])
 
 class TargetTask(Task):
   def __init__(self, target: TaskTarget) -> None:
     self._target = target
 
-  def to_string(self) -> str:
-    return super().to_string() + " " + self._target.to_string()
+  def description(self) -> Tuple:
+    return (super().description(), self._target.description())
 
   def completed(self, realm: Realm) -> bool:
     raise NotImplementedError
@@ -77,8 +81,8 @@ class AND(Task):
   def completed(self, realm: Realm) -> bool:
     return all([t.completed(realm) for t in self._tasks])
 
-  def to_string(self) -> str:
-    return "(AND " + " ".join([t.to_string() for t in self._tasks]) + ")"
+  def description(self) -> List:
+    return ["AND"] + [t.description() for t in self._tasks]
 
 class OR(Task):
   def __init__(self, *tasks: Task) -> None:
@@ -89,8 +93,8 @@ class OR(Task):
   def completed(self, realm: Realm) -> bool:
     return any([t.completed(realm) for t in self._tasks])
 
-  def to_string(self) -> str:
-    return "(OR " + " ".join([t.to_string() for t in self._tasks]) + ")"
+  def description(self) -> List:
+    return ["OR"] + [t.description() for t in self._tasks]
 
 class NOT(Task):
   def __init__(self, task: Task) -> None:
@@ -100,8 +104,8 @@ class NOT(Task):
   def completed(self, realm: Realm) -> bool:
     return not self._task.completed(realm)
 
-  def to_string(self) -> str:
-    return "(NOT " + self._task.to_string() + ")"
+  def description(self) -> List:
+    return ["NOT", self._task.description()] 
 
 ###############################################################
 
@@ -117,8 +121,8 @@ class InflictDamage(TargetTask):
       realm.players[a].history.damage_inflicted for a in self._target.agents()
     ]) >= self._quantity
 
-  def to_string(self) -> str:
-    return " ".join([super().to_string(), str(self._damage_type), str(self._quantity)])
+  def description(self) -> List:
+    return [super().description(), self._damage_type, self._quantity]
 
 class Defend(TargetTask):
   def __init__(self, target, num_steps) -> None:
@@ -131,8 +135,8 @@ class Defend(TargetTask):
       realm.players[a].alive for a in self._target.agents()
     ])
 
-  def to_string(self) -> str:
-    return " ".join([super().to_string(), str(self._num_steps)])
+  def description(self) -> List:
+    return [super().description(), self._num_steps]
 
 ###############################################################
 
@@ -169,12 +173,12 @@ class TaskSampler(object):
       if len(tasks) == 1:
         clauses.append(tasks[0])
       else:
-        clauses.append(OR(*tasks))
+        clauses.append(AND(*tasks))
 
     if len(clauses) == 1:
       return clauses[0]
 
-    return AND(*clauses)
+    return OR(*clauses)
 
   @staticmethod
   def create_default_task_sampler(team_helper: TeamHelper, agent_id: int):
