@@ -2,11 +2,8 @@ import numpy as np
 from typing import Dict, List
 import json
 import random
-
-from nmmo.core.realm import Realm
-
 class Task():
-  def completed(self, realm: Realm) -> bool:
+  def completed(self, realm, entity) -> bool:
     raise NotImplementedError
 
   def description(self) -> List:
@@ -39,7 +36,7 @@ class TargetTask(Task):
   def description(self) -> List:
     return [super().description(), self._target.description()]
 
-  def completed(self, realm: Realm) -> bool:
+  def completed(self, realm, entity) -> bool:
     raise NotImplementedError
 
 ###############################################################
@@ -78,8 +75,8 @@ class AND(Task):
     assert len(tasks)
     self._tasks = tasks
 
-  def completed(self, realm: Realm) -> bool:
-    return all([t.completed(realm) for t in self._tasks])
+  def completed(self, realm, entity) -> bool:
+    return all([t.completed(realm, entity) for t in self._tasks])
 
   def description(self) -> List:
     return ["AND"] + [t.description() for t in self._tasks]
@@ -90,8 +87,8 @@ class OR(Task):
     assert len(tasks)
     self._tasks = tasks
 
-  def completed(self, realm: Realm) -> bool:
-    return any([t.completed(realm) for t in self._tasks])
+  def completed(self, realm, entity) -> bool:
+    return any([t.completed(realm, entity) for t in self._tasks])
 
   def description(self) -> List:
     return ["OR"] + [t.description() for t in self._tasks]
@@ -101,8 +98,8 @@ class NOT(Task):
     super().__init__()
     self._task = task
 
-  def completed(self, realm: Realm) -> bool:
-    return not self._task.completed(realm)
+  def completed(self, realm, entity) -> bool:
+    return not self._task.completed(realm, entity)
 
   def description(self) -> List:
     return ["NOT", self._task.description()] 
@@ -115,7 +112,7 @@ class InflictDamage(TargetTask):
     self._damage_type = damage_type
     self._quantity = quantity
 
-  def completed(self, realm: Realm) -> bool:
+  def completed(self, realm, entity) -> bool:
     # TODO(daveey) damage_type is ignored, needs to be added to entity.history
     return sum([
       realm.players[a].history.damage_inflicted for a in self._target.agents()
@@ -129,7 +126,7 @@ class Defend(TargetTask):
     super().__init__(target)
     self._num_steps = num_steps
 
-  def completed(self, realm: Realm) -> bool:
+  def completed(self, realm, entity) -> bool:
     # TODO(daveey) need a way to specify time horizon
     return realm.tick >= self._num_steps and all([
       realm.players[a].alive for a in self._target.agents()

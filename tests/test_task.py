@@ -1,13 +1,15 @@
 import unittest
 import nmmo.lib.task as task
 from nmmo.core.realm import Realm
-
+from nmmo.entity.entity import Entity
+import nmmo
+import nmmo.systems.achievement as achievement
 class Success(task.Task):
-  def completed(self, realm: Realm) -> bool:
+  def completed(self, realm: Realm, entity: Entity) -> bool:
     return True
   
 class Failure(task.Task):
-  def completed(self, realm: Realm) -> bool:
+  def completed(self, realm: Realm, entity: Entity) -> bool:
     return False
   
 class TestTask(task.TargetTask):
@@ -16,7 +18,7 @@ class TestTask(task.TargetTask):
     self._param1 = param1
     self._param2 = param2
 
-  def completed(self, realm: Realm) -> bool:
+  def completed(self, realm: Realm, entity: Entity) -> bool:
     return False
   
   def description(self):
@@ -26,21 +28,26 @@ class MockRealm(Realm):
   def __init__(self):
     pass
 
+class MockEntity(Entity):
+  def __init__(self):
+    pass
+
 realm = MockRealm()
+entity = MockEntity
 
 class TestTasks(unittest.TestCase):
 
     def test_operators(self):
-      self.assertFalse(task.AND(Success(), Failure(), Success()).completed(realm))
-      self.assertTrue(task.OR(Success(), Failure(), Success()).completed(realm))
-      self.assertTrue(task.AND(Success(), task.NOT(Failure()), Success()).completed(realm))
+      self.assertFalse(task.AND(Success(), Failure(), Success()).completed(realm, entity))
+      self.assertTrue(task.OR(Success(), Failure(), Success()).completed(realm, entity))
+      self.assertTrue(task.AND(Success(), task.NOT(Failure()), Success()).completed(realm, entity))
 
     def test_descriptions(self):
       self.assertEqual(
         task.AND(Success(), 
         task.NOT(task.OR(Success(), 
                          TestTask(task.TaskTarget("t1", []), 123, 3.45)))).description(),
-        ['AND', 'Success', ['NOT', ['OR', 'Success', [('TestTask', 't1'), 123, 3.45]]]]
+        ['AND', 'Success', ['NOT', ['OR', 'Success', [['TestTask', 't1'], 123, 3.45]]]]
       )
 
     def test_team_helper(self):
@@ -81,6 +88,16 @@ class TestTasks(unittest.TestCase):
       sampler = task.TaskSampler.create_default_task_sampler(team_helper, 10)
 
       sampler.sample(max_clauses=5, max_clause_size=5, not_p=0.5)
+
+    def test_completed_tasks_in_info(self):
+      env = nmmo.Env()
+      env.config.TASKS = [
+        achievement.Achievement(Success(), 10),
+        achievement.Achievement(Failure(), 100)
+      ]
+
+      env.reset()
+      obs, rewards, dones, infos = env.step({})
 
 if __name__ == '__main__':
     unittest.main()
