@@ -82,6 +82,7 @@ class GodswordServerProtocol(WebSocketServerProtocol):
             packet['map']    = data['environment']
             packet['border'] = data['border']
             packet['size']   = data['size']
+            self.sent_environment=True
 
         if 'overlay' in data:
            packet['overlay'] = data['overlay']
