@@ -1,6 +1,7 @@
 from pdb import set_trace as T
 import numpy as np
 
+from ordered_set import OrderedSet
 import inspect
 import logging
 
@@ -97,7 +98,7 @@ class Inventory:
       self.gold             = Item.Gold(realm)
 
       self._item_stacks     = {self.gold.signature: self.gold}
-      self._item_references = {self.gold}
+      self._item_references = OrderedSet([self.gold])
 
    @property
    def space(self):
@@ -124,12 +125,10 @@ class Inventory:
       assert isinstance(item, Item.Item), f'{item} received is not an Item instance'
       assert item not in self._item_references, f'{item} object received already in inventory'
       assert not item.equipped.val, f'Received equipped item {item}'
-      assert self.space, f'Out of space for {item}'
+      #assert self.space, f'Out of space for {item}'
       assert item.quantity.val, f'Received empty item {item}'
 
       config = self.config
-      if config.LOG_MILESTONES and self.realm.quill.milestone.log_max(f'Receive_{item.__class__.__name__}', item.level.val) and config.LOG_VERBOSE:
-          logging.info(f'INVENTORY: Received level {item.level.val} {item.__class__.__name__}')
 
       if isinstance(item, Item.Stack):
           signature = item.signature
@@ -142,8 +141,17 @@ class Inventory:
                   logging.info(f'EXCHANGE: Total wealth {self.gold.quantity.val} gold')
               
               return
+          elif not self.space:
+              return
 
           self._item_stacks[signature] = item
+
+      if not self.space:
+          return
+
+      if config.LOG_MILESTONES and self.realm.quill.milestone.log_max(f'Receive_{item.__class__.__name__}', item.level.val) and config.LOG_VERBOSE:
+          logging.info(f'INVENTORY: Received level {item.level.val} {item.__class__.__name__}')
+
 
       self._item_references.add(item)
 

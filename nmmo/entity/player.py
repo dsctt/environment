@@ -79,9 +79,7 @@ class Player(entity.Entity):
               continue
 
           self.inventory.remove(item)
-
-          if source.inventory.space:
-              source.inventory.receive(item)
+          source.inventory.receive(item)
 
       if not super().receiveDamage(source, dmg):
          if source:

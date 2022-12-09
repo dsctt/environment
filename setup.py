@@ -43,6 +43,8 @@ setup(
         'imageio==2.8.0',
         'tqdm==4.61.1',
         'lz4==4.0.0',
+        'h5py==3.7.0',
+        'ordered-set',
         'pettingzoo==1.15.0',
     ],
     extras_require=extra,

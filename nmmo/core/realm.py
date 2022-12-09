@@ -1,6 +1,7 @@
 from pdb import set_trace as T
 import numpy as np
 
+from ordered_set import OrderedSet
 from collections import defaultdict
 from collections.abc import Mapping
 from typing import Dict, Callable
@@ -11,6 +12,7 @@ from nmmo.systems.exchange import Exchange
 from nmmo.systems import combat
 from nmmo.entity.npc import NPC
 from nmmo.entity import Player
+from nmmo.systems.item import Item
 
 from nmmo.io.action import Action
 from nmmo.lib import colors, spawn, log
@@ -155,7 +157,7 @@ class PlayerManager(EntityGroup):
    def reset(self):
       super().reset()
       self.agents  = self.loader(self.config)
-      self.spawned = set()
+      self.spawned = OrderedSet()
 
    def spawnIndividual(self, r, c, idx):
       pop, agent = next(self.agents)
@@ -231,6 +233,7 @@ class Realm:
       Args:
          idx: Map index to load
       ''' 
+      Item.INSTANCE_ID = 0
       self.quill = log.Quill(self.config)
       self.map.reset(self, idx)
       self.players.reset()
@@ -289,7 +292,6 @@ class Realm:
          entID, (atn, args) = merged[priority][0]
          if atn in (nmmo.action.Buy, nmmo.action.Sell):
             merged[priority] = sorted(merged[priority], key=lambda x: x[0]) 
-
          for entID, (atn, args) in merged[priority]:
             ent = self.entity(entID)
             atn.call(self, ent, *args)
