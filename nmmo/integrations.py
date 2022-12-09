@@ -54,7 +54,8 @@ class SB3Env(Env):
             stats = self.terminal()
             stats = {**stats['Env'], **stats['Player'], **stats['Milestone'], **stats['Event']}
 
-            infos[1]['logs'] = stats
+            key = list(infos.keys())[0]
+            infos[key]['logs'] = stats
 
         return obs, rewards, dones, infos 
 

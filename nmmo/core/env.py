@@ -164,31 +164,20 @@ class Env(ParallelEnv):
                continuous += 1
 
          name = entity.__name__
-         observation[name] = {
+         observation[name] = gym.spaces.Dict({
                'Continuous': gym.spaces.Box(
                         low=-2**20, high=2**20,
                         shape=(rows, continuous),
                         dtype=DataType.CONTINUOUS),
-               'Discrete'  : gym.spaces.Box(
+               'Discrete': gym.spaces.Box(
                         low=0, high=4096,
                         shape=(rows, discrete),
-                        dtype=DataType.DISCRETE)}
-
-         #TODO: Find a way to automate this
-         if name == 'Entity':
-            observation['Entity']['N'] = gym.spaces.Box(
-                    low=0, high=self.config.PLAYER_N_OBS,
-                    shape=(1,), dtype=DataType.DISCRETE)
-         elif name == 'Tile':
-            observation['Tile']['N'] = gym.spaces.Box(
-                    low=0, high=self.config.PLAYER_VISION_DIAMETER,
-                    shape=(1,), dtype=DataType.DISCRETE)
-         elif name == 'Item':
-            observation['Item']['N']   = gym.spaces.Box(low=0, high=self.config.ITEM_N_OBS, shape=(1,), dtype=DataType.DISCRETE)
-         elif name == 'Market':
-            observation['Market']['N'] = gym.spaces.Box(low=0, high=self.config.EXCHANGE_N_OBS, shape=(1,), dtype=DataType.DISCRETE)
-
-         observation[name] = gym.spaces.Dict(observation[name])
+                        dtype=DataType.DISCRETE),
+               'Mask': gym.spaces.Box(
+                        low=0, high=1,
+                        shape=(rows,),
+                        dtype=DataType.DISCRETE),
+               })
 
       return gym.spaces.Dict(observation)
 
@@ -218,7 +207,7 @@ class Env(ParallelEnv):
 
    ############################################################################
    ### Core API
-   def reset(self, idx=None, step=True):
+   def reset(self, idx=None):
       '''OpenAI Gym API reset function
 
       Loads a new game map and returns initial observations
@@ -226,7 +215,6 @@ class Env(ParallelEnv):
       Args:
          idx: Map index to load. Selects a random map by default
 
-         step: Whether to step the environment and return initial obs
 
       Returns:
          obs: Initial obs if step=True, None otherwise 
@@ -254,17 +242,30 @@ class Env(ParallelEnv):
       self.worldIdx = idx
       self.realm.reset(idx)
 
+      obs, self.action_lookup = self.realm.dataframe.get(self.realm.players)
+
+      self.obs = self._preprocess_obs(obs, {}, {}, {})
+      self.agents = list(self.realm.players.keys())
+
       # Set up logs
       self.register_logs()
  
-      if step:
-         self.obs, _, _, _ = self.step({})
+      self.obs, _, _, _ = self.step({})
 
       return self.obs
 
    def close(self):
        '''For conformity with the PettingZoo API only; rendering is external'''
        pass
+
+   def _preprocess_obs(self, obs, rewards, dones, infos):
+      if self.config.EMULATE_CONST_PLAYER_N:
+         emulation.pad_const_nent(self.config, self.dummy_ob, obs, rewards, dones, infos)
+
+      if self.config.EMULATE_FLAT_OBS:
+         obs = nmmo.emulation.pack_obs(obs)
+
+      return obs
 
    def step(self, actions):
       '''Simulates one game tick or timestep
@@ -401,11 +402,15 @@ class Env(ParallelEnv):
                if arg.argType == nmmo.action.Fixed:
                   self.actions[entID][atn][arg] = arg.edges[val]
                elif arg == nmmo.action.Target:
-                  if val >= len(ent.targets):
-                      drop = True
-                      continue
-                  targ = ent.targets[val]
-                  self.actions[entID][atn][arg] = self.realm.entity(targ)
+                  targ = self.action_lookup[entID]['Entity'][val]
+
+                  #TODO: find a better way to err check for dead/missing agents
+                  try:
+                    self.actions[entID][atn][arg] = self.realm.entity(targ)
+                  except:
+                    #print(self.realm.players.entities)
+                    #print(val, targ, np.where(np.array(self.action_lookup[entID]['Entity']) != 0), self.action_lookup[entID]['Entity'])
+                    del self.actions[entID][atn]
                elif atn in (nmmo.action.Sell, nmmo.action.Use, nmmo.action.Give) and arg == nmmo.action.Item:
                   if val >= len(ent.inventory.dataframeKeys):
                       drop = True
@@ -423,6 +428,8 @@ class Env(ParallelEnv):
                   self.actions[entID][atn][arg] = itm
                elif __debug__: #Fix -inf in classifier and assert err on bad atns
                   assert False, f'Argument {arg} invalid for action {atn}'
+               else:
+                  assert False
 
             # Cull actions with bad args
             if drop and atn in self.actions[entID]:
@@ -434,9 +441,10 @@ class Env(ParallelEnv):
       self.obs     = {}
       infos        = {}
 
-      obs, rewards, dones, self.raw = {}, {}, {}, {}
+      rewards, dones, self.raw = {}, {}, {}
+      obs, self.action_lookup = self.realm.dataframe.get(self.realm.players)
       for entID, ent in self.realm.players.items():
-         ob = self.realm.dataframe.get(ent)
+         ob = obs[entID] 
          self.obs[entID] = ob
          if ent.agent.scripted:
             atns = ent.agent(ob)
@@ -459,11 +467,9 @@ class Env(ParallelEnv):
       for entID, ent in self.dead.items():
          if ent.agent.scripted:
             continue
+            
          rewards[ent.entID], infos[ent.entID] = self.reward(ent)
-
          dones[ent.entID] = not self.config.RESPAWN #TODO: Is this correct behavior?
-
-         #obs[ent.entID]     = self.dummy_ob
 
       #Pettingzoo API
       self.agents = list(self.realm.players.keys())

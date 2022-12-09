@@ -14,7 +14,6 @@ extra = {
     'cleanrl': [
         'wandb==0.12.9',
         'supersuit==3.3.5',
-        'pettingzoo==1.15.0',
         'gym==0.23.0',
         'tensorboard',
         'torch',
@@ -34,6 +33,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'pytest-benchmark==3.4.1',
+        'openskill',
         'fire==0.4.0',
         'setproctitle==1.1.10',
         'service-identity==21.1.0',
@@ -44,8 +44,8 @@ setup(
         'tqdm==4.61.1',
         'lz4==4.0.0',
         'h5py==3.7.0',
-        'pettingzoo',
         'ordered-set',
+        'pettingzoo==1.15.0',
     ],
     extras_require=extra,
     python_requires=">=3.7",

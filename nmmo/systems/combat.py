@@ -37,9 +37,10 @@ def attack(realm, player, target, skillFn):
     target_level = level(target.skills)
 
     # Ammunition usage
-    ammunition = player.equipment.ammunition
-    if ammunition is not None:
-        ammunition.fire(player)
+    if config.EQUIPMENT_SYSTEM_ENABLED:
+        ammunition = player.equipment.ammunition
+        if ammunition is not None:
+            ammunition.fire(player)
 
     # Per-style offense/defense
     level_damage = 0
@@ -76,9 +77,18 @@ def attack(realm, player, target, skillFn):
     # Compute modifiers
     multiplier        = damage_multiplier(config, skill, target)
     skill_offense     = base_damage + level_damage * skill.level.val
-    skill_defense     = config.PROGRESSION_BASE_DEFENSE  + config.PROGRESSION_LEVEL_DEFENSE*level(target.skills)
-    equipment_offense = player.equipment.total(offense_fn)
-    equipment_defense = target.equipment.total(defense_fn)
+
+    if config.PROGRESSION_SYSTEM_ENABLED:
+        skill_defense     = config.PROGRESSION_BASE_DEFENSE  + config.PROGRESSION_LEVEL_DEFENSE*level(target.skills)
+    else:
+        skill_defense     = 0
+
+    if config.EQUIPMENT_SYSTEM_ENABLED:
+        equipment_offense = player.equipment.total(offense_fn)
+        equipment_defense = target.equipment.total(defense_fn)
+    else:
+        equipment_offense = 0
+        equipment_defense = 0
 
     # Total damage calculation
     offense = skill_offense + equipment_offense
@@ -97,6 +107,7 @@ def attack(realm, player, target, skillFn):
     target.receiveDamage(player, damage)
 
     return damage
+
 
 def danger(config, pos, full=False):
    border = config.MAP_BORDER

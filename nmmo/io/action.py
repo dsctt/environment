@@ -256,7 +256,7 @@ class Target(Node):
 
    @classmethod
    def N(cls, config):
-      #return config.WINDOW ** 2
+      return config.PLAYER_VISION_DIAMETER ** 2
       return config.PLAYER_N_OBS
 
    def deserialize(realm, entity, index):

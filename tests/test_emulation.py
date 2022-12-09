@@ -55,7 +55,7 @@ def equals(config, batch1, batch2):
         batch1_attrs = batch1[entity_name]
         batch2_attrs = batch2[entity_name]
 
-        attr_keys = 'Continuous Discrete N'.split()
+        attr_keys = 'Continuous Discrete'.split()
         assert list(batch1_attrs.keys()) == list(batch2_attrs.keys()) == attr_keys
                                                                               
         for key in attr_keys:

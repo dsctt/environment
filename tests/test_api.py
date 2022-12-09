@@ -17,4 +17,4 @@ def test_io():
    env.action_space(0)
 
 if __name__ == '__main__':
-   test_io()
+   test_env_creation()
