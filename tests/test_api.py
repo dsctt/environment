@@ -1,8 +1,8 @@
 from pdb import set_trace as T
 
 import unittest
-#import lovely_numpy
-#lovely_numpy.monkey_patch()
+import lovely_numpy
+lovely_numpy.set_config(repr=lovely_numpy.lovely)
 
 import nmmo
 from nmmo.entity.entity import Entity
