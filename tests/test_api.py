@@ -1,13 +1,15 @@
-import unittest
-
 from pdb import set_trace as T
-import lovely_numpy
-lovely_numpy.monkey_patch()
+
+import unittest
+#import lovely_numpy
+#lovely_numpy.monkey_patch()
 
 import nmmo
 from nmmo.entity.entity import Entity
 from nmmo.core.realm import Realm
 from nmmo.systems.item import Item
+
+
 class TestApi(unittest.TestCase):
    env = nmmo.Env()
    config = env.config
@@ -34,7 +36,7 @@ class TestApi(unittest.TestCase):
          for player_id, player_obs in obs.items():
             self._validate_tiles(player_obs, self.env.realm)
             self._validate_entitites(player_obs, self.env.realm)
-            # self._validate_items(player_id, player_obs, self.env.realm)
+            self._validate_items(player_id, player_obs, self.env.realm)
          obs, _, _, _ = self.env.step({})
 
    def _validate_tiles(self, obs, realm: Realm):
@@ -75,9 +77,12 @@ class TestApi(unittest.TestCase):
          ], f"Mismatch for Entity {entity.entID}")
 
    def _validate_items(self, player_id, obs, realm: Realm):
-      for item_obs in obs["Item"]["Continuous"]:
-         item: Item = realm.items[int(item_obs[0])]
-         self.assertListEqual(list(item_obs), [
+      item_refs = realm.players[player_id].inventory._item_references
+      item_obs = obs["Item"]["Continuous"]
+      # Something like this?
+      #assert len(item_refs) == len(item_obs)
+      for ob, item in zip(item_obs, item_refs):
+         self.assertListEqual(list(ob), [
             item.instanceID,
             item.index.val,
             item.level.val,
