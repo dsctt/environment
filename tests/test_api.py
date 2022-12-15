@@ -1,5 +1,6 @@
 from pdb import set_trace as T
 
+from typing import List
 import unittest
 import lovely_numpy
 lovely_numpy.set_config(repr=lovely_numpy.lovely)
@@ -31,11 +32,17 @@ class TestApi(unittest.TestCase):
       obs = self.env.reset()
       
       self.assertEqual(obs.keys(), self.env.realm.players.entities.keys())
-      
+
       for step in range(10):
+         entity_locations =[
+            [ev.base.r.val, ev.base.c.val, e] for e, ev in self.env.realm.players.entities.items()
+         ] + [
+            [ev.base.r.val, ev.base.c.val, e] for e, ev in self.env.realm.npcs.entities.items()
+         ]
+
          for player_id, player_obs in obs.items():
             self._validate_tiles(player_obs, self.env.realm)
-            self._validate_entitites(player_obs, self.env.realm)
+            self._validate_entitites(player_id, player_obs, self.env.realm, entity_locations)
             self._validate_items(player_id, player_obs, self.env.realm)
          obs, _, _, _ = self.env.step({})
 
@@ -45,10 +52,16 @@ class TestApi(unittest.TestCase):
          self.assertListEqual(list(tile_obs),
             [tile.nEnts.val, tile.index.val, tile.r.val, tile.c.val])
 
-   def _validate_entitites(self, obs, realm: Realm):
+   def _validate_entitites(self, player_id, obs, realm: Realm, entity_locations: List[List[int]]):
+      observed_entities = set()
+
       for entity_obs in obs["Entity"]["Continuous"]:
+
          if entity_obs[0] == 0: continue
          entity: Entity = realm.entity(entity_obs[1])
+
+         observed_entities.add(entity.entID)
+
          self.assertListEqual(list(entity_obs), [
             1, 
             entity.entID, 
@@ -75,6 +88,17 @@ class TestApi(unittest.TestCase):
             (entity.skills.carving.level.val if entity.isPlayer else 0),
             (entity.skills.alchemy.level.val if entity.isPlayer else 0),
          ], f"Mismatch for Entity {entity.entID}")
+
+      # Make sure that we see entities IFF they are in our vision radius
+      pr = realm.players.entities[player_id].base.r.val
+      pc = realm.players.entities[player_id].base.c.val
+      visible_entitites = set([e for r,c,e in entity_locations if 
+         r >= pr - realm.config.PLAYER_VISION_RADIUS and 
+         r <= pr + realm.config.PLAYER_VISION_RADIUS and 
+         c >= pc - realm.config.PLAYER_VISION_RADIUS and 
+         c <= pc + realm.config.PLAYER_VISION_RADIUS])
+      self.assertSetEqual(visible_entitites, observed_entities, 
+         f"Mismatch between observed: {observed_entities} and visible {visible_entitites} for {player_id}")
 
    def _validate_items(self, player_id, obs, realm: Realm):
       item_refs = realm.players[player_id].inventory._item_references
