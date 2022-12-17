@@ -2,7 +2,7 @@ from pdb import set_trace as T
 import pytest
 
 import nmmo
-from nmmo.core.config import Config, Small, Large, Resource, Combat, Progression, NPC, AllGameSystems
+from nmmo.core.config import Config, Small, Large, Resource, Terrain, Combat, Progression, NPC, AllGameSystems
 
 # Test utils
 def create_and_reset(conf):
@@ -47,7 +47,7 @@ def test_fps_small_base_1_pop(benchmark):
     benchmark_config(benchmark, Small, 1) 
 
 def test_fps_small_resource_1_pop(benchmark):
-    benchmark_config(benchmark, Small, 1, Resource) 
+    benchmark_config(benchmark, Small, 1, Resource, Terrain) 
 
 def test_fps_small_combat_1_pop(benchmark):
     benchmark_config(benchmark, Small, 1, Combat) 
@@ -56,16 +56,16 @@ def test_fps_small_progression_1_pop(benchmark):
     benchmark_config(benchmark, Small, 1, Progression) 
 
 def test_fps_small_rcp_1_pop(benchmark):
-    benchmark_config(benchmark, Small, 1, Resource, Combat, Progression) 
+    benchmark_config(benchmark, Small, 1, Resource, Terrain, Combat, Progression) 
 
 def test_fps_small_npc_1_pop(benchmark):
-    benchmark_config(benchmark, Small, 1, NPC)
+    benchmark_config(benchmark, Small, 1, NPC, Combat)
 
 def test_fps_small_all_1_pop(benchmark):
     benchmark_config(benchmark, Small, 1, AllGameSystems)
 
 def test_fps_small_rcp_100_pop(benchmark):
-    benchmark_config(benchmark, Small, 100, Resource, Combat, Progression) 
+    benchmark_config(benchmark, Small, 100, Resource, Terrain, Combat, Progression) 
 
 def test_fps_small_all_100_pop(benchmark):
     benchmark_config(benchmark, Small, 100, AllGameSystems)
@@ -78,7 +78,7 @@ def test_large_env_reset(benchmark):
     env = nmmo.Env(Large())
     benchmark(lambda: env.reset(idx=1))
 
-LargeMapsRCP = nmmo.Env(create_config(Large, Resource, Combat, Progression))
+LargeMapsRCP = nmmo.Env(create_config(Large, Resource, Terrain, Combat, Progression))
 LargeMapsAll = nmmo.Env(create_config(Large, AllGameSystems))
 
 def test_fps_large_rcp_1_pop(benchmark):
