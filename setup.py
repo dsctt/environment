@@ -46,6 +46,8 @@ setup(
         'h5py==3.7.0',
         'pettingzoo',
         'ordered-set',
+        'py',
+        'scipy'
     ],
     extras_require=extra,
     python_requires=">=3.7",
