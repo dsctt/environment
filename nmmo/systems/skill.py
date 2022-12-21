@@ -239,6 +239,9 @@ class Water(HarvestSkill):
         water = entity.resources.water
         water.decrement(depletion)
 
+        if self.config.IMMORTAL:
+         return
+
         tiles = realm.map.tiles
         if not self.harvestAdjacent(realm, entity, material.Water, deplete=False):
             return

@@ -221,6 +221,15 @@ class Config(Template):
    PLAYER_DEATH_FOG             = None
    '''How long before spawning death fog. None for no death fog'''
 
+
+   ############################################################################
+   ### Agent Parameters                                                   
+   IMMORTAL = False
+   '''Debug parameter: prevents agents from dying except by lava'''
+
+   BASE_HEALTH                = 10
+   '''Initial Constitution level and agent health'''
+
    PLAYER_DEATH_FOG_SPEED       = 1
    '''Number of tiles per tick that the fog moves in'''
 
