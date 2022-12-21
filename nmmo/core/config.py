@@ -667,7 +667,7 @@ class Medium(Config):
 
    PATH_MAPS                    = 'maps/medium' 
 
-   PLAYER_N                     = 256
+   PLAYER_N                     = 128
    PLAYER_SPAWN_ATTEMPTS        = 2
 
    MAP_PREVIEW_DOWNSCALE        = 16
@@ -688,7 +688,7 @@ class Large(Config):
 
    PATH_MAPS                    = 'maps/large' 
 
-   PLAYER_N                     = 2048
+   PLAYER_N                     = 1024
    PLAYER_SPAWN_ATTEMPTS        = 16
 
    MAP_PREVIEW_DOWNSCALE        = 64

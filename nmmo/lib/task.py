@@ -135,6 +135,85 @@ class Defend(TargetTask):
   def description(self) -> List:
     return super().description() + [self._num_steps]
 
+class Inflict(TargetTask):
+    def __init__(self, target: TaskTarget, damage_type, quantity: int):
+        '''
+        target: The team that is completing the task. Any agent may complete
+        damage_type: Can use skills.Melee/Range/Mage
+        quantity: Minimum damage to inflict in a single hit 
+        '''
+        pass
+
+class Defeat(TargetTask):
+    def __init__(self, target: TaskTarget, entity_type, level: int):
+        '''
+        target: The team that is completing the task. Any agent may complete
+        entity type: entity.Player or entity.NPC
+        level: minimum target level to defeat
+        '''
+        pass
+
+class Achieve(TargetTask):
+    def __init__(self, target: TaskTarget, skill, level: int):
+        '''
+        target: The team that is completing the task. Any agent may complete. 
+        skill: systems.skill to advance
+        level: level to reach
+        '''
+        pass
+ 
+class Harvest(TargetTask):
+    def __init__(self, target: TaskTarget, resource, level: int):
+        '''
+        target: The team that is completing the task. Any agent may complete
+        resource: lib.material to harvest
+        level: minimum material level to harvest
+        '''
+        pass
+ 
+class Equip(Task):
+    def __init__(self, target: TaskTarget, item, level: int):
+        '''
+        target: The team that is completing the task. Any agent may complete.
+        item: systems.item to equip
+        level: Minimum level of that item
+        '''
+        pass
+
+class Hoard(Task):
+    def __init__(self, target: TaskTarget, gold):
+        '''
+        target: The team that is completing the task. Completed across the team
+        gold: reach this amount of gold held at one time (inventory.gold sum over team)
+        '''
+        pass
+
+class Group(Task):
+    def __init__(self, target: TaskTarget, num_teammates: int, distance: int):
+        '''
+        target: The team that is completing the task. Completed across the team
+        num_teammates: Number of teammates to group together
+        distance: Max distance to nearest teammate
+        '''
+        pass
+
+class Spread(Task):
+    def __init__(self, target: TaskTarget, num_teammates: int, distance: int):
+        '''
+        target: The team that is completing the task. Completed across the team
+        num_teammates: Number of teammates to group together
+        distance: Min distance to nearest teammate
+        '''
+        pass
+
+class Eliminate(Task):
+    def __init__(self, target: TaskTarget, opponent_team):
+        '''
+        target: The team that is completing the task. Completed across the team
+        opponent_team: left/right/any team to be eliminated (all agents defeated)
+        '''
+        pass
+
 ###############################################################
 
 class TaskSampler(object):

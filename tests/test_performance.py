@@ -108,7 +108,7 @@ def test_large_env_reset(benchmark):
     env = nmmo.Env(Large())
     benchmark(lambda: env.reset(idx=1))
 
-LargeMapsRCP = nmmo.Env(create_config(Large, Resource, Combat, Progression))
+LargeMapsRCP = nmmo.Env(create_config(Large, Resource, Terrain, Combat, Progression))
 LargeMapsAll = nmmo.Env(create_config(Large, AllGameSystems))
 
 def test_fps_large_rcp_1_pop(benchmark):
