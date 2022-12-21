@@ -40,7 +40,7 @@ setup(
         'autobahn==19.3.3',
         'Twisted==19.2.0',
         'vec-noise==1.1.4',
-        'imageio==2.8.0',
+        'imageio==2.23.0',
         'tqdm==4.61.1',
         'lz4==4.0.0',
         'h5py==3.7.0',
