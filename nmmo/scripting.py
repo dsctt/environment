@@ -39,12 +39,13 @@ class Observation:
       Returns:
          Vector corresponding to the specified tile
       '''
-      return self.tiles[self.config.PLAYER_VISION_DIAMETER * (self.delta + rDelta) + self.delta + cDelta]
+      return self.tiles[self.config.PLAYER_VISION_DIAMETER * (self.delta + cDelta) + self.delta + rDelta]
 
    @property
    def agent(self):
       '''Return the array object corresponding to the current agent'''
-      return self.agents[0]
+      curr_idx = (self.config.PLAYER_VISION_DIAMETER + 1) * self.delta
+      return self.obs['Entity']['Continuous'][curr_idx]
 
    @staticmethod
    def attribute(ary, attr):
