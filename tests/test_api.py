@@ -2,18 +2,35 @@ from pdb import set_trace as T
 
 from typing import List
 import unittest
-import lovely_numpy
-lovely_numpy.set_config(repr=lovely_numpy.lovely)
+from tqdm import tqdm
+#import lovely_numpy
+#lovely_numpy.set_config(repr=lovely_numpy.lovely)
 
 import nmmo
 from nmmo.entity.entity import Entity
 from nmmo.core.realm import Realm
-from nmmo.systems.item import Item
+from nmmo.systems import item as Item
+
+from scripted import baselines
+
+# 30 seems to be enough to test variety of agent actions
+TEST_HORIZON = 30
+RANDOM_SEED = 342
+
+class Config(nmmo.config.Small, nmmo.config.AllGameSystems):
+
+    RENDER = False
+    SPECIALIZE = True
+    PLAYERS = [
+            baselines.Fisher, baselines.Herbalist, baselines.Prospector, baselines.Carver, baselines.Alchemist,
+            baselines.Melee, baselines.Range, baselines.Mage]
 
 
 class TestApi(unittest.TestCase):
-   env = nmmo.Env()
-   config = env.config
+   @classmethod
+   def setUpClass(cls):
+      cls.config = Config()
+      cls.env = nmmo.Env(cls.config, RANDOM_SEED)
 
    def test_observation_space(self):
       obs_space = self.env.observation_space(0)
@@ -33,7 +50,7 @@ class TestApi(unittest.TestCase):
       
       self.assertEqual(obs.keys(), self.env.realm.players.entities.keys())
 
-      for step in range(10):
+      for step in tqdm(range(TEST_HORIZON)):
          entity_locations =[
             [ev.base.r.val, ev.base.c.val, e] for e, ev in self.env.realm.players.entities.items()
          ] + [
@@ -123,7 +140,7 @@ class TestApi(unittest.TestCase):
             item.resource_restore.val,
             item.price.val,
             item.equipped.val
-         ], f"Mismatch for Item {item.instanceID}")
+         ], f"Mismatch for Player {player_id}, Item {item.instanceID}")
 
 if __name__ == '__main__':
     unittest.main()
