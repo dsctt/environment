@@ -2,7 +2,7 @@ from pdb import set_trace as T
 import numpy as np
 import random
 
-from queue import PriorityQueue, Queue
+import heapq
 
 import nmmo
 from nmmo.lib import material
@@ -113,15 +113,14 @@ def forageDijkstra(config, ob, actions, food_max, water_max, cutoff=100):
    reward    = {start: (food, water)}
    backtrace = {start: None}
 
-   queue = Queue()
-   queue.put(start)
+   queue = [start]
 
-   while not queue.empty():
+   while queue:
       cutoff -= 1
       if cutoff <= 0:
          break
 
-      cur = queue.get()
+      cur = queue.pop(0)
       for nxt in adjacentPos(cur):
          if nxt in backtrace:
             continue
@@ -161,7 +160,7 @@ def forageDijkstra(config, ob, actions, food_max, water_max, cutoff=100):
             best = total
             goal = nxt
 
-         queue.put(nxt)
+         queue.append(nxt)
          backtrace[nxt] = cur
 
    while goal in backtrace and backtrace[goal] != start:
@@ -209,16 +208,15 @@ def gatherBFS(config, ob, actions, resource, cutoff=100):
 
     backtrace = {start: None}
 
-    queue = Queue()
-    queue.put(start)
+    queue = [start]
 
     found = False
-    while not queue.empty():
+    while queue:
         cutoff -= 1
         if cutoff <= 0:
             return False
 
-        cur = queue.get()
+        cur = queue.pop(0)
         for nxt in adjacentPos(cur):
             if found:
                 break
@@ -257,7 +255,7 @@ def gatherBFS(config, ob, actions, resource, cutoff=100):
                     backtrace[nxt] = cur
                     break
 
-            queue.put(nxt)
+            queue.append(nxt)
             backtrace[nxt] = cur
 
     #Ran out of tiles
@@ -285,8 +283,7 @@ def aStar(config, ob, actions, rr, cc, cutoff=100):
    if start == goal:
       return (0, 0)
 
-   pq = PriorityQueue()
-   pq.put((0, start))
+   pq = [(0, start)]
 
    backtrace = {}
    cost = {start: 0}
@@ -295,7 +292,7 @@ def aStar(config, ob, actions, rr, cc, cutoff=100):
    closestHeuristic = utils.l1(start, goal)
    closestCost = closestHeuristic
 
-   while not pq.empty():
+   while pq:
       # Use approximate solution if budget exhausted
       cutoff -= 1
       if cutoff <= 0:
@@ -303,7 +300,7 @@ def aStar(config, ob, actions, rr, cc, cutoff=100):
             goal = closestPos
          break
 
-      priority, cur = pq.get()
+      priority, cur = heapq.heappop(pq)
 
       if cur == goal:
          break
@@ -339,7 +336,7 @@ def aStar(config, ob, actions, rr, cc, cutoff=100):
                closestHeuristic = heuristic
                closestCost = priority
 
-            pq.put((priority, nxt))
+            heapq.heappush(pq, (priority, nxt))
             backtrace[nxt] = cur
 
    #Not needed with scuffed material list above
