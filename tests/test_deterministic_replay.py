@@ -87,9 +87,9 @@ class TestDeterministicReplay(unittest.TestCase):
          cls.seed, cls.config, cls.actions, cls.final_obs_src, cls.final_npcs_src = load_replay_file(replay_files[0])
       else:
          # if there is no repo replay file, then go with the default local file
-         try:
+         if os.path.exists(LOCAL_REPLAY):
             cls.seed, cls.config, cls.actions, cls.final_obs_src, cls.final_npcs_src = load_replay_file(LOCAL_REPLAY)
-         except:
+         else:
             cls.seed, cls.config, cls.actions, cls.final_obs_src, cls.final_npcs_src = generate_replay_file(LOCAL_REPLAY, TEST_HORIZON)
       cls.horizon = len(cls.actions)
 
