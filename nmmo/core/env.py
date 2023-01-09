@@ -235,6 +235,7 @@ class Env(ParallelEnv):
 
       self.actions = {}
       self.dead    = []
+      self.obs = {}
 
       if idx is None:
          idx = np.random.randint(self.config.MAP_N) + 1
@@ -242,15 +243,15 @@ class Env(ParallelEnv):
       self.worldIdx = idx
       self.realm.reset(idx)
 
-      obs, self.action_lookup = self.realm.dataframe.get(self.realm.players)
-
-      self.obs = self._preprocess_obs(obs, {}, {}, {})
       self.agents = list(self.realm.players.keys())
 
       # Set up logs
       self.register_logs()
- 
-      self.obs, _, _, _ = self.step({})
+
+      # return the initial obs, without doing self.step({})
+      obs, self.action_lookup = self.realm.dataframe.get(self.realm.players)
+      for entID in self.agents:
+         self.obs[entID] = obs[entID]
 
       return self.obs
 
@@ -258,14 +259,21 @@ class Env(ParallelEnv):
        '''For conformity with the PettingZoo API only; rendering is external'''
        pass
 
-   def _preprocess_obs(self, obs, rewards, dones, infos):
-      if self.config.EMULATE_CONST_PLAYER_N:
-         emulation.pad_const_nent(self.config, self.dummy_ob, obs, rewards, dones, infos)
+   def _generate_packet(self):
+      '''Client packet for rendering and/or save replay'''
+      packet = {
+         'config': self.config,
+         'pos': self.overlayPos,
+         'wilderness': 0
+         }
 
-      if self.config.EMULATE_FLAT_OBS:
-         obs = nmmo.emulation.pack_obs(obs)
+      packet = {**self.realm.packet(), **packet}
 
-      return obs
+      if self.overlay is not None:
+         packet['overlay'] = self.overlay
+         self.overlay      = None
+      
+      return packet
 
    def step(self, actions):
       '''Simulates one game tick or timestep
@@ -362,22 +370,13 @@ class Env(ParallelEnv):
       assert self.has_reset, 'step before reset'
 
       if self.config.RENDER or self.config.SAVE_REPLAY:
-          packet = {
-                'config': self.config,
-                'pos': self.overlayPos,
-                'wilderness': 0
-                }
+         self.packet = self._generate_packet()
+         
+         # self._generate_packet() sets overlay to None
+         assert self.overlay is None 
 
-          packet = {**self.realm.packet(), **packet}
-
-          if self.overlay is not None:
-             packet['overlay'] = self.overlay
-             self.overlay      = None
-
-          self.packet = packet
-
-          if self.config.SAVE_REPLAY:
-              self.replay.update(packet)
+         if self.config.SAVE_REPLAY:
+            self.replay.update(self.packet)
 
       #Preprocess actions for neural models
       for entID in list(actions.keys()):
@@ -690,6 +689,10 @@ class Env(ParallelEnv):
       '''
 
       assert self.has_reset, 'render before reset'
+      
+      if not (self.config.RENDER and hasattr(self, 'packet')):
+         return
+
       packet = self.packet
 
       if not self.client:
