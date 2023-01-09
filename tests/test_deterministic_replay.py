@@ -16,7 +16,8 @@ def load_replay_file(replay_file):
    # load the pickle file
    with open(replay_file, 'rb') as handle:
       ref_data = pickle.load(handle)
-   
+
+      print('[TestDetReplay] Loading the existing replay file with seed', ref_data['seed'])   
       seed = ref_data['seed']
       config = ref_data['config']
       init_obs = ref_data['init_obs']
@@ -24,13 +25,7 @@ def load_replay_file(replay_file):
       final_obs = ref_data['final_obs']
       final_npcs = ref_data['final_npcs']
 
-      # test whether the loaded seed and config are valid
-      print('[TestDetReplay] Testing whether the seed and config are valid')
-      env_src = TestEnv(config, seed)
-      obs = env_src.reset()
-      assert are_observations_equal(obs, init_obs), "Something wrong with the provided pickle data"
-
-   return seed, config, actions, final_obs, final_npcs
+   return seed, config, init_obs, actions, final_obs, final_npcs
 
 
 def generate_replay_file(replay_file, test_horizon):
@@ -65,7 +60,7 @@ def generate_replay_file(replay_file, test_horizon):
 
       pickle.dump(ref_data, handle)
 
-   return seed, config, actions, final_obs, final_npcs   
+   return seed, config, init_obs, actions, final_obs, final_npcs   
 
 
 class TestDeterministicReplay(unittest.TestCase):
@@ -84,13 +79,13 @@ class TestDeterministicReplay(unittest.TestCase):
       replay_files = glob.glob(os.path.join('tests', 'replay_repo_*.pickle'))
       if replay_files:
          # there may be several, but we only take the first one [0]
-         cls.seed, cls.config, cls.actions, cls.final_obs_src, cls.final_npcs_src = load_replay_file(replay_files[0])
+         cls.seed, cls.config, cls.init_obs_src, cls.actions, cls.final_obs_src, cls.final_npcs_src = load_replay_file(replay_files[0])
       else:
          # if there is no repo replay file, then go with the default local file
          if os.path.exists(LOCAL_REPLAY):
-            cls.seed, cls.config, cls.actions, cls.final_obs_src, cls.final_npcs_src = load_replay_file(LOCAL_REPLAY)
+            cls.seed, cls.config, cls.init_obs_src, cls.actions, cls.final_obs_src, cls.final_npcs_src = load_replay_file(LOCAL_REPLAY)
          else:
-            cls.seed, cls.config, cls.actions, cls.final_obs_src, cls.final_npcs_src = generate_replay_file(LOCAL_REPLAY, TEST_HORIZON)
+            cls.seed, cls.config, cls.init_obs_src, cls.actions, cls.final_obs_src, cls.final_npcs_src = generate_replay_file(LOCAL_REPLAY, TEST_HORIZON)
       cls.horizon = len(cls.actions)
 
       print('[TestDetReplay] Setting up the replication env with seed', cls.seed)
@@ -105,6 +100,9 @@ class TestDeterministicReplay(unittest.TestCase):
          npcs_rep[nid] = npc.packet()
          del npcs_rep[nid]['alive'] # to use the same 'are_observations_equal' function
       cls.final_npcs_rep = npcs_rep
+
+   def test_compare_init_observations(self):
+      self.assertTrue(are_observations_equal(self.init_obs_src, self.init_obs_rep))
 
    def test_compare_final_observations(self):
       self.assertTrue(are_observations_equal(self.final_obs_src, self.final_obs_rep))
