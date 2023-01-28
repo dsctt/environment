@@ -90,14 +90,23 @@ class TestTasks(unittest.TestCase):
       sampler.sample(max_clauses=5, max_clause_size=5, not_p=0.5)
 
     def test_completed_tasks_in_info(self):
-      env = nmmo.Env()
-      env.config.TASKS = [
+      config = nmmo.config.Default()  
+      config.PLAYERS = [nmmo.core.agent.Random]
+      config.TASKS = [
         achievement.Achievement(Success(), 10),
         achievement.Achievement(Failure(), 100)
       ]
 
+      env = nmmo.Env(config)
+
       env.reset()
       obs, rewards, dones, infos = env.step({})
+      self.assertEqual(infos[1][Success().to_string()], 10)
+      self.assertEqual(infos[1][Failure().to_string()], 0)
+
+      obs, rewards, dones, infos = env.step({})
+      self.assertEqual(infos[1][Success().to_string()], 0)
+      self.assertEqual(infos[1][Failure().to_string()], 0)
 
 if __name__ == '__main__':
     unittest.main()

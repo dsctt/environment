@@ -32,13 +32,9 @@ def attack(realm, player, target, skillFn):
     skill_type   = type(skill)
     skill_name   = skill_type.__name__
 
-    # Attacker and target levels
-    player_level = skill.level.val
-    target_level = level(target.skills)
-
     # Ammunition usage
     if config.EQUIPMENT_SYSTEM_ENABLED:
-        ammunition = player.equipment.ammunition
+        ammunition = player.equipment.ammunition.item
         if ammunition is not None:
             ammunition.fire(player)
 
@@ -97,11 +93,11 @@ def attack(realm, player, target, skillFn):
     #damage  = multiplier * (offense - defense)
     damage  = max(int(damage), 0)
 
-    if config.LOG_MILESTONES and player.isPlayer and realm.quill.milestone.log_max(f'Damage_{skill_name}', damage) and config.LOG_VERBOSE:
-        player_ilvl = player.equipment.total(lambda e: e.level)
-        target_ilvl = target.equipment.total(lambda e: e.level)
-
-        logging.info(f'COMBAT: Inflicted {damage} {skill_name} damage (lvl {player_level} i{player_ilvl} vs lvl {target_level} i{target_ilvl})')
+    if player.isPlayer:
+        realm.log_milestone(f'Damage_{skill_name}', damage,
+                            f'COMBAT: Inflicted {damage} {skill_name} damage ' +
+                            f'(lvl {player.equipment.total(lambda e: e.level)} vs' +
+                            f'lvl {target.equipment.total(lambda e: e.level)})')
 
     player.applyDamage(damage, skill.__class__.__name__.lower())
     target.receiveDamage(player, damage)

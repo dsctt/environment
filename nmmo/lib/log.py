@@ -1,26 +1,16 @@
-from pdb import set_trace as T
 from collections import defaultdict
-from nmmo.lib import material
-from copy import deepcopy
-import os
 
 import logging
-import numpy as np
-import json, pickle
-import time
 
-from nmmo.lib import utils
 
 class Logger:
     def __init__(self):
         self.stats = defaultdict(list)
 
     def log(self, key, val):
-        try:
-            int_val = int(val)
-        except TypeError as e:
-            print(f'{val} must be int or float')
-            raise e
+        if not isinstance(val, (int, float)):
+            raise RuntimeError(f'{val} must be int or float')
+
         self.stats[key].append(val)
         return True
 
@@ -42,46 +32,6 @@ class MilestoneLogger(Logger):
 
         self.log(key, val)
         return True
-
-class Quill:
-   def __init__(self, config):
-      self.config = config
-
-      self.env    = Logger()
-      self.player = Logger()
-      self.event  = Logger()
-
-      self.shared = {}
-
-      if config.LOG_MILESTONES:
-          self.milestone = MilestoneLogger(config.LOG_FILE)
-
-   def register(self, key, fn):
-       assert key not in self.shared, f'Log key {key} already exists'
-       self.shared[key] = fn
-
-   def log_env(self, key, val):
-      self.env.log(key, val)
-
-   def log_player(self, key, val):
-      self.player.log(key, val)
-
-   @property
-   def packet(self):
-      packet = {'Env':    self.env.stats,
-              'Player': self.player.stats}
-
-      if self.config.LOG_EVENTS:
-          packet['Event'] = self.event.stats
-      else:
-          packet['Event'] = 'Unavailable: config.LOG_EVENTS = False'
-
-      if self.config.LOG_MILESTONES:
-          packet['Milestone'] = self.event.stats
-      else:
-          packet['Milestone'] = 'Unavailable: config.LOG_MILESTONES = False'
-
-      return packet
 
 #Log wrapper and benchmarker
 class Benchmarker:

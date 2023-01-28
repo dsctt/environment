@@ -25,8 +25,10 @@ class Achievement:
       return 0
 
 class Diary:
-   def __init__(self, achievements: List[Achievement]):
+   def __init__(self, agent, achievements: List[Achievement]):
+      self.agent = agent
       self.achievements = achievements
+      self.rewards = {}
 
    @property
    def completed(self):
@@ -36,6 +38,5 @@ class Diary:
    def cumulative_reward(self, aggregate=True):
       return sum(a.reward * a.completed for a in self.achievements)
 
-   def update(self, realm, entity):
-      return {a.name: a.update(realm, entity) for a in self.achievements}
-
+   def update(self, realm):
+      self.rewards = { a.name: a.update(realm, self.agent) for a in self.achievements }

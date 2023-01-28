@@ -4,9 +4,9 @@ import nmmo
 
 def test_rollout():
    config = nmmo.config.Default()  
-   config.AGENTS = [nmmo.core.agent.Random]
+   config.PLAYERS = [nmmo.core.agent.Random]
 
-   env = nmmo.Env()
+   env = nmmo.Env(config)
    env.reset()
    for i in range(128):
        env.step({})
