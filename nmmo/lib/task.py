@@ -1,5 +1,4 @@
-import numpy as np
-from typing import Dict, List
+from typing import List
 import json
 import random
 class Task():
@@ -142,7 +141,6 @@ class Inflict(TargetTask):
         damage_type: Can use skills.Melee/Range/Mage
         quantity: Minimum damage to inflict in a single hit 
         '''
-        pass
 
 class Defeat(TargetTask):
     def __init__(self, target: TaskTarget, entity_type, level: int):
@@ -151,7 +149,6 @@ class Defeat(TargetTask):
         entity type: entity.Player or entity.NPC
         level: minimum target level to defeat
         '''
-        pass
 
 class Achieve(TargetTask):
     def __init__(self, target: TaskTarget, skill, level: int):
@@ -160,7 +157,6 @@ class Achieve(TargetTask):
         skill: systems.skill to advance
         level: level to reach
         '''
-        pass
  
 class Harvest(TargetTask):
     def __init__(self, target: TaskTarget, resource, level: int):
@@ -169,7 +165,6 @@ class Harvest(TargetTask):
         resource: lib.material to harvest
         level: minimum material level to harvest
         '''
-        pass
  
 class Equip(Task):
     def __init__(self, target: TaskTarget, item, level: int):
@@ -178,7 +173,6 @@ class Equip(Task):
         item: systems.item to equip
         level: Minimum level of that item
         '''
-        pass
 
 class Hoard(Task):
     def __init__(self, target: TaskTarget, gold):
@@ -186,7 +180,6 @@ class Hoard(Task):
         target: The team that is completing the task. Completed across the team
         gold: reach this amount of gold held at one time (inventory.gold sum over team)
         '''
-        pass
 
 class Group(Task):
     def __init__(self, target: TaskTarget, num_teammates: int, distance: int):
@@ -195,7 +188,6 @@ class Group(Task):
         num_teammates: Number of teammates to group together
         distance: Max distance to nearest teammate
         '''
-        pass
 
 class Spread(Task):
     def __init__(self, target: TaskTarget, num_teammates: int, distance: int):
@@ -204,7 +196,6 @@ class Spread(Task):
         num_teammates: Number of teammates to group together
         distance: Min distance to nearest teammate
         '''
-        pass
 
 class Eliminate(Task):
     def __init__(self, target: TaskTarget, opponent_team):
@@ -212,7 +203,6 @@ class Eliminate(Task):
         target: The team that is completing the task. Completed across the team
         opponent_team: left/right/any team to be eliminated (all agents defeated)
         '''
-        pass
 
 ###############################################################
 

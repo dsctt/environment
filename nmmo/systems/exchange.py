@@ -2,7 +2,7 @@ from __future__ import annotations
 from collections import deque
 import math
 
-from typing import Dict, Union
+from typing import Dict
 
 from nmmo.systems.item import Item
 

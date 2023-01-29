@@ -2,7 +2,6 @@
 #Data texture pairs are used for enums that require textures.
 #These textures are filled in by the Render class at run time.
 
-from pdb import set_trace as T
 import numpy as np
 import colorsys
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 import numpy as np
 
-from nmmo import entity
 from nmmo.overlay import OverlayRegistry
 
 class RenderHelper:

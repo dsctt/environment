@@ -1,4 +1,3 @@
-from pdb import set_trace as T
 
 from collections import defaultdict
 import numpy as np

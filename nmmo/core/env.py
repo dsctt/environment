@@ -1,4 +1,3 @@
-import itertools
 from typing import Any, Dict, List
 import numpy as np
 import random
@@ -9,14 +8,11 @@ import gym
 from pettingzoo.utils.env import ParallelEnv, AgentID
 
 import nmmo
-from nmmo import core
-from nmmo.core.agent import Agent
-from nmmo.core.log_helper import LogHelper
 from nmmo.core.observation import Observation
 from nmmo.core.tile import Tile
-from nmmo.entity.entity import Entity, EntityState
+from nmmo.entity.entity import Entity
 from nmmo.core.config import Default
-from nmmo.systems.item import Item, ItemState
+from nmmo.systems.item import Item
 from scripted.baselines import Scripted
 
 
@@ -34,7 +30,7 @@ class Env(ParallelEnv):
     super().__init__()
 
     self.config = config
-    self.realm = core.Realm(config)
+    self.realm = nmmo.core.Realm(config)
 
   @functools.lru_cache(maxsize=None)
   def observation_space(self, agent: int):

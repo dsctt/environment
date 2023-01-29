@@ -1,5 +1,3 @@
-from pdb import set_trace as T
-import numpy as np
 
 import nmmo
 from nmmo.systems.ai import move, attack, utils

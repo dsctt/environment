@@ -1,4 +1,3 @@
-from pdb import set_trace as T
 
 import scipy.stats as stats
 import numpy as np
@@ -36,7 +35,6 @@ class Save:
 
 class Terrain:
    '''Terrain material class; populated at runtime'''
-   pass
 
 def generate_terrain(config, idx, interpolaters):
     center      = config.MAP_CENTER
