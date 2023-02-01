@@ -1,4 +1,3 @@
-from pdb import set_trace as T
 
 from nmmo.lib import colors
 
@@ -25,7 +24,6 @@ class Agent:
        Args:
            obs: Agent observation provided by the environment
        '''
-       pass
 
 class Random(Agent):
     '''Moves randomly, including bumping into things and falling into lava'''

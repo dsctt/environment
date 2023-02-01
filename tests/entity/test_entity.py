@@ -1,11 +1,7 @@
-# Unittest for entity.py
-
 import unittest
 import nmmo
-from nmmo.entity import Entity
-from nmmo.entity.entity import EntityState
+from nmmo.entity.entity import Entity, EntityState
 from nmmo.lib.datastore.numpy_datastore import NumpyDatastore
-import numpy as np
 
 class MockRealm:
   def __init__(self):

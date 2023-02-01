@@ -1,7 +1,5 @@
 '''Manual test for client connectivity'''
 
-from pdb import set_trace as T
-import pytest
 
 import nmmo
 

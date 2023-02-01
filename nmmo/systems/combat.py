@@ -1,12 +1,9 @@
 #Various utilities for managing combat, including hit/damage
 
-from pdb import set_trace as T
 
 import numpy as np
-import logging
 
 from nmmo.systems import skill as Skill
-from nmmo.systems import item as Item
 
 def level(skills):
     return max(e.level.val for e in skills.skills)

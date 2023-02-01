@@ -1,7 +1,6 @@
-from pdb import set_trace as T
 
 
-from typing import Dict, List
+from typing import List
 from nmmo.lib.task import Task
 
 class Achievement:

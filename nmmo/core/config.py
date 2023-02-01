@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pdb import set_trace as T
-import numpy as np
 import os
 
 import nmmo

@@ -1,4 +1,3 @@
-from pdb import set_trace as T
 from itertools import chain
 
 from setuptools import find_packages, setup

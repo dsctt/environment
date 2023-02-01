@@ -1,11 +1,9 @@
-from pdb import set_trace as T
 
 from typing import List
 import unittest
 from tqdm import tqdm
 
 import nmmo
-from nmmo.core.observation import Observation
 from nmmo.core.tile import TileState
 from nmmo.entity.entity import Entity, EntityState
 from nmmo.core.realm import Realm
@@ -14,7 +12,7 @@ from nmmo.systems.item import ItemState
 from scripted import baselines
 
 # 30 seems to be enough to test variety of agent actions
-TEST_HORIZON = 1024
+TEST_HORIZON = 30
 RANDOM_SEED = 342
 # TODO: We should check that milestones have been reached, to make
 # sure that the agents aren't just dying

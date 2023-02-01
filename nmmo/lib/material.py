@@ -1,4 +1,3 @@
-from pdb import set_trace as T
 
 from nmmo.systems import item, droptable
 

@@ -3,8 +3,9 @@ from typing import Dict, Set
 
 import numpy as np
 from ordered_set import OrderedSet
+from nmmo.entity.entity import Entity
+from nmmo.entity.player import Player
 
-from nmmo.entity import Entity, Player
 from nmmo.entity.npc import NPC
 from nmmo.lib import colors, spawn
 from nmmo.systems import combat

@@ -1,4 +1,3 @@
-from pdb import set_trace as T
 import numpy as np
 
 from nmmo.lib import overlay
@@ -73,11 +72,9 @@ class Overlay:
        Args:
            obs: Observation returned by the environment
        '''
-       pass
 
    def register(self):
        '''Compute the overlay and register it within realm. Override per overlay.'''
-       pass
 
 class Skills(Overlay):
    def __init__(self, config, realm, *args):

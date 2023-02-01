@@ -1,8 +1,4 @@
-from pdb import set_trace as T
 
-import nmmo
-from nmmo.core.observation import Observation
-from nmmo.lib import material
 
 def l1(start, goal):
    sr, sc = start

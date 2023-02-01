@@ -1,9 +1,6 @@
-from pdb import set_trace as T
 from typing import Dict, Tuple
-import numpy as np
 
 from ordered_set import OrderedSet
-import logging
 
 from nmmo.systems import item as Item 
 class EquipmentSlot:

@@ -1,5 +1,5 @@
 import nmmo
-from nmmo.core.config import Config, Small, Medium, Large, Terrain, Resource, Combat, NPC, Progression, Item, Equipment, Profession, Exchange, Communication, AllGameSystems
+from nmmo.core.config import Medium
 
 
 def create_config(base, *systems):

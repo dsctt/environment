@@ -1,10 +1,9 @@
 from __future__ import annotations
-from pdb import set_trace as T
 import numpy as np
 
 from ordered_set import OrderedSet
 import abc
-from nmmo.systems import experience, combat, ai
+from nmmo.systems import combat, experience
 from nmmo.lib import material
 
 ### Infrastructure ###

@@ -1,10 +1,8 @@
-from pdb import set_trace as T
 from ordered_set import OrderedSet
 import numpy as np
 
 from enum import Enum, auto
 
-import nmmo
 from nmmo.lib import utils
 from nmmo.lib.utils import staticproperty
 

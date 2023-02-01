@@ -1,14 +1,9 @@
-from pdb import set_trace as T
 import numpy as np
 import random
 
 from nmmo.lib.utils import inBounds
-from nmmo.systems import combat
-from nmmo.lib import material
 import heapq
 
-from nmmo.systems.ai.dynamic_programming import map_to_rewards, \
-   compute_values, max_value_direction_around
 
 def validTarget(ent, targ, rng):
    if targ is None or not targ.alive:
