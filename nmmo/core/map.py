@@ -24,7 +24,7 @@ class Map:
 
       for r in range(sz):
          for c in range(sz):
-            self.tiles[r, c] = core.Tile(config, realm, r, c)
+            self.tiles[r, c] = core.Tile(realm, r, c)
 
    @property
    def packet(self):
@@ -65,9 +65,8 @@ class Map:
 
    def step(self):
       '''Evaluate updatable tiles'''
-      if self.config.LOG_MILESTONES and self.realm.quill.milestone.log_max(f'Resource_Depleted', len(self.updateList)) and self.config.LOG_VERBOSE:
-         logging.info(f'RESOURCE: Depleted {len(self.updateList)} resource tiles')                           
-
+      self.realm.log_milestone('Resource_Depleted', len(self.updateList), 
+            f'RESOURCE: Depleted {len(self.updateList)} resource tiles')
 
       for e in self.updateList.copy():
          if not e.depleted:

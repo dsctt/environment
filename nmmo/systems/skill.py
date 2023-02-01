@@ -1,11 +1,9 @@
+from __future__ import annotations
 from pdb import set_trace as T
 import numpy as np
 
 from ordered_set import OrderedSet
-import logging
 import abc
-
-from nmmo.io.stimulus import Serialized
 from nmmo.systems import experience, combat, ai
 from nmmo.lib import material
 
@@ -56,8 +54,8 @@ class Skill:
       level = self.expCalc.levelAtExp(self.exp)
       self.level.update(int(level))
 
-      if self.config.LOG_MILESTONES and self.realm.quill.milestone.log_max(f'Level_{self.__class__.__name__}', level) and self.config.LOG_VERBOSE:
-         logging.info(f'PROGRESSION: Reached level {level} {self.__class__.__name__}')
+      self.realm.log_milestone(f'Level_{self.__class__.__name__}', level,
+        f"PROGRESSION: Reached level {level} {self.__class__.__name__}")
 
    def setExpByLevel(self, level):
       self.exp = self.expCalc.expAtLevel(level)
@@ -82,8 +80,9 @@ class HarvestSkill(NonCombatSkill):
         for drop in dropTable.roll(realm, level):
             assert drop.level.val == level, 'Drop level does not match roll specification'
 
-            if self.config.LOG_MILESTONES and realm.quill.milestone.log_max(f'Gather_{drop.__class__.__name__}', level) and self.config.LOG_VERBOSE:
-                logging.info(f'PROFESSION: Gathered level {level} {drop.__class__.__name__} (level {self.level.val} {self.__class__.__name__})') 
+            self.realm.log_milestone(f'Gather_{drop.__class__.__name__}', level,
+                f"PROFESSION: Gathered level {level} {drop.__class__.__name__} "
+                f"(level {self.level.val} {self.__class__.__name__})")
 
             if entity.inventory.space:
                 entity.inventory.receive(drop)
@@ -197,17 +196,17 @@ class Skills(Basic, Harvest, Combat):
 ### Skills ###
 class Melee(CombatSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Melee(ent.dataframe, ent.entID)
+        self.level = ent.melee_level
         super().__init__(realm, ent, skillGroup)
 
 class Range(CombatSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Range(ent.dataframe, ent.entID)
+        self.level = ent.range_level
         super().__init__(realm, ent, skillGroup)
 
 class Mage(CombatSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Mage(ent.dataframe, ent.entID)
+        self.level = ent.mage_level
         super().__init__(realm, ent, skillGroup)
 
 Melee.weakness = Mage
@@ -273,7 +272,7 @@ class Food(HarvestSkill):
 
 class Fishing(ConsumableSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Fishing(ent.dataframe, ent.entID)
+        self.level = ent.fishing_level
         super().__init__(realm, ent, skillGroup)
 
     def update(self, realm, entity):
@@ -281,7 +280,7 @@ class Fishing(ConsumableSkill):
 
 class Herbalism(ConsumableSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Herbalism(ent.dataframe, ent.entID)
+        self.level = ent.herbalism_level
         super().__init__(realm, ent, skillGroup)
 
     def update(self, realm, entity):
@@ -289,7 +288,7 @@ class Herbalism(ConsumableSkill):
 
 class Prospecting(AmmunitionSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Prospecting(ent.dataframe, ent.entID)
+        self.level = ent.prospecting_level
         super().__init__(realm, ent, skillGroup)
 
     def update(self, realm, entity):
@@ -297,7 +296,7 @@ class Prospecting(AmmunitionSkill):
 
 class Carving(AmmunitionSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Carving(ent.dataframe, ent.entID)
+        self.level = ent.carving_level
         super().__init__(realm, ent, skillGroup)
 
     def update(self, realm, entity):
@@ -305,7 +304,7 @@ class Carving(AmmunitionSkill):
 
 class Alchemy(AmmunitionSkill):
     def __init__(self, realm, ent, skillGroup):
-        self.level = Serialized.Entity.Alchemy(ent.dataframe, ent.entID)
+        self.level = ent.alchemy_level
         super().__init__(realm, ent, skillGroup)
 
     def update(self, realm, entity):
