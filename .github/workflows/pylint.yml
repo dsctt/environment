@@ -20,4 +20,4 @@ jobs:
         pip install pylint
     - name: Analysing the code with pylint
       run: |
-        pylint --rcfile=pylint.cfg --refursive=y nmmo tests
+        pylint --rcfile=pylint.cfg --recursive=y nmmo tests
