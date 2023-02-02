@@ -2,7 +2,6 @@ from itertools import chain
 
 from setuptools import find_packages, setup
 
-
 REPO_URL = "https://github.com/neuralmmo/environment"
 
 extra = {
