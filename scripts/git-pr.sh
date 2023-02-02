@@ -72,6 +72,4 @@ if [ "$ans" != "n" ]; then
   pull_request_url="https://github.com/CarperAI/nmmo-environment/compare/$MASTER_BRANCH...CarperAI:nmmo-environment:$branch_name?expand=1"
 
   echo "Pull request URL: $pull_request_url"
-if
-
-
+fi
