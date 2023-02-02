@@ -44,7 +44,7 @@ setup(
         'lz4==4.0.0',
         'h5py==3.7.0',
         'ordered-set',
-        'pettingzoo==1.15.0',
+        'pettingzoo==1.19.0',
         'py',
         'scipy'
     ],
