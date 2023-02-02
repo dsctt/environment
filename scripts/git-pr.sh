@@ -66,9 +66,12 @@ echo "Pushing topic branch to origin..."
 git push -u origin $branch_name
 
 # Generate a Github pull request
-echo "Generating Github pull request..."
-pull_request_url="https://github.com/CarperAI/nmmo-environment/compare/$MASTER_BRANCH...CarperAI:nmmo-environment:$branch_name?expand=1"
+read -p "Do you like to create a PR to the CarperAI/nmmo-environment repo? (y/n) " ans
+if [ "$ans" != "n" ]; then
+  echo "Generating Github pull request..."
+  pull_request_url="https://github.com/CarperAI/nmmo-environment/compare/$MASTER_BRANCH...CarperAI:nmmo-environment:$branch_name?expand=1"
 
-echo "Pull request URL: $pull_request_url"
+  echo "Pull request URL: $pull_request_url"
+if
 
 
