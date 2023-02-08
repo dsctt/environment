@@ -27,6 +27,9 @@ class DataTable:
     self._num_columns = num_columns
     self._id_allocator = IdAllocator(100)
 
+  def reset(self):
+    self._id_allocator = IdAllocator(100)
+
   def update(self, row_id: int, col: int, value):
     raise NotImplementedError
 

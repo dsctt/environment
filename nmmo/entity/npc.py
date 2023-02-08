@@ -142,7 +142,7 @@ class NPC(entity.Entity):
     data = super().packet()
 
     data['skills']   = self.skills.packet()
-    data['resource'] = {'health': self.resources.health.packet()}
+    data['resource'] = {'health': self.resources.health.val}
 
     return data
 

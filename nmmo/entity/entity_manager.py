@@ -84,6 +84,7 @@ class NPCManager(EntityGroup):
   def reset(self):
     super().reset()
     self.next_id = -1
+    self.spawn_dangers = []
 
   def spawn(self):
     config = self.config

@@ -72,6 +72,10 @@ class Realm:
         idx: Map index to load
     """
     self.log_helper.reset()
+    # reset datastore tables, except the table for TileState
+    for s in [EntityState, ItemState]:
+      # TileState datastore reset is done through self.map.reset
+      self.datastore.table(s._name).reset() # pylint: disable=protected-access
     self.map.reset(map_id or np.random.randint(self.config.MAP_N) + 1)
     self.players.reset()
     self.npcs.reset()
@@ -160,7 +164,11 @@ class Realm:
     return dead
 
   def log_milestone(self, category: str, value: float, message: str = None):
-    self.log_helper.log_milestone(category, value)
-    self.log_helper.log_event(category, value)
+    if self.config.LOG_MILESTONES:
+      self.log_helper.log_milestone(category, value)
+
+    if self.config.LOG_EVENTS:
+      self.log_helper.log_event(category, value)
+
     if self.config.LOG_VERBOSE:
       logging.info("Milestone: %s %s %s", category, value, message)
