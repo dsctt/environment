@@ -2,7 +2,6 @@ from itertools import chain
 
 from setuptools import find_packages, setup
 
-
 REPO_URL = "https://github.com/neuralmmo/environment"
 
 extra = {
@@ -13,7 +12,6 @@ extra = {
     'cleanrl': [
         'wandb==0.12.9',
         'supersuit==3.3.5',
-        'gym==0.23.0',
         'tensorboard',
         'torch',
         'openskill',
@@ -32,7 +30,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'pytest-benchmark==3.4.1',
-        'openskill',
+        'openskill==4.0.0',
         'fire==0.4.0',
         'setproctitle==1.1.10',
         'service-identity==21.1.0',
@@ -43,10 +41,13 @@ setup(
         'tqdm==4.61.1',
         'lz4==4.0.0',
         'h5py==3.7.0',
-        'ordered-set',
-        'pettingzoo==1.15.0',
-        'py',
-        'scipy'
+        'ordered-set==4.1.0',
+        'pettingzoo==1.19.0',
+        'gym==0.23.0',
+        'pylint==2.16.0',
+        'py==1.11.0',
+        'scipy==1.10.0',
+        'numpy==1.24.1'
     ],
     extras_require=extra,
     python_requires=">=3.7",
