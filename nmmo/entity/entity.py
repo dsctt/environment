@@ -127,9 +127,9 @@ class Resources:
 
   def packet(self):
     data = {}
-    data['health'] = self.health.packet()
-    data['food'] = self.food.packet()
-    data['water'] = self.water.packet()
+    data['health'] = self.health.val
+    data['food'] = self.food.val
+    data['water'] = self.water.val
     return data
 
 class Status:
@@ -255,8 +255,9 @@ class Entity(EntityState):
       'level': self.attack_level,
       'item_level': self.item_level.val,
       'color': self.color.packet(),
-      'population': self.population.val,
-      'self': self.self.val,
+      'population': self.population,
+      # FIXME: Don't know what it does. Previous nmmo entities all returned 1
+      # 'self': self.self.val,
     }
 
     return data
@@ -320,3 +321,7 @@ class Entity(EntityState):
     mage = self.skills.mage.level.val
 
     return int(max(melee, ranged, mage))
+
+  @property
+  def population(self):
+    return self.population_id.val

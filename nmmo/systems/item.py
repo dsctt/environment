@@ -346,7 +346,7 @@ class Consumable(Item):
       return False
 
     self.realm.log_milestone(
-      f'Consumed_{self.__class__.__name__}', self.level.val,
+      f'[PlayerID: {entity.ent_id}] Consumed_{self.__class__.__name__}', self.level.val,
       f"PROF: Consumed {self.level.val} {self.__class__.__name__} "
       f"by Entity level {entity.attack_level}")
 

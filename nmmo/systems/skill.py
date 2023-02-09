@@ -57,8 +57,8 @@ class Skill(abc.ABC):
     level = self.experience_calculator.level_at_exp(self.exp)
     self.level.update(int(level))
 
-    self.realm.log_milestone(f'Level_{self.__class__.__name__}', level,
-      f"PROGRESSION: Reached level {level} {self.__class__.__name__}")
+    self.realm.log_milestone(f'[PlayerID: {self.entity.ent_id}] Level_{self.__class__.__name__}',
+      int(level), f"PROGRESSION: Reached level {level} {self.__class__.__name__}")
 
   def set_experience_by_level(self, level):
     self.exp = self.experience_calculator.level_at_exp(level)
@@ -96,8 +96,8 @@ class HarvestSkill(NonCombatSkill):
     for drop in drop_table.roll(self.realm, level):
       assert drop.level.val == level, 'Drop level does not match roll specification'
 
-      self.realm.log_milestone(f'Gather_{drop.__class__.__name__}', level,
-        f"PROFESSION: Gathered level {level} {drop.__class__.__name__} "
+      self.realm.log_milestone(f'[PlayerID: {entity.ent_id}] Gather_{drop.__class__.__name__}',
+        level, f"PROFESSION: Gathered level {level} {drop.__class__.__name__} "
         f"(level {self.level.val} {self.__class__.__name__})")
 
       if entity.inventory.space:
