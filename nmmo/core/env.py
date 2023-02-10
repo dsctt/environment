@@ -33,6 +33,8 @@ class Env(ParallelEnv):
     self.realm = realm.Realm(config)
     self.obs = None
 
+    self.possible_agents = [i for i in range(1, config.PLAYER_N + 1)]
+
   # pylint: disable=method-cache-max-size-none
   @functools.lru_cache(maxsize=None)
   def observation_space(self, agent: int):
@@ -151,7 +153,7 @@ class Env(ParallelEnv):
           Where agent_i is the integer index of the i\'th agent
 
           The environment only evaluates provided actions for provided
-          agents. Unprovided action types are interpreted as no-ops and
+          gents. Unprovided action types are interpreted as no-ops and
           illegal actions are ignored
 
           It is also possible to specify invalid combinations of valid

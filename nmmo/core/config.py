@@ -1,5 +1,4 @@
 # pylint: disable=invalid-name
-
 from __future__ import annotations
 
 import os
@@ -680,6 +679,10 @@ class Medium(Config):
   PROGRESSION_SPAWN_UNIFORMS   = 256
 
   HORIZON                      = 1024
+
+  @property
+  def PLAYERS(self):
+    return [nmmo.Agent]
 
 
 class Large(Config):
