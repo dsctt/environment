@@ -33,7 +33,7 @@ class Env(ParallelEnv):
     self.realm = realm.Realm(config)
     self.obs = None
 
-    self.possible_agents = [i for i in range(1, config.PLAYER_N + 1)]
+    self.possible_agents = list(range(1, config.PLAYER_N + 1))
 
   # pylint: disable=method-cache-max-size-none
   @functools.lru_cache(maxsize=None)
