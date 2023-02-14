@@ -163,7 +163,7 @@ class Realm:
 
     return dead
 
-  def log_milestone(self, category: str, value: float, message: str = None):
+  def log_milestone(self, category: str, value: float, message: str = None, tags: Dict = None):
     if self.config.LOG_MILESTONES:
       self.log_helper.log_milestone(category, value)
 
@@ -171,4 +171,8 @@ class Realm:
       self.log_helper.log_event(category, value)
 
     if self.config.LOG_VERBOSE:
-      logging.info("Milestone: %s %s %s", category, value, message)
+      # TODO: more general handling of tags, if necessary
+      if tags and 'player_id' in tags:
+        logging.info("Milestone (Player %d): %s %s %s", tags['player_id'], category, value, message)
+      else:
+        logging.info("Milestone: %s %s %s", category, value, message)
