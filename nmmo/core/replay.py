@@ -1,5 +1,6 @@
 import json
 import lzma
+import logging
 
 class Replay:
   def __init__(self, config):
@@ -25,7 +26,7 @@ class Replay:
     self.packets.append(data)
 
   def save(self):
-    print(f'Saving replay to {self.path} ...')
+    logging.info('Saving replay to %s ...', self.path)
 
     data = {
         'map': self.map,

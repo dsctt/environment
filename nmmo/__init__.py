@@ -1,3 +1,5 @@
+import logging
+
 from .version import __version__
 
 from .lib import material, spawn
@@ -29,4 +31,4 @@ __all__ = ['Env', 'config', 'agent', 'Agent', 'MapGenerator', 'Terrain',
 try:
   __all__.append('OpenSkillRating')
 except RuntimeError:
-  print('Warning: OpenSkill not installed. Ignore if you do not need this feature')
+  logging.error('Warning: OpenSkill not installed. Ignore if you do not need this feature')
