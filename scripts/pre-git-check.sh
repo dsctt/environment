@@ -35,4 +35,6 @@ if ! pytest; then
     exit 1
 fi
 
-echo "Looks good!"
+echo
+echo "Pre-git checks look good!"
+echo
