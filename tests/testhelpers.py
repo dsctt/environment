@@ -1,23 +1,23 @@
-# pylint: disable=all
-
-import numpy as np
+import logging
 from copy import deepcopy
+import numpy as np
 
 import nmmo
 
 from scripted import baselines
+from nmmo.io.action import Move, Attack, Sell, Use, Give, Buy
 
 
 # this function can be replaced by assertDictEqual
 # but might be still useful for debugging
-def are_actions_equal(source_atn, target_atn, debug=True):
+def actions_are_equal(source_atn, target_atn, debug=True):
 
   # compare the numbers and player ids
   player_src = list(source_atn.keys())
   player_tgt = list(target_atn.keys())
   if player_src != player_tgt:
     if debug:
-      print("players don't match")
+      logging.error("players don't match")
     return False
 
   # for each player, compare the actions
@@ -27,26 +27,26 @@ def are_actions_equal(source_atn, target_atn, debug=True):
 
     if list(atn1.keys()) != list(atn2.keys()):
       if debug:
-        print("action keys don't match. player:", ent_id)
+        logging.error("action keys don't match. player: %s", str(ent_id))
       return False
 
     for atn, args in atn1.items():
       if atn2[atn] != args:
         if debug:
-          print("action args don't match. player:", ent_id, ", action:", atn)
+          logging.error("action args don't match. player: %s, action: %s", str(ent_id), str(atn))
         return False
 
   return True
 
 
 # this function CANNOT be replaced by assertDictEqual
-def are_observations_equal(source_obs, target_obs, debug=True):
+def observations_are_equal(source_obs, target_obs, debug=True):
 
   keys_src = list(source_obs.keys())
   keys_obs = list(target_obs.keys())
   if keys_src != keys_obs:
     if debug:
-      print("entities don't match")
+      logging.error("entities don't match")
     return False
 
   for k in keys_src:
@@ -54,7 +54,7 @@ def are_observations_equal(source_obs, target_obs, debug=True):
     ent_tgt = target_obs[k]
     if list(ent_src.keys()) != list(ent_tgt.keys()):
       if debug:
-        print("entries don't match. key:", k)
+        logging.error("entries don't match. key: %s", str(k))
       return False
 
     obj = ent_src.keys()
@@ -63,51 +63,35 @@ def are_observations_equal(source_obs, target_obs, debug=True):
       obj_tgt = ent_tgt[o]
       if np.sum(obj_src != obj_tgt) > 0:
         if debug:
-          print("objects don't match. key:", k, ', obj:', o)
+          logging.error("objects don't match. key: %s, obj: %s", str(k), str(o))
         return False
 
   return True
 
 
 def player_total(env):
-  sum_gold = 0
-
-  for ent in env.realm.players.values():
-    sum_gold += ent.gold.val
-
-  return sum_gold 
+  return sum(ent.gold.val for ent in env.realm.players.values())
 
 
 def count_actions(tick, actions):
-  cnt_move = 0
-  cnt_attack = 0
-  cnt_sell = 0
-  cnt_use = 0
-  cnt_give = 0
-  cnt_buy = 0
+  cnt_action = {}
+  for atn in (Move, Attack, Sell, Use, Give, Buy):
+    cnt_action[atn] = 0
 
-  for entID in list(actions.keys()):
-    for atn, args in actions[entID].items():
-      if atn == nmmo.action.Move:
-        cnt_move += 1
-      elif atn == nmmo.action.Attack:
-        cnt_attack += 1
-      elif atn == nmmo.action.Sell:
-        cnt_sell += 1
-      elif atn == nmmo.action.Use:
-        cnt_use += 1
-      elif atn == nmmo.action.Give:
-        cnt_give += 1
-      elif atn == nmmo.action.Buy:
-        cnt_buy += 1
+  for ent_id in actions:
+    for atn, _ in actions[ent_id].items():
+      if atn in cnt_action:
+        cnt_action[atn] += 1
       else:
-        print('not counted:', atn)
+        cnt_action[atn] = 1
 
-  print('Tick:', tick, ', alive agents:', len(actions.keys()), 
-        ', atn cnts move:', cnt_move, ', attack:', cnt_attack, ', sell:', cnt_sell, 
-        ', use:', cnt_use, ', give:', cnt_give, ', buy:', cnt_buy)
+  info_str = f"Tick: {tick}, acting agents: {len(actions)}, action counts " + \
+             f"move: {cnt_action[Move]}, attack: {cnt_action[Attack]}, " + \
+             f"sell: {cnt_action[Sell]}, use: {cnt_action[Move]}, " + \
+             f"give: {cnt_action[Give]}, buy: {cnt_action[Buy]}"
+  logging.info(info_str)
 
-  return cnt_move, cnt_attack, cnt_sell, cnt_use, cnt_give, cnt_buy
+  return cnt_action
 
 
 class ScriptedAgentTestConfig(nmmo.config.Small, nmmo.config.AllGameSystems):
@@ -117,15 +101,17 @@ class ScriptedAgentTestConfig(nmmo.config.Small, nmmo.config.AllGameSystems):
   LOG_ENV = True
 
   LOG_MILESTONES = True
-  LOG_EVENTS = False # TODO: LOG_EVENTS needs to be fixed
+  LOG_EVENTS = False
   LOG_VERBOSE = False
 
   SPECIALIZE = True
   PLAYERS = [
-          baselines.Fisher, baselines.Herbalist, baselines.Prospector, baselines.Carver, baselines.Alchemist,
-          baselines.Melee, baselines.Range, baselines.Mage]
+    baselines.Fisher, baselines.Herbalist,
+    baselines.Prospector,baselines.Carver, baselines.Alchemist,
+    baselines.Melee, baselines.Range, baselines.Mage]
 
 
+# pylint: disable=abstract-method,duplicate-code
 class ScriptedAgentTestEnv(nmmo.Env):
   '''
   EnvTest step() bypasses some differential treatments for scripted agents
@@ -147,7 +133,7 @@ class ScriptedAgentTestEnv(nmmo.Env):
 
     # all agent must be scripted agents
     for ent in self.realm.players.values():
-      assert isinstance(ent.agent, baselines.Scripted) == True, 'All agent must be scripted.'
+      assert isinstance(ent.agent, baselines.Scripted), 'All agent must be scripted.'
 
     # if actions are not provided, generate actions using the scripted policy
     if actions == {}:
@@ -156,14 +142,15 @@ class ScriptedAgentTestEnv(nmmo.Env):
         # generate the serialized actions & cache these
         atns = ent.agent(self.obs[eid])
         self.actions[eid] = deepcopy(atns)
-        
+
         # handle problematic values
         for atn, args in atns.items():
           for arg, val in args.items():
-            if arg == nmmo.io.action.Price and type(val) != int:
-              # <class 'nmmo.io.action.Price'>: <class 'nmmo.io.action.Discrete_1'>: convert Discrete_1 to 1
+            if arg == nmmo.io.action.Price and not isinstance(val, int):
+              # <class 'nmmo.io.action.Price'>: <class 'nmmo.io.action.Discrete_1'>
+              # convert Discrete_1 to 1
               self.actions[eid][atn][arg] = val.val
-        
+
         #print(eid, self.actions[eid])
 
         # deserialize
@@ -172,7 +159,7 @@ class ScriptedAgentTestEnv(nmmo.Env):
             #print(ent, val)
             atns[atn][arg] = arg.deserialize(self.realm, ent, val)
         actions[eid] = atns
-    
+
     # if actions are provided, deserialize these
     else:
 
