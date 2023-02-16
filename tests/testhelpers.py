@@ -128,10 +128,8 @@ class ScriptedAgentTestEnv(nmmo.Env):
     self.actions = {}
     return super().reset(map_id=map_id, seed=seed, options=options)
 
-  def step(self, actions):
-    assert self.obs is not None, 'step() called before reset'
-
-    # all agent must be scripted agents
+  def _compute_scripted_agent_actions(self, actions):
+    # all agent must be scripted agents when using ScriptedAgentTestEnv
     for ent in self.realm.players.values():
       assert isinstance(ent.agent, baselines.Scripted), 'All agent must be scripted.'
 
@@ -141,15 +139,17 @@ class ScriptedAgentTestEnv(nmmo.Env):
       for eid, ent in self.realm.players.items():
         # generate the serialized actions & cache these
         atns = ent.agent(self.obs[eid])
-        self.actions[eid] = deepcopy(atns)
 
-        # handle problematic values
+        # handle the cases that are problematic for pickle
         for atn, args in atns.items():
           for arg, val in args.items():
             if arg == nmmo.io.action.Price and not isinstance(val, int):
               # <class 'nmmo.io.action.Price'>: <class 'nmmo.io.action.Discrete_1'>
               # convert Discrete_1 to 1
-              self.actions[eid][atn][arg] = val.val
+              atns[atn][arg] = val.val
+
+        # make a copy of actions that are not serialized
+        self.actions[eid] = deepcopy(atns)
 
         #print(eid, self.actions[eid])
 
@@ -185,12 +185,12 @@ class ScriptedAgentTestEnv(nmmo.Env):
             atns[atn][arg] = arg.deserialize(self.realm, ent, val)
             actions[eid] = atns
 
-    dones = self.realm.step(actions)
+    return actions
 
-    # Store the observations, since actions reference them
-    self.obs = self._compute_observations()
-    gym_obs = {a: o.to_gym() for a,o in self.obs.items()}
+  def _process_actions(self, actions, obs):
+    # all agent must be scripted agents when using ScriptedAgentTestEnv
+    for ent in self.realm.players.values():
+      assert isinstance(ent.agent, baselines.Scripted), 'All agent must be scripted.'
 
-    rewards, infos = self._compute_rewards(self.obs.keys())
-
-    return gym_obs, rewards, dones, infos
+    # if so, bypass the _process_actions
+    return actions
