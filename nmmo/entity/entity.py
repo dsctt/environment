@@ -283,12 +283,13 @@ class Entity(EntityState):
     if self.alive:
       return True
 
-    if source is None:
+    if source is None: # no one is taking loot
       return True
 
-    if not source.is_player:
+    if not source.is_player: # npcs cannot loot
       return True
 
+    # now, source can loot the dead self
     return False
 
   # pylint: disable=unused-argument

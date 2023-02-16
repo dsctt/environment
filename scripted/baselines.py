@@ -198,7 +198,7 @@ class Scripted(nmmo.Agent):
            if itm.type_id in self.best_items:
                current_level = self.best_items[itm.type_id].level
 
-           itm.heuristic = self.upgrade_heuristic(current_level, itm.level, itm.price)
+           itm.heuristic = self.upgrade_heuristic(current_level, itm.level, itm.listed_price)
 
            #Always count first item
            if itm.type_id not in self.best_heuristic:

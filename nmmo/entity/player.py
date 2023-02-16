@@ -29,6 +29,10 @@ class Player(entity.Entity):
     # Submodules
     self.skills = Skills(realm, self)
 
+    # Gold: initialize with 1 gold, like the old nmmo
+    if realm.config.EXCHANGE_SYSTEM_ENABLED:
+      self.gold.update(1)
+
     self.diary  = None
     tasks = realm.config.TASKS
     if tasks:
@@ -61,6 +65,13 @@ class Player(entity.Entity):
     if not self.config.ITEM_SYSTEM_ENABLED:
       return False
 
+    # if self is killed, source receive gold & inventory items
+    source.gold.increment(self.gold.val)
+    self.gold.update(0)
+
+    # TODO(kywch): make source receive the highest-level items first
+    #   because source cannot take it if the inventory is full
+    #   Also, destroy the remaining items if the source cannot take those
     for item in list(self.inventory.items):
       if not item.quantity.val:
         continue
