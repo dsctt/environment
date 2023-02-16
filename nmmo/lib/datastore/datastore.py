@@ -54,6 +54,9 @@ class DataTable:
   def add_row(self) -> int:
     raise NotImplementedError
 
+  def is_empty(self) -> bool:
+    raise NotImplementedError
+
 class DatastoreRecord:
   def __init__(self, datastore, table: DataTable, row_id: int) -> None:
     self.datastore = datastore
