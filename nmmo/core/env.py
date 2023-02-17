@@ -34,6 +34,7 @@ class Env(ParallelEnv):
     self.obs = None
 
     self.possible_agents = list(range(1, config.PLAYER_N + 1))
+    self.has_scripted_agents = False
 
   # pylint: disable=method-cache-max-size-none
   @functools.lru_cache(maxsize=None)
@@ -128,6 +129,13 @@ class Env(ParallelEnv):
 
     self._init_random(seed)
     self.realm.reset(map_id)
+
+    # check if there are scripted agents
+    for ent in self.realm.players.values():
+      if isinstance(ent.agent, Scripted):
+        self.has_scripted_agents = True
+        break
+
     self.obs = self._compute_observations()
 
     return {a: o.to_gym() for a,o in self.obs.items()}
@@ -313,18 +321,23 @@ class Env(ParallelEnv):
   def _compute_scripted_agent_actions(self, actions: Dict[int, Dict[str, Dict[str, Any]]]):
     '''Compute actions for scripted agents and add them into the action dict'''
 
+    # If there are no scripted agents, this function doesn't need to run at all
+    if not self.has_scripted_agents:
+      return actions
+
     for eid, ent in self.realm.players.items():
       if isinstance(ent.agent, Scripted):
         assert eid not in actions, f'Received an action for a scripted agent {eid}'
-        atns = ent.agent(self.obs[eid])
+        actions[eid] = ent.agent(self.obs[eid])
+
+    return self._deserialize_scripted_actions(actions)
+
+  def _deserialize_scripted_actions(self, actions: Dict[int, Dict[str, Dict[str, Any]]]):
+    for eid, atns in actions.items():
+      if isinstance(self.realm.players[eid].agent, Scripted):
         for atn, args in atns.items():
           for arg, val in args.items():
-            atns[atn][arg] = arg.deserialize(self.realm, ent, val)
-            actions[eid] = atns
-        # CHECKME: do we need to remove them from the observations?
-        #   self.obs is not used in realm.step() and then refreshed via
-        #   _compute_observations, which provide obs for scripted agents anyway
-        #del self.obs[eid]
+            atns[atn][arg] = arg.deserialize(self.realm, self.realm.players[eid], val)
 
     return actions
 
