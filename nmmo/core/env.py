@@ -1,6 +1,7 @@
 import functools
 import random
 from typing import Any, Dict, List
+from ordered_set import OrderedSet
 
 import gym
 import numpy as np
@@ -34,7 +35,7 @@ class Env(ParallelEnv):
     self.obs = None
 
     self.possible_agents = list(range(1, config.PLAYER_N + 1))
-    self.has_scripted_agents = False
+    self.scripted_agents = OrderedSet()
 
   # pylint: disable=method-cache-max-size-none
   @functools.lru_cache(maxsize=None)
@@ -131,10 +132,9 @@ class Env(ParallelEnv):
     self.realm.reset(map_id)
 
     # check if there are scripted agents
-    for ent in self.realm.players.values():
+    for eid, ent in self.realm.players.items():
       if isinstance(ent.agent, Scripted):
-        self.has_scripted_agents = True
-        break
+        self.scripted_agents.add(eid)
 
     self.obs = self._compute_observations()
 
@@ -322,19 +322,22 @@ class Env(ParallelEnv):
     '''Compute actions for scripted agents and add them into the action dict'''
 
     # If there are no scripted agents, this function doesn't need to run at all
-    if not self.has_scripted_agents:
+    if not self.scripted_agents:
       return actions
 
-    for eid, ent in self.realm.players.items():
-      if isinstance(ent.agent, Scripted):
-        assert eid not in actions, f'Received an action for a scripted agent {eid}'
-        actions[eid] = ent.agent(self.obs[eid])
+    for eid in self.scripted_agents:
+      assert eid not in actions, f'Received an action for a scripted agent {eid}'
+      if eid in self.realm.players:
+        actions[eid] = self.realm.players[eid].agent(self.obs[eid])
+      else:
+        # remove the dead scripted agent from the list
+        self.scripted_agents.discard(eid)
 
     return self._deserialize_scripted_actions(actions)
 
   def _deserialize_scripted_actions(self, actions: Dict[int, Dict[str, Dict[str, Any]]]):
     for eid, atns in actions.items():
-      if isinstance(self.realm.players[eid].agent, Scripted):
+      if eid in self.scripted_agents:
         for atn, args in atns.items():
           for arg, val in args.items():
             atns[atn][arg] = arg.deserialize(self.realm, self.realm.players[eid], val)
