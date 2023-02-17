@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import os
 import sys
+import logging
 
 import nmmo
 from nmmo.core.agent import Agent
 from nmmo.core.terrain import MapGenerator
 from nmmo.lib import utils, material, spawn
-
 
 class Template(metaclass=utils.StaticIterable):
   def __init__(self):
@@ -30,10 +30,11 @@ class Template(metaclass=utils.StaticIterable):
       try:
         setattr(self, k, v)
       except AttributeError:
-        print(f'Cannot set attribute: {k} to {v}')
+        logging.error('Cannot set attribute: %s to %s', str(k), str(v))
         sys.exit()
     self.data[k] = v
 
+  # pylint: disable=bad-builtin
   def print(self):
     key_len = 0
     for k in self.data:

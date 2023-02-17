@@ -96,7 +96,8 @@ class Exchange:
 
     self._list_item(item, seller, price, tick)
     self._realm.log_milestone(f'Sell_{item.__class__.__name__}', item.level.val,
-      f'EXCHANGE: Offered level {item.level.val} {item.__class__.__name__} for {price} gold')
+      f'EXCHANGE: Offered level {item.level.val} {item.__class__.__name__} for {price} gold',
+      tags={"player_id": seller.ent_id})
 
   def buy(self, buyer, item_id: int):
     listing = self._item_listings[item_id]

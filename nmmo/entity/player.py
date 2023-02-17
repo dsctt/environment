@@ -36,17 +36,11 @@ class Player(entity.Entity):
 
   @property
   def serial(self):
-    return self.population_id, self.entID
+    return self.population_id, self.ent_id
 
   @property
   def is_player(self) -> bool:
     return True
-
-  @property
-  def population(self):
-    if __debug__:
-      assert self.population_id.val == self.pop
-    return self.pop
 
   @property
   def level(self) -> int:
@@ -89,7 +83,7 @@ class Player(entity.Entity):
   def packet(self):
     data = super().packet()
 
-    data['entID']     = self.entID
+    data['entID']     = self.ent_id
     data['annID']     = self.population
 
     data['resource']  = self.resources.packet()

@@ -88,7 +88,8 @@ class SerializedState():
       _name = name
       State = SimpleNamespace(
         attr_name_to_col = {a: i for i, a in enumerate(attributes)},
-        num_attributes = len(attributes)
+        num_attributes = len(attributes),
+        table = lambda ds: ds.table(name)
       )
 
       def __init__(self, datastore: Datastore,

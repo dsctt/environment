@@ -1,6 +1,7 @@
 import functools
 import random
 from typing import Any, Dict, List
+from ordered_set import OrderedSet
 
 import gym
 import numpy as np
@@ -34,6 +35,7 @@ class Env(ParallelEnv):
     self.obs = None
 
     self.possible_agents = list(range(1, config.PLAYER_N + 1))
+    self.scripted_agents = OrderedSet()
 
   # pylint: disable=method-cache-max-size-none
   @functools.lru_cache(maxsize=None)
@@ -128,11 +130,17 @@ class Env(ParallelEnv):
 
     self._init_random(seed)
     self.realm.reset(map_id)
+
+    # check if there are scripted agents
+    for eid, ent in self.realm.players.items():
+      if isinstance(ent.agent, Scripted):
+        self.scripted_agents.add(eid)
+
     self.obs = self._compute_observations()
 
     return {a: o.to_gym() for a,o in self.obs.items()}
 
-  def step(self, actions):
+  def step(self, actions: Dict[int, Dict[str, Dict[str, Any]]]):
     '''Simulates one game tick or timestep
 
     Args:
@@ -226,20 +234,17 @@ class Env(ParallelEnv):
     '''
     assert self.obs is not None, 'step() called before reset'
 
+    # Check the validity of provided actions
+    # Currently, it doesn't go well with scripted agents' actions
     actions = self._process_actions(actions, self.obs)
 
-    # Compute actions for scripted agents, add them into the action dict,
-    # and remove them from the observations.
-    for eid, ent in self.realm.players.items():
-      if isinstance(ent.agent, Scripted):
-        assert eid not in actions, f'Received an action for a scripted agent {eid}'
-        atns = ent.agent(self.obs[eid])
-        for atn, args in atns.items():
-          for arg, val in args.items():
-            atns[atn][arg] = arg.deserialize(self.realm, ent, val)
-            actions[eid] = atns
-        del self.obs[eid]
+    # Add in scripted agents' actions, if any
+    actions = self._compute_scripted_agent_actions(actions)
 
+    # TODO(kywch): _process_actions should be here and validate all actions
+    # Rename _process_actions to _validate_actions?
+
+    # Execute actions
     dones = self.realm.step(actions)
 
     # Store the observations, since actions reference them
@@ -250,6 +255,7 @@ class Env(ParallelEnv):
 
     return gym_obs, rewards, dones, infos
 
+  # TODO(kywch): rewrite _process_actions using obs.ActionTargets
   def _process_actions(self,
       actions: Dict[int, Dict[str, Dict[str, Any]]],
       obs: Dict[int, Observation]):
@@ -311,6 +317,32 @@ class Env(ParallelEnv):
           processed_actions[entity_id][atn] = processed_action
 
     return processed_actions
+
+  def _compute_scripted_agent_actions(self, actions: Dict[int, Dict[str, Dict[str, Any]]]):
+    '''Compute actions for scripted agents and add them into the action dict'''
+
+    # If there are no scripted agents, this function doesn't need to run at all
+    if not self.scripted_agents:
+      return actions
+
+    for eid in self.scripted_agents:
+      assert eid not in actions, f'Received an action for a scripted agent {eid}'
+      if eid in self.realm.players:
+        actions[eid] = self.realm.players[eid].agent(self.obs[eid])
+      else:
+        # remove the dead scripted agent from the list
+        self.scripted_agents.discard(eid)
+
+    return self._deserialize_scripted_actions(actions)
+
+  def _deserialize_scripted_actions(self, actions: Dict[int, Dict[str, Dict[str, Any]]]):
+    for eid, atns in actions.items():
+      if eid in self.scripted_agents:
+        for atn, args in atns.items():
+          for arg, val in args.items():
+            atns[atn][arg] = arg.deserialize(self.realm, self.realm.players[eid], val)
+
+    return actions
 
   def _compute_observations(self):
     '''Neural MMO Observation API

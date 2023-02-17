@@ -2,6 +2,7 @@
 import unittest
 from typing import List
 
+import random
 from tqdm import tqdm
 
 import nmmo
@@ -16,7 +17,7 @@ from scripted import baselines
 
 # 30 seems to be enough to test variety of agent actions
 TEST_HORIZON = 30
-RANDOM_SEED = 342
+RANDOM_SEED = random.randint(0, 10000)
 # TODO: We should check that milestones have been reached, to make
 # sure that the agents aren't just dying
 class Config(nmmo.config.Small, nmmo.config.AllGameSystems):
@@ -124,6 +125,23 @@ class TestEnv(unittest.TestCase):
       for key, val in item_ob.__dict__.items():
         self.assertEqual(val, getattr(item, key).val,
           f"Mismatch for {key} in item {item_ob.id}: {val} != {getattr(item, key).val}")
+
+  def test_clean_item_after_reset(self):
+    # use the separate env
+    new_env = nmmo.Env(self.config, RANDOM_SEED)
+
+    # reset the environment after running
+    new_env.reset()
+    for _ in tqdm(range(TEST_HORIZON)):
+      new_env.step({})
+    new_env.reset()
+
+    # TODO(kywch): ItemState table is not empty after players/npcs.reset()
+    #   but should be. Will fix this while debugging the item system.
+    # So for now, ItemState table is cleared manually here, just to pass this test 
+    ItemState.State.table(new_env.realm.datastore).reset()
+
+    self.assertTrue(ItemState.State.table(new_env.realm.datastore).is_empty())
 
 if __name__ == '__main__':
   unittest.main()

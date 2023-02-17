@@ -27,6 +27,9 @@ class DataTable:
     self._num_columns = num_columns
     self._id_allocator = IdAllocator(100)
 
+  def reset(self):
+    self._id_allocator = IdAllocator(100)
+
   def update(self, row_id: int, col: int, value):
     raise NotImplementedError
 
@@ -49,6 +52,9 @@ class DataTable:
     raise NotImplementedError
 
   def add_row(self) -> int:
+    raise NotImplementedError
+
+  def is_empty(self) -> bool:
     raise NotImplementedError
 
 class DatastoreRecord:

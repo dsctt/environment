@@ -348,7 +348,8 @@ class Consumable(Item):
     self.realm.log_milestone(
       f'Consumed_{self.__class__.__name__}', self.level.val,
       f"PROF: Consumed {self.level.val} {self.__class__.__name__} "
-      f"by Entity level {entity.attack_level}")
+      f"by Entity level {entity.attack_level}",
+      tags={"player_id": entity.ent_id})
 
     self._apply_effects(entity)
     entity.inventory.remove(self)

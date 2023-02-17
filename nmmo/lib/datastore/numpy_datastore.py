@@ -9,10 +9,16 @@ class NumpyTable(DataTable):
   def __init__(self, num_columns: int, initial_size: int, dtype=np.float32):
     super().__init__(num_columns)
     self._dtype  = dtype
+    self._initial_size = initial_size
     self._max_rows = 0
-
     self._data = np.zeros((0, self._num_columns), dtype=self._dtype)
-    self._expand(initial_size)
+    self._expand(self._initial_size)
+
+  def reset(self):
+    super().reset() # resetting _id_allocator
+    self._max_rows = 0
+    self._data = np.zeros((0, self._num_columns), dtype=self._dtype)
+    self._expand(self._initial_size)
 
   def update(self, row_id: int, col: int, value):
     self._data[row_id, col] = value
@@ -52,6 +58,12 @@ class NumpyTable(DataTable):
     self._max_rows = max_rows
     self._id_allocator.expand(max_rows)
     self._data = data
+
+  def is_empty(self) -> bool:
+    all_data_zero = np.sum(self._data)==0
+    # 0th row is reserved as padding, so # of free ids is _max_rows-1
+    all_id_free = len(self._id_allocator.free) == self._max_rows-1
+    return all_data_zero and all_id_free
 
 class NumpyDatastore(Datastore):
   def _create_table(self, num_columns: int) -> DataTable:

@@ -1,6 +1,7 @@
 
 import os
 import random
+import logging
 
 import numpy as np
 import vec_noise
@@ -234,7 +235,7 @@ class MapGenerator:
       return
 
     if __debug__:
-      print(f'Generating {config.MAP_N} maps')
+      logging.info('Generating %s maps', str(config.MAP_N))
 
     for idx in tqdm(range(config.MAP_N)):
       path = path_maps + '/map' + str(idx+1)

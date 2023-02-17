@@ -26,18 +26,25 @@ class DummyLogHelper(LogHelper):
 
   def log_event(self, event: str, value: float) -> None:
     pass
+
 class SimpleLogHelper(LogHelper):
   def __init__(self, realm) -> None:
     self.realm = realm
     self.config = realm.config
 
+    self.reset()
+
+  def reset(self):
     self._env_logger    = Logger()
     self._player_logger = Logger()
-    self._event_logger  = Logger()
-    self._milestone_logger = None
+    self._event_logger  = DummyLogHelper()
+    self._milestone_logger = DummyLogHelper()
+
+    if self.config.LOG_EVENTS:
+      self._event_logger = Logger()
 
     if self.config.LOG_MILESTONES:
-      self.milestone = MilestoneLogger(self.config.LOG_FILE)
+      self._milestone_logger = MilestoneLogger(self.config.LOG_FILE)
 
     self._player_stats_funcs = {}
     self._register_player_stats()
@@ -140,6 +147,6 @@ class SimpleLogHelper(LogHelper):
         stats["Achievement_{achievement.name}"] = float(achievement.completed)
 
     # Used for SR
-    stats['PolicyID'] = player.policyID
+    stats['PolicyID'] = player.population
 
     return stats

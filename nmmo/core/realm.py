@@ -73,8 +73,18 @@ class Realm:
     """
     self.log_helper.reset()
     self.map.reset(map_id or np.random.randint(self.config.MAP_N) + 1)
+
+    # EntityState and ItemState tables must be empty after players/npcs.reset()
     self.players.reset()
     self.npcs.reset()
+    assert EntityState.State.table(self.datastore).is_empty(), \
+        "EntityState table is not empty"
+
+    # TODO(kywch): ItemState table is not empty after players/npcs.reset()
+    #   but should be. Will fix this while debugging the item system.
+    # assert ItemState.State.table(self.datastore).is_empty(), \
+    #     "ItemState table is not empty"
+
     self.players.spawn()
     self.npcs.spawn()
     self.tick = 0
@@ -162,8 +172,13 @@ class Realm:
 
     return dead
 
-  def log_milestone(self, category: str, value: float, message: str = None):
+  def log_milestone(self, category: str, value: float, message: str = None, tags: Dict = None):
     self.log_helper.log_milestone(category, value)
     self.log_helper.log_event(category, value)
+
     if self.config.LOG_VERBOSE:
-      logging.info("Milestone: %s %s %s", category, value, message)
+      # TODO: more general handling of tags, if necessary
+      if tags and 'player_id' in tags:
+        logging.info("Milestone (Player %d): %s %s %s", tags['player_id'], category, value, message)
+      else:
+        logging.info("Milestone: %s %s %s", category, value, message)

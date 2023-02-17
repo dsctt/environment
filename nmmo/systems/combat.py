@@ -94,8 +94,9 @@ def attack(realm, player, target, skillFn):
     if player.is_player:
         realm.log_milestone(f'Damage_{skill_name}', damage,
                             f'COMBAT: Inflicted {damage} {skill_name} damage ' +
-                            f'(lvl {player.equipment.total(lambda e: e.level)} vs' +
-                            f'lvl {target.equipment.total(lambda e: e.level)})')
+                            f'(lvl {player.equipment.total(lambda e: e.level)} vs ' +
+                            f'lvl {target.equipment.total(lambda e: e.level)})',
+                            tags={"player_id": player.ent_id})
 
     player.apply_damage(damage, skill.__class__.__name__.lower())
     target.receive_damage(player, damage)

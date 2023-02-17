@@ -1,4 +1,5 @@
 import os
+import logging
 
 import numpy as np
 from ordered_set import OrderedSet
@@ -52,7 +53,7 @@ class Map:
     try:
       map_file = np.load(f_path)
     except FileNotFoundError:
-      print('Maps not found')
+      logging.error('Maps not found')
       raise
 
     materials = {mat.index: mat for mat in material.All}
