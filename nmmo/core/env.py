@@ -33,7 +33,7 @@ class Env(ParallelEnv):
     self.realm = realm.Realm(config)
     self.obs = None
 
-    self.possible_agents = [i for i in range(1, config.PLAYER_N + 1)]
+    self.possible_agents = list(range(1, config.PLAYER_N + 1))
 
   # pylint: disable=method-cache-max-size-none
   @functools.lru_cache(maxsize=None)
@@ -274,7 +274,7 @@ class Env(ParallelEnv):
             processed_action[arg] = arg.edges[val]
 
           elif arg == nmmo.action.Target:
-            target_id = entity_obs.entities.ids[val]
+            target_id = entity_obs.entities.id(val)
             target = self.realm.entity_or_none(target_id)
             if target is not None:
               processed_action[arg] = target
@@ -285,7 +285,7 @@ class Env(ParallelEnv):
           elif atn in (nmmo.action.Sell, nmmo.action.Use, nmmo.action.Give) \
             and arg == nmmo.action.Item:
 
-            item_id = entity_obs.inventory.ids[val]
+            item_id = entity_obs.inventory.id(val)
             item = self.realm.items.get(item_id)
             if item is not None:
               assert item.owner_id == entity_id, f'Item {item_id} is not owned by {entity_id}'
@@ -295,7 +295,7 @@ class Env(ParallelEnv):
               break
 
           elif atn == nmmo.action.Buy and arg == nmmo.action.Item:
-            item_id = entity_obs.market.ids[val]
+            item_id = entity_obs.market.id(val)
             item = self.realm.items.get(item_id)
             if item is not None:
               assert item.listed_price > 0, f'Item {item_id} is not for sale'

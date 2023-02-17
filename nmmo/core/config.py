@@ -5,6 +5,7 @@ import os
 import sys
 
 import nmmo
+from nmmo.core.agent import Agent
 from nmmo.core.terrain import MapGenerator
 from nmmo.lib import utils, material, spawn
 
@@ -680,9 +681,7 @@ class Medium(Config):
 
   HORIZON                      = 1024
 
-  @property
-  def PLAYERS(self):
-    return [nmmo.Agent]
+  PLAYERS = [Agent]
 
 
 class Large(Config):
