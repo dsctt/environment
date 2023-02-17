@@ -140,8 +140,8 @@ class ScriptedAgentTestEnv(nmmo.Env):
   def _compute_scripted_agent_actions(self, actions):
     # if actions are not provided, generate actions using the scripted policy
     if actions == {}:
-      for eid, entity in self.realm.players.items():
-        actions[eid] = entity.agent(self.obs[eid])
+      for eid, ent in self.realm.players.items():
+        actions[eid] = ent.agent(self.obs[eid])
 
       # cache the actions for replay before deserialization
       self.actions = deepcopy(actions)
