@@ -121,6 +121,9 @@ class Realm:
     return e
 
   def entity_or_none(self, ent_id):
+    if ent_id is None:
+      return None
+
     """Get entity by ID"""
     if ent_id < 0:
       return self.npcs.get(ent_id)

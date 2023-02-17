@@ -23,23 +23,32 @@ class Observation:
     self.tiles = tiles[0:config.MAP_N_OBS]
 
     entities = entities[0:config.PLAYER_N_OBS]
+    entity_ids = entities[:,EntityState.State.attr_name_to_col["id"]]
     self.entities = SimpleNamespace(
         values = entities,
-        ids = entities[:,EntityState.State.attr_name_to_col["id"]])
+        ids = entity_ids,
+        id = lambda i: entity_ids[i] if i < len(entity_ids) else None
+    )
 
     if config.ITEM_SYSTEM_ENABLED:
       inventory = inventory[0:config.ITEM_N_OBS]
+      inv_ids = inventory[:,ItemState.State.attr_name_to_col["id"]]
       self.inventory = SimpleNamespace(
         values = inventory,
-        ids = inventory[:,ItemState.State.attr_name_to_col["id"]])
+        ids = inv_ids,
+        id = lambda i: inv_ids[i] if i < len(inv_ids) else None
+    )
     else:
       assert inventory.size == 0
 
     if config.EXCHANGE_SYSTEM_ENABLED:
       market = market[0:config.EXCHANGE_N_OBS]
+      market_ids = market[:,ItemState.State.attr_name_to_col["id"]]
       self.market = SimpleNamespace(
         values = market,
-        ids = market[:,ItemState.State.attr_name_to_col["id"]])
+        ids = market_ids,
+        id = lambda i: market_ids[i] if i < len(market_ids) else None
+      )
     else:
       assert market.size == 0
 

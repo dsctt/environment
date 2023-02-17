@@ -6,6 +6,7 @@ import sys
 import logging
 
 import nmmo
+from nmmo.core.agent import Agent
 from nmmo.core.terrain import MapGenerator
 from nmmo.lib import utils, material, spawn
 from nmmo.core.agent import Agent
@@ -683,9 +684,7 @@ class Medium(Config):
   HORIZON                      = 1024
 
   PLAYERS = [Agent]
-  # @property
-  # def PLAYERS(self):
-  #   return [nmmo.Agent]
+
 
 class Large(Config):
   '''A large config suitable for large-scale research or fast models'''
