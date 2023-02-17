@@ -9,7 +9,6 @@ import nmmo
 from nmmo.core.agent import Agent
 from nmmo.core.terrain import MapGenerator
 from nmmo.lib import utils, material, spawn
-from nmmo.core.agent import Agent
 
 class Template(metaclass=utils.StaticIterable):
   def __init__(self):
