@@ -246,7 +246,7 @@ class Env(ParallelEnv):
 
     # Execute actions
     self.realm.step(actions)
-    dones = {eid: eid in self.realm.players for eid in self.possible_agents}
+    dones = {eid: eid not in self.realm.players for eid in self.possible_agents}
 
     # Store the observations, since actions reference them
     self.obs = self._compute_observations()
