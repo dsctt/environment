@@ -121,6 +121,9 @@ class Realm:
     return e
 
   def entity_or_none(self, ent_id):
+    if ent_id is None:
+      return None
+
     """Get entity by ID"""
     if ent_id < 0:
       return self.npcs.get(ent_id)
@@ -170,11 +173,8 @@ class Realm:
     return dead
 
   def log_milestone(self, category: str, value: float, message: str = None, tags: Dict = None):
-    if self.config.LOG_MILESTONES:
-      self.log_helper.log_milestone(category, value)
-
-    if self.config.LOG_EVENTS:
-      self.log_helper.log_event(category, value)
+    self.log_helper.log_milestone(category, value)
+    self.log_helper.log_event(category, value)
 
     if self.config.LOG_VERBOSE:
       # TODO: more general handling of tags, if necessary

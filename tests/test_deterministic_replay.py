@@ -6,6 +6,7 @@ import glob
 import pickle
 import logging
 import random
+from typing import Any, Dict
 
 import numpy as np
 from tqdm import tqdm
@@ -39,6 +40,17 @@ def load_replay_file(replay_file):
   return seed, config, map_src, init_obs, init_npcs, med_obs, actions, final_obs, final_npcs
 
 
+def make_actions_picklable(actions: Dict[int, Dict[str, Dict[str, Any]]]):
+  for eid in actions:
+    for atn, args in actions[eid].items():
+      for arg, val in args.items():
+        if arg == nmmo.io.action.Price and not isinstance(val, int):
+          # <class 'nmmo.io.action.Price'>: <class 'nmmo.io.action.Discrete_1'>
+          # convert Discrete_1 to 1
+          actions[eid][atn][arg] = val.val
+  return actions
+
+
 def generate_replay_file(replay_file, test_horizon):
   # generate the new data with a new env
   seed = random.randint(0, 10000)
@@ -59,7 +71,7 @@ def generate_replay_file(replay_file, test_horizon):
   for _ in tqdm(range(test_horizon)):
     nxt_obs, _, _, _ = env_src.step({})
     med_obs.append(nxt_obs)
-    actions.append(env_src.actions)
+    actions.append(make_actions_picklable(env_src.actions))
   final_obs = nxt_obs
   final_npcs = env_src.realm.npcs.packet
 

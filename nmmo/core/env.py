@@ -1,6 +1,7 @@
 import functools
 import random
 from typing import Any, Dict, List
+from ordered_set import OrderedSet
 
 import gym
 import numpy as np
@@ -34,6 +35,7 @@ class Env(ParallelEnv):
     self.obs = None
 
     self.possible_agents = list(range(1, config.PLAYER_N + 1))
+    self.scripted_agents = OrderedSet()
 
   # pylint: disable=method-cache-max-size-none
   @functools.lru_cache(maxsize=None)
@@ -128,6 +130,12 @@ class Env(ParallelEnv):
 
     self._init_random(seed)
     self.realm.reset(map_id)
+
+    # check if there are scripted agents
+    for eid, ent in self.realm.players.items():
+      if isinstance(ent.agent, Scripted):
+        self.scripted_agents.add(eid)
+
     self.obs = self._compute_observations()
 
     return {a: o.to_gym() for a,o in self.obs.items()}
@@ -272,7 +280,7 @@ class Env(ParallelEnv):
             processed_action[arg] = arg.edges[val]
 
           elif arg == nmmo.action.Target:
-            target_id = entity_obs.entities.ids[val]
+            target_id = entity_obs.entities.id(val)
             target = self.realm.entity_or_none(target_id)
             if target is not None:
               processed_action[arg] = target
@@ -283,7 +291,7 @@ class Env(ParallelEnv):
           elif atn in (nmmo.action.Sell, nmmo.action.Use, nmmo.action.Give) \
             and arg == nmmo.action.Item:
 
-            item_id = entity_obs.inventory.ids[val]
+            item_id = entity_obs.inventory.id(val)
             item = self.realm.items.get(item_id)
             if item is not None:
               assert item.owner_id == entity_id, f'Item {item_id} is not owned by {entity_id}'
@@ -293,7 +301,7 @@ class Env(ParallelEnv):
               break
 
           elif atn == nmmo.action.Buy and arg == nmmo.action.Item:
-            item_id = entity_obs.market.ids[val]
+            item_id = entity_obs.market.id(val)
             item = self.realm.items.get(item_id)
             if item is not None:
               assert item.listed_price > 0, f'Item {item_id} is not for sale'
@@ -313,18 +321,26 @@ class Env(ParallelEnv):
   def _compute_scripted_agent_actions(self, actions: Dict[int, Dict[str, Dict[str, Any]]]):
     '''Compute actions for scripted agents and add them into the action dict'''
 
-    for eid, ent in self.realm.players.items():
-      if isinstance(ent.agent, Scripted):
-        assert eid not in actions, f'Received an action for a scripted agent {eid}'
-        atns = ent.agent(self.obs[eid])
+    # If there are no scripted agents, this function doesn't need to run at all
+    if not self.scripted_agents:
+      return actions
+
+    for eid in self.scripted_agents:
+      assert eid not in actions, f'Received an action for a scripted agent {eid}'
+      if eid in self.realm.players:
+        actions[eid] = self.realm.players[eid].agent(self.obs[eid])
+      else:
+        # remove the dead scripted agent from the list
+        self.scripted_agents.discard(eid)
+
+    return self._deserialize_scripted_actions(actions)
+
+  def _deserialize_scripted_actions(self, actions: Dict[int, Dict[str, Dict[str, Any]]]):
+    for eid, atns in actions.items():
+      if eid in self.scripted_agents:
         for atn, args in atns.items():
           for arg, val in args.items():
-            atns[atn][arg] = arg.deserialize(self.realm, ent, val)
-            actions[eid] = atns
-        # CHECKME: do we need to remove them from the observations?
-        #   self.obs is not used in realm.step() and then refreshed via
-        #   _compute_observations, which provide obs for scripted agents anyway
-        #del self.obs[eid]
+            atns[atn][arg] = arg.deserialize(self.realm, self.realm.players[eid], val)
 
     return actions
 
