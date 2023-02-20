@@ -245,7 +245,8 @@ class Env(ParallelEnv):
     # Rename _process_actions to _validate_actions?
 
     # Execute actions
-    dones = self.realm.step(actions)
+    self.realm.step(actions)
+    dones = {eid: eid not in self.realm.players for eid in self.possible_agents}
 
     # Store the observations, since actions reference them
     self.obs = self._compute_observations()
