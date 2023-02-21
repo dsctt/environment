@@ -278,6 +278,7 @@ class Env(ParallelEnv):
         for arg, val in args.items():
 
           if arg.argType == nmmo.action.Fixed:
+            val = min(val, len(arg.edges) - 1)
             processed_action[arg] = arg.edges[val]
 
           elif arg == nmmo.action.Target:
