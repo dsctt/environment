@@ -28,9 +28,10 @@ git merge origin/$MASTER_BRANCH
 # Checking pylint, xcxc, pytest without touching git
 PRE_GIT_CHECK=$(find . -name pre-git-check.sh)
 if test -f "$PRE_GIT_CHECK"; then
-   $PRE_GIT_CHECK
+  $PRE_GIT_CHECK
 else
-   echo "Missing pre-git-check.sh. Exiting."
+  echo "Missing pre-git-check.sh. Exiting."
+  exit 1
 fi
 
 # create a new branch from current branch and reset to master
