@@ -74,6 +74,7 @@ class Player(entity.Entity):
     #   Also, destroy the remaining items if the source cannot take those
     for item in list(self.inventory.items):
       if not item.quantity.val:
+        item.datastore_record.delete()
         continue
 
       self.inventory.remove(item)

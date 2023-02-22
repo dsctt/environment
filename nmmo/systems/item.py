@@ -38,7 +38,7 @@ ItemState.Limits = lambda config: {
   "owner_id": (-math.inf, math.inf),
   "level": (0, 99),
   "capacity": (0, 99),
-  "quantity": (0, 99),
+  "quantity": (0, math.inf), # NOTE: Ammunitions can be stacked infinitely
   "melee_attack": (0, 100),
   "range_attack": (0, 100),
   "mage_attack": (0, 100),
@@ -149,7 +149,7 @@ class Equipment(Item):
   def unequip(self, equip_slot):
     assert self.equipped.val == 1
     self.equipped.update(0)
-    equip_slot.unequip(self)
+    equip_slot.unequip()
 
   def equip(self, entity, equip_slot):
     assert self.equipped.val == 0
@@ -179,10 +179,16 @@ class Equipment(Item):
     return entity.attack_level
 
   def use(self, entity):
+    if self.listed_price > 0: # cannot use if listed for sale
+      return
+
     if self.equipped.val:
       self.unequip(self._slot(entity))
     else:
+      # always empty the slot first
+      self._slot(entity).unequip()
       self.equip(entity, self._slot(entity))
+
 
 class Armor(Equipment, ABC):
   def __init__(self, realm, level, **kwargs):
@@ -206,6 +212,7 @@ class Bottom(Armor):
   def _slot(self, entity):
     return entity.inventory.equipment.bottom
 
+
 class Weapon(Equipment):
   def __init__(self, realm, level, **kwargs):
     super().__init__(realm, level, **kwargs)
@@ -214,7 +221,7 @@ class Weapon(Equipment):
       level*realm.config.EQUIPMENT_WEAPON_LEVEL_DAMAGE)
 
   def _slot(self, entity):
-    return entity.inventory.equipment.weapon
+    return entity.inventory.equipment.held
 
 class Sword(Weapon):
   ITEM_TYPE_ID = 5
@@ -243,6 +250,7 @@ class Wand(Weapon):
 
   def _level(self, entity):
     return entity.skills.mage.level.val
+
 
 class Tool(Equipment):
   def __init__(self, realm, level, **kwargs):
@@ -276,6 +284,8 @@ class Arcane(Tool):
   ITEM_TYPE_ID = 12
   def _level(self, entity):
     return entity.skills.alchemy.level.val
+
+
 class Ammunition(Equipment, Stack):
   def __init__(self, realm, level, **kwargs):
     super().__init__(realm, level, **kwargs)
@@ -294,9 +304,10 @@ class Ammunition(Equipment, Stack):
 
     if self.quantity.val == 0:
       entity.inventory.remove(self)
+      # delete this empty item instance from the datastore
+      self.datastore_record.delete()
 
     return self.damage
-
 
 class Scrap(Ammunition):
   ITEM_TYPE_ID = 13
@@ -340,8 +351,14 @@ class Shard(Ammunition):
   def damage(self):
     return self.mage_attack.val
 
+
+# NOTE: Each consumable item (ration, poultice) cannot be stacked,
+#   so each item takes 1 inventory space
 class Consumable(Item):
   def use(self, entity) -> bool:
+    if self.listed_price > 0: # cannot use if listed for sale
+      return False
+
     if self._level(entity) < self.level.val:
       return False
 
@@ -353,7 +370,11 @@ class Consumable(Item):
 
     self._apply_effects(entity)
     entity.inventory.remove(self)
+    self.datastore_record.delete()
     return True
+
+  def _level(self, entity):
+    return entity.level
 
 class Ration(Consumable):
   ITEM_TYPE_ID = 16

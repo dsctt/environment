@@ -283,10 +283,16 @@ class Entity(EntityState):
     if self.alive:
       return True
 
-    if source is None: # no one is taking loot
-      return True
+    # if the entity is dead, unlist its items regardless of looting
+    if self.config.EXCHANGE_SYSTEM_ENABLED:
+      for item in list(self.inventory.items):
+        self.realm.exchange.unlist_item(item)
 
-    if not source.is_player: # npcs cannot loot
+    # if the entity is dead but no one can loot, destroy its items
+    if source is None or not source.is_player: # nobody or npcs cannot loot
+      if self.config.ITEM_SYSTEM_ENABLED:
+        for item in list(self.inventory.items):
+          item.datastore_record.delete()
       return True
 
     # now, source can loot the dead self

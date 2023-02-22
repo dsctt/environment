@@ -11,6 +11,8 @@ class EquipmentSlot:
     self.item = item
 
   def unequip(self) -> None:
+    if self.item:
+      self.item.equipped.update(0)
     self.item = None
 
 class Equipment:
@@ -133,14 +135,20 @@ class Inventory:
         stack = self._item_stacks[signature]
         assert item.level.val == stack.level.val, f'{item} stack level mismatch'
         stack.quantity.increment(item.quantity.val)
+        # destroy the original item instance after the transfer is complete
+        item.datastore_record.delete()
         return
 
       if not self.space:
+        # if no space thus cannot receive, just destroy the item
+        item.datastore_record.delete()
         return
 
       self._item_stacks[signature] = item
 
     if not self.space:
+      # if no space thus cannot receive, just destroy the item
+      item.datastore_record.delete()
       return
 
     self.realm.log_milestone(f'Receive_{item.__class__.__name__}', item.level.val,
@@ -150,12 +158,13 @@ class Inventory:
     item.owner_id.update(self.entity.id.val)
     self.items.add(item)
 
+  # pylint: disable=protected-access
   def remove(self, item, quantity=None):
     assert isinstance(item, Item.Item), f'{item} removing item is not an Item instance'
     assert item in self.items, f'No item {item} to remove'
 
     if isinstance(item, Item.Equipment) and item.equipped.val:
-      item.unequip(self.entity)
+      item.unequip(item._slot(self.entity))
 
     if isinstance(item, Item.Stack):
       signature = item.signature
