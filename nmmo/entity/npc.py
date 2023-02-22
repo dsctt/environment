@@ -70,6 +70,15 @@ class NPC(entity.Entity):
     if super().receive_damage(source, dmg):
       return True
 
+    # run the next lines if the npc is killed
+    # source receive gold & items in the droptable
+    # pylint: disable=no-member
+    source.gold.increment(self.gold.val)
+    self.gold.update(0)
+
+    # TODO(kywch): make source receive the highest-level items first
+    #   because source cannot take it if the inventory is full
+    #   Also, destroy the remaining items if the source cannot take those
     for item in self.droptable.roll(self.realm, self.attack_level):
       if source.inventory.space:
         source.inventory.receive(item)
