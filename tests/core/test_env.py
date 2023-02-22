@@ -136,6 +136,13 @@ class TestEnv(unittest.TestCase):
       new_env.step({})
     new_env.reset()
 
+    # items are referenced in the realm.items, which must be empty
+    self.assertTrue(len(new_env.realm.items) == 0)
+
+    # items are referenced in the exchange
+    self.assertTrue(len(new_env.realm.exchange._item_listings) == 0)
+    self.assertTrue(len(new_env.realm.exchange._listings_queue) == 0)
+
     # TODO(kywch): ItemState table is not empty after players/npcs.reset()
     #   but should be. Will fix this while debugging the item system.
     # So for now, ItemState table is cleared manually here, just to pass this test 

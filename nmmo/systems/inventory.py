@@ -127,6 +127,7 @@ class Inventory:
     assert isinstance(item, Item.Item), f'{item} received is not an Item instance'
     assert item not in self.items, f'{item} object received already in inventory'
     assert not item.equipped.val, f'Received equipped item {item}'
+    assert not item.listed_price.val, f'Received listed item {item}'
     assert item.quantity.val, f'Received empty item {item}'
 
     if isinstance(item, Item.Stack):
@@ -136,19 +137,19 @@ class Inventory:
         assert item.level.val == stack.level.val, f'{item} stack level mismatch'
         stack.quantity.increment(item.quantity.val)
         # destroy the original item instance after the transfer is complete
-        item.datastore_record.delete()
+        item.destroy()
         return
 
       if not self.space:
         # if no space thus cannot receive, just destroy the item
-        item.datastore_record.delete()
+        item.destroy()
         return
 
       self._item_stacks[signature] = item
 
     if not self.space:
       # if no space thus cannot receive, just destroy the item
-      item.datastore_record.delete()
+      item.destroy()
       return
 
     self.realm.log_milestone(f'Receive_{item.__class__.__name__}', item.level.val,
@@ -173,17 +174,19 @@ class Inventory:
       stack = self._item_stacks[signature]
 
       if quantity is None or stack.quantity.val == quantity:
-        self.items.remove(stack)
+        self._remove(stack)
         del self._item_stacks[signature]
         return
 
       assert 0 < quantity <= stack.quantity.val, \
         f'Invalid remove {quantity} x {item} ({stack.quantity.val} available)'
       stack.quantity.val -= quantity
-
       return
 
+    self._remove(item)
+
+  # pylint: disable=protected-access
+  def _remove(self, item):
     self.realm.exchange.unlist_item(item)
     item.owner_id.update(0)
-
     self.items.remove(item)

@@ -56,6 +56,11 @@ class TestAmmoUse(unittest.TestCase):
       for other, pos in self.spawn_locs.items():
         self.assertTrue(other in env.obs[ent_id].entities.ids)
 
+      # ammo instances are in the datastore and global item registry (realm)
+      item_id = ItemState.parse_array(env.obs[ent_id].inventory.values[0]).id
+      self.assertTrue(ItemState.Query.by_id(env.realm.datastore, item_id) is not None)
+      self.assertTrue(item_id in env.realm.items)
+
       # agents have ammo
       self.assertEqual(self.ammo[ent_id].ITEM_TYPE_ID,
         ItemState.parse_array(env.obs[ent_id].inventory.values[0]).type_id)
@@ -85,9 +90,11 @@ class TestAmmoUse(unittest.TestCase):
         for ent_id in self.ammo })
 
     # check if the ammos were consumed
+    ammo_ids = []
     for ent_id in self.ammo:
       self.assertEqual(1, # True
         ItemState.parse_array(env.obs[ent_id].inventory.values[0]).quantity)
+      ammo_ids.append(ItemState.parse_array(env.obs[ent_id].inventory.values[0]).id)
 
     # Third tick actions: ATTACK again to use up all the ammo
     env.step({ ent_id: { action.Attack: 
@@ -99,6 +106,10 @@ class TestAmmoUse(unittest.TestCase):
     for ent_id in self.ammo:
       self.assertTrue(len(env.obs[ent_id].inventory.values) ==  0) # empty inventory
       self.assertTrue(env.realm.players[ent_id].inventory.equipment.ammunition.item == None)
+
+    for item_id in ammo_ids:
+      self.assertTrue(len(ItemState.Query.by_id(env.realm.datastore, item_id)) == 0)
+      self.assertTrue(item_id not in env.realm.items)
 
     # DONE
 
