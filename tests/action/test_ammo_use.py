@@ -24,7 +24,7 @@ class TestAmmoUse(unittest.TestCase):
     cls.config.IMMORTAL = True
     
     # detailed logging for debugging
-    cls.config.LOG_VERBOSE = True
+    cls.config.LOG_VERBOSE = False
     if cls.config.LOG_VERBOSE:
       logging.basicConfig(filename=LOGFILE, level=logging.INFO)
 
