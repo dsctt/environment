@@ -77,9 +77,8 @@ class Realm:
     # EntityState and ItemState tables must be empty after players/npcs.reset()
     self.players.reset()
     self.npcs.reset()
-    #assert EntityState.State.table(self.datastore).is_empty(), \
-    #    "EntityState table is not empty"
-    EntityState.State.table(self.datastore).reset()
+    assert EntityState.State.table(self.datastore).is_empty(), \
+        "EntityState table is not empty"
 
     # TODO(kywch): ItemState table is not empty after players/npcs.reset()
     #   but should be. Will fix this while debugging the item system.

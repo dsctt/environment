@@ -185,7 +185,6 @@ class Inventory:
 
     self._remove(item)
 
-  # pylint: disable=protected-access
   def _remove(self, item):
     self.realm.exchange.unlist_item(item)
     item.owner_id.update(0)

@@ -92,9 +92,9 @@ class TestAmmoUse(unittest.TestCase):
     # check if the ammos were consumed
     ammo_ids = []
     for ent_id in self.ammo:
-      self.assertEqual(1, # True
-        ItemState.parse_array(env.obs[ent_id].inventory.values[0]).quantity)
-      ammo_ids.append(ItemState.parse_array(env.obs[ent_id].inventory.values[0]).id)
+      item_info = ItemState.parse_array(env.obs[ent_id].inventory.values[0])
+      self.assertEqual(1, item_info.quantity)
+      ammo_ids.append(item_info.id)
 
     # Third tick actions: ATTACK again to use up all the ammo
     env.step({ ent_id: { action.Attack: 
