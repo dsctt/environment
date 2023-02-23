@@ -1,4 +1,5 @@
 import unittest
+import logging
 
 # pylint: disable=import-error
 from testhelpers import ScriptedAgentTestEnv, ScriptedAgentTestConfig
@@ -11,6 +12,7 @@ from nmmo.systems.item import ItemState
 TEST_HORIZON = 150
 RANDOM_SEED = 985
 
+LOGFILE = 'tests/action/test_ammo_use.log'
 
 class TestAmmoUse(unittest.TestCase):
   @classmethod
@@ -20,6 +22,11 @@ class TestAmmoUse(unittest.TestCase):
     cls.config.PLAYERS = [baselines.Melee, baselines.Range, baselines.Mage]
     cls.config.PLAYER_N = 3
     cls.config.IMMORTAL = True
+    
+    # detailed logging for debugging
+    cls.config.LOG_VERBOSE = True
+    if cls.config.LOG_VERBOSE:
+      logging.basicConfig(filename=LOGFILE, level=logging.INFO)
 
     # set up agents to test ammo use
     cls.policy = { 1:'Melee', 2:'Range', 3:'Mage' }

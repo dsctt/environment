@@ -29,12 +29,6 @@ def attack(realm, player, target, skillFn):
     skill_type   = type(skill)
     skill_name   = skill_type.__name__
 
-    # Ammunition usage
-    if config.EQUIPMENT_SYSTEM_ENABLED:
-        ammunition = player.equipment.ammunition.item
-        if ammunition is not None:
-            ammunition.fire(player)
-
     # Per-style offense/defense
     level_damage = 0
     if skill_type == Skill.Melee:
@@ -80,6 +74,16 @@ def attack(realm, player, target, skillFn):
     if config.EQUIPMENT_SYSTEM_ENABLED:
         equipment_offense = player.equipment.total(offense_fn)
         equipment_defense = target.equipment.total(defense_fn)
+
+        # for debug
+        equipment_level_offense = player.equipment.total(lambda e: e.level)
+        equipment_level_defense = target.equipment.total(lambda e: e.level)
+
+        # after tallying ammo damage, consume ammo (i.e., fire)
+        ammunition = player.equipment.ammunition.item
+        if ammunition is not None:
+            ammunition.fire(player)
+
     else:
         equipment_offense = 0
         equipment_defense = 0
@@ -94,8 +98,8 @@ def attack(realm, player, target, skillFn):
     if player.is_player:
         realm.log_milestone(f'Damage_{skill_name}', damage,
                             f'COMBAT: Inflicted {damage} {skill_name} damage ' +
-                            f'(lvl {player.equipment.total(lambda e: e.level)} vs ' +
-                            f'lvl {target.equipment.total(lambda e: e.level)})',
+                            f'(attack equip lvl {equipment_level_offense} vs ' +
+                            f'defense equip lvl {equipment_level_defense})',
                             tags={"player_id": player.ent_id})
 
     player.apply_damage(damage, skill.__class__.__name__.lower())
