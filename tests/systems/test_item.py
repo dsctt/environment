@@ -16,15 +16,25 @@ class TestItem(unittest.TestCase):
     realm = MockRealm()
 
     hat_1 = Hat(realm, 1)
+    self.assertTrue(ItemState.Query.by_id(realm.datastore, hat_1.id.val) is not None)
     self.assertEqual(hat_1.type_id.val, Hat.ITEM_TYPE_ID)
     self.assertEqual(hat_1.level.val, 1)
     self.assertEqual(hat_1.mage_defense.val, 10)
 
     hat_2 = Hat(realm, 10)
+    self.assertTrue(ItemState.Query.by_id(realm.datastore, hat_2.id.val) is not None)
     self.assertEqual(hat_2.level.val, 10)
     self.assertEqual(hat_2.melee_defense.val, 100)
 
     self.assertDictEqual(realm.items, {hat_1.id.val: hat_1, hat_2.id.val: hat_2})
+
+    # also test destroy
+    ids = [hat_1.id.val, hat_2.id.val]
+    hat_1.destroy()
+    hat_2.destroy()
+    for item_id in ids:
+      self.assertTrue(len(ItemState.Query.by_id(realm.datastore, item_id)) == 0)
+    self.assertDictEqual(realm.items, {})
 
   def test_owned_by(self):
     realm = MockRealm()

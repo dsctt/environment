@@ -84,6 +84,7 @@ class Realm:
     #   but should be. Will fix this while debugging the item system.
     # assert ItemState.State.table(self.datastore).is_empty(), \
     #     "ItemState table is not empty"
+    ItemState.State.table(self.datastore).reset()
 
     self.players.spawn()
     self.npcs.spawn()

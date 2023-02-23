@@ -52,6 +52,9 @@ ItemState.Limits = lambda config: {
 }
 
 ItemState.Query = SimpleNamespace(
+  by_id=lambda ds, id: ds.table("Item").where_eq(
+    ItemState.State.attr_name_to_col["id"], id),
+
   owned_by = lambda ds, id: ds.table("Item").where_eq(
     ItemState.State.attr_name_to_col["owner_id"], id),
 
@@ -99,6 +102,10 @@ class Item(ItemState):
     self.health_restore.update(health_restore)
     self.resource_restore.update(resource_restore)
     realm.items[self.id.val] = self
+
+  def destroy(self):
+    del self.realm.items[self.id.val]
+    self.datastore_record.delete()
 
   @property
   def packet(self):
@@ -305,7 +312,7 @@ class Ammunition(Equipment, Stack):
     if self.quantity.val == 0:
       entity.inventory.remove(self)
       # delete this empty item instance from the datastore
-      self.datastore_record.delete()
+      self.destroy()
 
     return self.damage
 
@@ -370,7 +377,7 @@ class Consumable(Item):
 
     self._apply_effects(entity)
     entity.inventory.remove(self)
-    self.datastore_record.delete()
+    self.destroy()
     return True
 
   def _level(self, entity):

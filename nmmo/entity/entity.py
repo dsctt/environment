@@ -292,7 +292,7 @@ class Entity(EntityState):
     if source is None or not source.is_player: # nobody or npcs cannot loot
       if self.config.ITEM_SYSTEM_ENABLED:
         for item in list(self.inventory.items):
-          item.datastore_record.delete()
+          item.destroy()
       return True
 
     # now, source can loot the dead self
