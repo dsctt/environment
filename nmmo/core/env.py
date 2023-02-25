@@ -39,6 +39,7 @@ class Env(ParallelEnv):
 
   # pylint: disable=method-cache-max-size-none
   @functools.lru_cache(maxsize=None)
+  # CHECK ME: Do we need the agent parameter here?
   def observation_space(self, agent: int):
     '''Neural MMO Observation Space
 
@@ -64,10 +65,10 @@ class Env(ParallelEnv):
     }
 
     if self.config.ITEM_SYSTEM_ENABLED:
-      obs_space["Item"] = box(self.config.ITEM_N_OBS, Item.State.num_attributes)
+      obs_space["Inventory"] = box(self.config.INVENTORY_N_OBS, Item.State.num_attributes)
 
     if self.config.EXCHANGE_SYSTEM_ENABLED:
-      obs_space["Market"] = box(self.config.EXCHANGE_N_OBS, Item.State.num_attributes)
+      obs_space["Market"] = box(self.config.MARKET_N_OBS, Item.State.num_attributes)
 
     return gym.spaces.Dict(obs_space)
 
@@ -77,6 +78,7 @@ class Env(ParallelEnv):
       random.seed(seed)
 
   @functools.lru_cache(maxsize=None)
+  # CHECK ME: Do we need the agent parameter here?
   def action_space(self, agent):
     '''Neural MMO Action Space
 
@@ -291,7 +293,7 @@ class Env(ParallelEnv):
               break
 
           elif atn in (nmmo.action.Sell, nmmo.action.Use, nmmo.action.Give) \
-            and arg == nmmo.action.Item:
+            and arg == nmmo.action.InventoryItem:
 
             item_id = entity_obs.inventory.id(val)
             item = self.realm.items.get(item_id)
@@ -302,7 +304,7 @@ class Env(ParallelEnv):
               action_valid = False
               break
 
-          elif atn == nmmo.action.Buy and arg == nmmo.action.Item:
+          elif atn == nmmo.action.Buy and arg == nmmo.action.MarketItem:
             item_id = entity_obs.market.id(val)
             item = self.realm.items.get(item_id)
             if item is not None:

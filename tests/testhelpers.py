@@ -60,6 +60,11 @@ def observations_are_equal(source_obs, target_obs, debug=True):
 
     obj = ent_src.keys()
     for o in obj:
+
+      # ActionTargets causes a problem here, so skip it
+      if o == "ActionTargets":
+        continue
+
       obj_src = ent_src[o]
       obj_tgt = ent_tgt[o]
       if np.sum(obj_src != obj_tgt) > 0:

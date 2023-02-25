@@ -219,8 +219,9 @@ class Scripted(nmmo.Agent):
       if itm.equipped:
         continue
 
+      # InventoryItem needs where the item is (index) in the inventory
       self.actions[action.Use] = {
-        action.Item: itm.id}
+        action.InventoryItem: self.ob.inventory.index(itm.id)} # list(self.ob.inventory.ids).index(itm.id)
 
     return True
 
@@ -232,13 +233,17 @@ class Scripted(nmmo.Agent):
     else:
       return
 
+    # InventoryItem needs where the item is (index) in the inventory
     self.actions[action.Use] = {
-      action.Item: itm.id}
+      action.InventoryItem: self.ob.inventory.index(itm.id)} # list(self.ob.inventory.ids).index(itm.id)
 
   def sell(self, keep_k: dict, keep_best: set):
     for itm in self.inventory.values():
       price = itm.level
       assert itm.quantity > 0
+
+      if itm.equipped:
+        continue
 
       if itm.type_id in keep_k:
         owned = self.item_counts[itm.type_id]
@@ -253,7 +258,7 @@ class Scripted(nmmo.Agent):
         continue
 
       self.actions[action.Sell] = {
-        action.Item: itm.id,
+        action.InventoryItem: self.ob.inventory.index(itm.id), # list(self.ob.inventory.ids).index(itm.id)
         action.Price: action.Price.edges[int(price)]}
 
       return itm
@@ -280,7 +285,7 @@ class Scripted(nmmo.Agent):
       # Buy best heuristic upgrade
       if purchase:
         self.actions[action.Buy] = {
-          action.Item: purchase.id}
+          action.MarketItem: self.ob.market.index(purchase.id)} #list(self.ob.market.ids).index(purchase.id)}
         return
 
   def exchange(self):
@@ -302,10 +307,9 @@ class Scripted(nmmo.Agent):
 
     self.ob = observation
     self.me = observation.agent()
-    self.me.level = max(self.me.melee_level, self.me.range_level, self.me.mage_level)
 
-    # Combat level only, like self.me.level
-    self.level = self.me.level
+    # combat level
+    self.me.level = max(self.me.melee_level, self.me.range_level, self.me.mage_level)
 
     self.skills = {
       skill.Melee: self.me.melee_level,
@@ -317,6 +321,9 @@ class Scripted(nmmo.Agent):
       skill.Carving: self.me.carving_level,
       skill.Alchemy: self.me.alchemy_level
     }
+
+    # level for using armor, rations, and poultice
+    self.level = max(self.skills.values())
 
     if self.spawnR is None:
       self.spawnR = self.me.row

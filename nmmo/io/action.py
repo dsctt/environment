@@ -1,4 +1,5 @@
 # pylint: disable=all
+# TODO(kywch): If edits work, I will make it pass pylint
 
 from ordered_set import OrderedSet
 import numpy as np
@@ -7,6 +8,7 @@ from enum import Enum, auto
 
 from nmmo.lib import utils
 from nmmo.lib.utils import staticproperty
+from nmmo.systems.item import Item
 
 class NodeType(Enum):
    #Tree edges
@@ -292,12 +294,33 @@ class Mage(Node):
    def skill(entity):
       return entity.skills.mage
 
+
+class InventoryItem(Node):
+    argType  = None
+
+    @classmethod
+    def N(cls, config):
+        return config.INVENTORY_N_OBS
+
+    # TODO(kywch): What does args do?
+    def args(stim, entity, config):
+        return stim.exchange.items()
+
+    def deserialize(realm, entity, index):
+        inventory = Item.Query.owned_by(realm.datastore, entity.id.val)
+
+        if index >= inventory.shape[0]:
+            return None
+
+        item_id = inventory[index, Item.State.attr_name_to_col["id"]]
+        return realm.items[item_id]
+
 class Use(Node):
     priority = 3
 
     @staticproperty
     def edges():
-        return [Item]
+        return [InventoryItem]
 
     def call(env, entity, item):
         if item not in entity.inventory:
@@ -310,7 +333,7 @@ class Give(Node):
 
     @staticproperty
     def edges():
-        return [Item, Target]
+        return [InventoryItem, Target]
 
     def call(env, entity, item, target):
         if item not in entity.inventory:
@@ -329,18 +352,25 @@ class Give(Node):
         return True
 
 
-class Item(Node):
-    argType  = 'Entity'
+class MarketItem(Node):
+    argType  = None
 
     @classmethod
     def N(cls, config):
-        return config.ITEM_N_OBS
+        return config.MARKET_N_OBS
 
+    # TODO(kywch): What does args do?
     def args(stim, entity, config):
         return stim.exchange.items()
 
     def deserialize(realm, entity, index):
-        return realm.items[index]
+        market = Item.Query.for_sale(realm.datastore)
+
+        if index >= market.shape[0]:
+            return None
+        
+        item_id = market[index, Item.State.attr_name_to_col["id"]]
+        return realm.items[item_id]
 
 class Buy(Node):
     priority = 4
@@ -348,7 +378,7 @@ class Buy(Node):
 
     @staticproperty
     def edges():
-        return [Item]
+        return [MarketItem]
 
     def call(env, entity, item):
         #Do not process exchange actions on death tick
@@ -366,7 +396,7 @@ class Sell(Node):
 
     @staticproperty
     def edges():
-        return [Item, Price]
+        return [InventoryItem, Price]
 
     def call(env, entity, item, price):
         #Do not process exchange actions on death tick
