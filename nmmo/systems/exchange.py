@@ -143,4 +143,4 @@ class Exchange:
         'supply': supply
       }
 
-      return packet
+    return packet

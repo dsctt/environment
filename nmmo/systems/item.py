@@ -123,6 +123,11 @@ class Item(ItemState):
             'resource_restore': self.resource_restore.val,
             }
 
+  def _level(self, entity):
+    # this is for armors, ration, and poultice
+    # weapons and tools must override this with specific skills
+    return entity.level
+
   def use(self, entity) -> bool:
     raise NotImplementedError
 
@@ -182,11 +187,11 @@ class Equipment(Item):
   def _slot(self, entity):
     raise NotImplementedError
 
-  def _level(self, entity):
-    return entity.attack_level
-
   def use(self, entity):
     if self.listed_price > 0: # cannot use if listed for sale
+      return
+
+    if self._level(entity) < self.level.val:
       return
 
     if self.equipped.val:
@@ -304,8 +309,8 @@ class Ammunition(Equipment, Stack):
     return entity.inventory.equipment.ammunition
 
   def fire(self, entity) -> int:
-    if __debug__:
-      assert self.quantity.val > 0, 'Used ammunition with 0 quantity'
+    assert self.equipped.val > 0, 'Ammunition not equipped'
+    assert self.quantity.val > 0, 'Used ammunition with 0 quantity'
 
     self.quantity.decrement()
 
@@ -379,9 +384,6 @@ class Consumable(Item):
     entity.inventory.remove(self)
     self.destroy()
     return True
-
-  def _level(self, entity):
-    return entity.level
 
 class Ration(Consumable):
   ITEM_TYPE_ID = 16

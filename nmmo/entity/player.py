@@ -1,8 +1,5 @@
-
-
 from nmmo.systems.skill import Skills
 from nmmo.systems.achievement import Diary
-from nmmo.systems import combat
 from nmmo.entity import entity
 
 # pylint: disable=no-member
@@ -48,7 +45,10 @@ class Player(entity.Entity):
 
   @property
   def level(self) -> int:
-    return combat.level(self.skills)
+    # a player's level is the max of all skills
+    # CHECK ME: the initial level is 1 because of Basic skills,
+    #   which are harvesting food/water and don't progress
+    return max(e.level.val for e in self.skills.skills)
 
   def apply_damage(self, dmg, style):
     super().apply_damage(dmg, style)
