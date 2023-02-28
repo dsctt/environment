@@ -218,12 +218,8 @@ class Attack(Node):
       if not config.COMBAT_FRIENDLY_FIRE and entity.is_player and entity.population_id.val == targ.population_id.val:
          return
 
-      #Check attack range
-      rng     = style.attackRange(config)
-      dif     = utils.linf(entity.pos, targ.pos)
-
-      #Can't attack same cell or out of range
-      if dif == 0 or dif > rng:
+      #Can't attack out of range
+      if utils.linf(entity.pos, targ.pos) > style.attackRange(config):
          return
 
       #Execute attack
