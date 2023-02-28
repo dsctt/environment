@@ -74,9 +74,9 @@ def seed():
   return int(np.random.randint(0, 2**32))
 
 def linf(pos1, pos2):
-  r1, c1 = pos1
-  r2, c2 = pos2
-  return max(abs(r1 - r2), abs(c1 - c2))
+  # pos could be a single (r,c) or a vector of (r,c)s
+  diff = np.abs(np.array(pos1) - np.array(pos2))
+  return np.max(diff, axis=len(diff.shape)-1)  
 
 #Bounds checker
 def in_bounds(r, c, shape, border=0):

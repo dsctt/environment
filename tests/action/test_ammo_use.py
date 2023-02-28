@@ -23,7 +23,7 @@ class TestAmmoUse(unittest.TestCase):
     cls.config.PLAYERS = [baselines.Melee, baselines.Range, baselines.Mage]
     cls.config.PLAYER_N = 3
     cls.config.IMMORTAL = True
-    
+
     # detailed logging for debugging
     cls.config.LOG_VERBOSE = False
     if cls.config.LOG_VERBOSE:
@@ -54,12 +54,12 @@ class TestAmmoUse(unittest.TestCase):
   def _provide_item(self, realm, ent_id, item, level, quantity):
     realm.players[ent_id].inventory.receive(
       item(realm, level=level, quantity=quantity))
-    
+
   def _setup_env(self):
     """ set up a new env and perform initial checks """
     env = ScriptedAgentTestEnv(self.config, seed=RANDOM_SEED)
     env.reset()
-    
+
     for ent_id, pos in self.spawn_locs.items():
       self._change_spawn_pos(env.realm, ent_id, pos)
       env.realm.players[ent_id].gold.update(5)

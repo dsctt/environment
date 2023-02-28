@@ -191,6 +191,9 @@ class Attack(Node):
       rets = list(rets)
       return rets
 
+   # CHECK ME: do we need l1 distance function?
+   #   systems/ai/utils.py also has various distance functions
+   #   which we may want to clean up
    def l1(pos, cent):
       r, c = pos
       rCent, cCent = cent
@@ -217,9 +220,7 @@ class Attack(Node):
 
       #Check attack range
       rng     = style.attackRange(config)
-      start   = np.array(entity.pos)
-      end     = np.array(targ.pos)
-      dif     = np.max(np.abs(start - end))
+      dif     = utils.linf(entity.pos, targ.pos)
 
       #Can't attack same cell or out of range
       if dif == 0 or dif > rng:
