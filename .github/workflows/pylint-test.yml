@@ -22,7 +22,8 @@ jobs:
       run: pylint --rcfile=pylint.cfg --recursive=y nmmo tests
     - name: Looking for xcxc
       run: |
-        if grep -r --include='*.py' 'xcxc' >/dev/null; then
+        if grep -r --include='*.py' 'xcxc'; then
+          echo "Found xcxc in the code. Please check the file."
           exit 1
         fi
     - name: Running unit tests
