@@ -51,7 +51,8 @@ def closestTarget(ent, tiles, rng=1):
             if e is not ent and validTarget(ent, e, rng): return e
 
 def distance(ent, targ):
-   return l1(ent.pos, targ.pos)
+   # used in scripted/behavior.py, attack() to determine attack range
+   return lInfty(ent.pos, targ.pos)
 
 def lInf(ent, targ):
    sr, sc = ent.pos

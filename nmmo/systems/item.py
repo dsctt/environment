@@ -128,6 +128,9 @@ class Item(ItemState):
     # weapons and tools must override this with specific skills
     return entity.level
 
+  def level_gt(self, entity):
+    return self.level.val > self._level(entity)
+
   def use(self, entity) -> bool:
     raise NotImplementedError
 
