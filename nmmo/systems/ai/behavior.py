@@ -64,7 +64,7 @@ def hunt(realm, actions, entity):
 
 def attack(realm, actions, entity):
    distance = utils.lInfty(entity.pos, entity.target.pos)
-   if distance > entity.skills.style.attackRange(realm.config):
+   if distance > entity.skills.style.attack_range(realm.config):
       return
 
    actions[nmmo.action.Attack] = {

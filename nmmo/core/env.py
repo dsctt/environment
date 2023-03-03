@@ -35,7 +35,7 @@ class Env(ParallelEnv):
     self.obs = None
 
     self.possible_agents = list(range(1, config.PLAYER_N + 1))
-    self._dead_agents = set()
+    self._dead_agents = OrderedSet()
     self.scripted_agents = OrderedSet()
 
   # pylint: disable=method-cache-max-size-none
@@ -65,10 +65,10 @@ class Env(ParallelEnv):
     }
 
     if self.config.ITEM_SYSTEM_ENABLED:
-      obs_space["Item"] = box(self.config.ITEM_N_OBS, Item.State.num_attributes)
+      obs_space["Inventory"] = box(self.config.INVENTORY_N_OBS, Item.State.num_attributes)
 
     if self.config.EXCHANGE_SYSTEM_ENABLED:
-      obs_space["Market"] = box(self.config.EXCHANGE_N_OBS, Item.State.num_attributes)
+      obs_space["Market"] = box(self.config.MARKET_N_OBS, Item.State.num_attributes)
 
     return gym.spaces.Dict(obs_space)
 
@@ -131,7 +131,7 @@ class Env(ParallelEnv):
 
     self._init_random(seed)
     self.realm.reset(map_id)
-    self._dead_agents = set()
+    self._dead_agents = OrderedSet()
 
     # check if there are scripted agents
     for eid, ent in self.realm.players.items():
@@ -298,7 +298,7 @@ class Env(ParallelEnv):
               break
 
           elif atn in (nmmo.action.Sell, nmmo.action.Use, nmmo.action.Give) \
-            and arg == nmmo.action.Item:
+            and arg == nmmo.action.InventoryItem:
 
             item_id = entity_obs.inventory.id(val)
             item = self.realm.items.get(item_id)
@@ -309,7 +309,7 @@ class Env(ParallelEnv):
               action_valid = False
               break
 
-          elif atn == nmmo.action.Buy and arg == nmmo.action.Item:
+          elif atn == nmmo.action.Buy and arg == nmmo.action.MarketItem:
             item_id = entity_obs.market.id(val)
             item = self.realm.items.get(item_id)
             if item is not None:

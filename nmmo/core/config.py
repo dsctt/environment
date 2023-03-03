@@ -202,6 +202,7 @@ class Config(Template):
   PLAYER_N                     = None
   '''Maximum number of players spawnable in the environment'''
 
+  # TODO(kywch): CHECK if there could be 100+ entities within one's vision
   PLAYER_N_OBS                 = 100
   '''Number of distinct agent observations'''
 
@@ -520,13 +521,14 @@ class Item:
   ITEM_INVENTORY_CAPACITY             = 12
   '''Number of inventory spaces'''
 
+  ITEM_GIVE_TO_FRIENDLY               = True
+  '''Whether agents with the same population index can give gold/item to each other'''
+
   @property
-  def ITEM_N_OBS(self):
+  def INVENTORY_N_OBS(self):
     '''Number of distinct item observations'''
-    # TODO: This is a hack, referring to NPC_LEVEL_MAX not defined here
-    # pylint: disable=no-member
-    return self.ITEM_N * self.NPC_LEVEL_MAX
-    #return self.INVENTORY_CAPACITY
+    return self.ITEM_INVENTORY_CAPACITY
+
 
 
 class Equipment:
@@ -613,11 +615,12 @@ class Exchange:
   EXCHANGE_LISTING_DURATION           = 5
 
   @property
-  def EXCHANGE_N_OBS(self):
-    # TODO: This is a hack, referring to NPC_LEVEL_MAX not defined here
+  def MARKET_N_OBS(self):
+    # TODO(kywch): This is a hack. Check if the limit is reached
     # pylint: disable=no-member
     '''Number of distinct item observations'''
-    return self.ITEM_N * self.NPC_LEVEL_MAX
+    return self.PLAYER_N * self.EXCHANGE_LISTING_DURATION
+
 
 class Communication:
   '''Exchange Game System'''
@@ -625,12 +628,9 @@ class Communication:
   COMMUNICATION_SYSTEM_ENABLED             = True
   '''Game system flag'''
 
-  @property
-  def COMMUNICATION_NUM_TOKENS(self):
-    '''Number of distinct item observations'''
-    # TODO: This is a hack, referring to NPC_LEVEL_MAX not defined here
-    # pylint: disable=no-member
-    return self.ITEM_N * self.NPC_LEVEL_MAX
+  # CHECK ME: When do we actually use this?
+  COMMUNICATION_NUM_TOKENS                 = 50
+  '''Number of distinct COMM tokens'''
 
 
 class AllGameSystems(

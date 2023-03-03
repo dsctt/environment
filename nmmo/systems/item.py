@@ -123,6 +123,14 @@ class Item(ItemState):
             'resource_restore': self.resource_restore.val,
             }
 
+  def _level(self, entity):
+    # this is for armors, ration, and poultice
+    # weapons and tools must override this with specific skills
+    return entity.level
+
+  def level_gt(self, entity):
+    return self.level.val > self._level(entity)
+
   def use(self, entity) -> bool:
     raise NotImplementedError
 
@@ -182,12 +190,10 @@ class Equipment(Item):
   def _slot(self, entity):
     raise NotImplementedError
 
-  def _level(self, entity):
-    return entity.attack_level
-
   def use(self, entity):
-    if self.listed_price > 0: # cannot use if listed for sale
-      return
+    assert self in entity.inventory, "Item is not in entity's inventory"
+    assert self.listed_price == 0, "Listed item cannot be used"
+    assert self._level(entity) >= self.level.val, "Entity's level is not sufficient to use the item"
 
     if self.equipped.val:
       self.unequip(self._slot(entity))
@@ -304,8 +310,8 @@ class Ammunition(Equipment, Stack):
     return entity.inventory.equipment.ammunition
 
   def fire(self, entity) -> int:
-    if __debug__:
-      assert self.quantity.val > 0, 'Used ammunition with 0 quantity'
+    assert self.equipped.val > 0, 'Ammunition not equipped'
+    assert self.quantity.val > 0, 'Used ammunition with 0 quantity'
 
     self.quantity.decrement()
 
@@ -363,11 +369,9 @@ class Shard(Ammunition):
 #   so each item takes 1 inventory space
 class Consumable(Item):
   def use(self, entity) -> bool:
-    if self.listed_price > 0: # cannot use if listed for sale
-      return False
-
-    if self._level(entity) < self.level.val:
-      return False
+    assert self in entity.inventory, "Item is not in entity's inventory"
+    assert self.listed_price == 0, "Listed item cannot be used"
+    assert self._level(entity) >= self.level.val, "Entity's level is not sufficient to use the item"
 
     self.realm.log_milestone(
       f'Consumed_{self.__class__.__name__}', self.level.val,
@@ -379,9 +383,6 @@ class Consumable(Item):
     entity.inventory.remove(self)
     self.destroy()
     return True
-
-  def _level(self, entity):
-    return entity.level
 
 class Ration(Consumable):
   ITEM_TYPE_ID = 16

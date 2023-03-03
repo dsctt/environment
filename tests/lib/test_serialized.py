@@ -3,7 +3,7 @@ import unittest
 
 from nmmo.lib.serialized import SerializedState
 
-# pylint: disable=no-member,unused-argument
+# pylint: disable=no-member,unused-argument,unsubscriptable-object
 
 FooState = SerializedState.subclass("FooState", [
   "a", "b", "col"
@@ -36,13 +36,21 @@ class TestSerialized(unittest.TestCase):
   def test_serialized(self):
     state = FooState(MockDatastore(), FooState.Limits)
 
+    # initial value = 0
     self.assertEqual(state.a.val, 0)
+
+    # if given value is within the range, set to the value
     state.a.update(1)
     self.assertEqual(state.a.val, 1)
-    state.a.update(-20)
-    self.assertEqual(state.a.val, -10)
-    state.a.update(100)
-    self.assertEqual(state.a.val, 10)
+
+    # if given a lower value than the min, set to min
+    a_min, a_max = FooState.Limits["a"]
+    state.a.update(a_min - 100)
+    self.assertEqual(state.a.val, a_min)
+
+    # if given a higher value than the max, set to max
+    state.a.update(a_max + 100)
+    self.assertEqual(state.a.val, a_max)
 
 if __name__ == '__main__':
   unittest.main()

@@ -14,7 +14,7 @@ from nmmo.core.replay_helper import ReplayHelper
 from nmmo.core.tile import TileState
 from nmmo.entity.entity import EntityState
 from nmmo.entity.entity_manager import NPCManager, PlayerManager
-from nmmo.io.action import Action
+from nmmo.io.action import Action, Buy
 from nmmo.lib.datastore.numpy_datastore import NumpyDatastore
 from nmmo.systems.exchange import Exchange
 from nmmo.systems.item import Item, ItemState
@@ -150,14 +150,27 @@ class Realm:
     self.players.update(actions)
     self.npcs.update(npc_actions)
 
-    # Execute actions
+    # Execute actions -- CHECK ME the below priority
+    #  - 10: Use - equip ammo, restore HP, etc.
+    #  - 20: Buy - exchange while sellers, items, buyers are all intact
+    #  - 30: Give, GiveGold - transfer while both are alive and at the same tile
+    #  - 40: Destroy - use with SELL/GIVE, if not gone, destroy and recover space
+    #  - 50: Attack
+    #  - 60: Move
+    #  - 70: Sell - to guarantee the listed items are available to buy
+    #  - 99: Comm
     for priority in sorted(merged):
       # TODO: we should be randomizing these, otherwise the lower ID agents
-      # will always go first.
-      ent_id, (atn, args) = merged[priority][0]
+      # will always go first. --> ONLY SHUFFLE BUY
+      if priority == Buy.priority:
+        np.random.shuffle(merged[priority])
+
+      # CHECK ME: do we need this line?
+      # ent_id, (atn, args) = merged[priority][0]
       for ent_id, (atn, args) in merged[priority]:
         ent = self.entity(ent_id)
-        atn.call(self, ent, *args)
+        if ent.alive:
+          atn.call(self, ent, *args)
 
     dead = self.players.cull()
     self.npcs.cull()

@@ -1,8 +1,5 @@
-
-
 from nmmo.systems.skill import Skills
 from nmmo.systems.achievement import Diary
-from nmmo.systems import combat
 from nmmo.entity import entity
 
 # pylint: disable=no-member
@@ -48,7 +45,10 @@ class Player(entity.Entity):
 
   @property
   def level(self) -> int:
-    return combat.level(self.skills)
+    # a player's level is the max of all skills
+    # CHECK ME: the initial level is 1 because of Basic skills,
+    #   which are harvesting food/water and don't progress
+    return max(e.level.val for e in self.skills.skills)
 
   def apply_damage(self, dmg, style):
     super().apply_damage(dmg, style)
@@ -59,32 +59,28 @@ class Player(entity.Entity):
     if self.immortal:
       return False
 
+    # super().receive_damage returns True if self is alive after taking dmg
     if super().receive_damage(source, dmg):
       return True
 
     if not self.config.ITEM_SYSTEM_ENABLED:
       return False
 
-    # if self is killed, source receive gold & inventory items
-    source.gold.increment(self.gold.val)
-    self.gold.update(0)
+    # starting from here, source receive gold & inventory items
+    if self.config.EXCHANGE_SYSTEM_ENABLED:
+      source.gold.increment(self.gold.val)
+      self.gold.update(0)
 
     # TODO(kywch): make source receive the highest-level items first
     #   because source cannot take it if the inventory is full
     #   Also, destroy the remaining items if the source cannot take those
     for item in list(self.inventory.items):
-      if not item.quantity.val:
-        item.datastore_record.delete()
-        continue
-
       self.inventory.remove(item)
+
+      # if source doesn't have space, inventory.receive() destroys the item
       source.inventory.receive(item)
 
-    if not super().receive_damage(source, dmg):
-      if source:
-        source.history.player_kills += 1
-      return False
-
+    # CHECK ME: this is an empty function. do we still need this?
     self.skills.receive_damage(dmg)
     return False
 
