@@ -1,13 +1,15 @@
 import logging
+import unittest
+
 from copy import deepcopy
 import numpy as np
 
 import nmmo
 
 from scripted import baselines
-from nmmo.io.action import Move, Attack, Sell, Use, Give, Buy
 from nmmo.entity.entity import EntityState
-from nmmo.systems.item import ItemState
+from nmmo.io import action
+from nmmo.systems import item as Item
 
 # this function can be replaced by assertDictEqual
 # but might be still useful for debugging
@@ -81,7 +83,7 @@ def player_total(env):
 
 def count_actions(tick, actions):
   cnt_action = {}
-  for atn in (Move, Attack, Sell, Use, Give, Buy):
+  for atn in (action.Move, action.Attack, action.Sell, action.Use, action.Give, action.Buy):
     cnt_action[atn] = 0
 
   for ent_id in actions:
@@ -92,9 +94,9 @@ def count_actions(tick, actions):
         cnt_action[atn] = 1
 
   info_str = f"Tick: {tick}, acting agents: {len(actions)}, action counts " + \
-             f"move: {cnt_action[Move]}, attack: {cnt_action[Attack]}, " + \
-             f"sell: {cnt_action[Sell]}, use: {cnt_action[Move]}, " + \
-             f"give: {cnt_action[Give]}, buy: {cnt_action[Buy]}"
+             f"move: {cnt_action[action.Move]}, attack: {cnt_action[action.Attack]}, " + \
+             f"sell: {cnt_action[action.Sell]}, use: {cnt_action[action.Move]}, " + \
+             f"give: {cnt_action[action.Give]}, buy: {cnt_action[action.Buy]}"
   logging.info(info_str)
 
   return cnt_action
@@ -139,7 +141,7 @@ class ScriptedAgentTestEnv(nmmo.Env):
     self.actions = {}
     # manually resetting the EntityState, ItemState datastore tables
     EntityState.State.table(self.realm.datastore).reset()
-    ItemState.State.table(self.realm.datastore).reset()
+    Item.ItemState.State.table(self.realm.datastore).reset()
     return super().reset(map_id=map_id, seed=seed, options=options)
 
   def _compute_scripted_agent_actions(self, actions):
@@ -169,4 +171,190 @@ class ScriptedAgentTestEnv(nmmo.Env):
     #   to be reconciled.
 
     # bypass the current _process_actions()
+    return actions
+
+
+# pylint: disable=invalid-name,protected-access
+class ScriptedTestTemplate(unittest.TestCase):
+
+  @classmethod
+  def setUpClass(cls):
+    # only use Combat agents
+    cls.config = ScriptedAgentTestConfig()
+    cls.config.PLAYERS = [baselines.Melee, baselines.Range, baselines.Mage]
+    cls.config.PLAYER_N = 3
+    #cls.config.IMMORTAL = True
+
+    # set up agents to test ammo use
+    cls.policy = { 1:'Melee', 2:'Range', 3:'Mage' }
+    # 1 cannot hit 3, 2 can hit 1, 3 cannot hit 2
+    cls.spawn_locs = { 1:(17, 17), 2:(17, 19), 3:(21, 21) }
+    cls.ammo = { 1:Item.Scrap, 2:Item.Shaving, 3:Item.Shard }
+    cls.ammo_quantity = 2
+
+    # items to provide
+    cls.init_gold = 5
+    cls.item_level = [0, 3] # 0 can be used, 3 cannot be used
+    cls.item_sig = {}
+
+  def _change_spawn_pos(self, realm, ent_id, new_pos):
+    # check if the position is valid
+    assert realm.map.tiles[new_pos].habitable, "Given pos is not habitable."
+    assert realm.entity(ent_id), "No such entity in the realm"
+
+    entity = realm.entity(ent_id)
+    old_pos = entity.pos
+    realm.map.tiles[old_pos].remove_entity(ent_id)
+
+    # set to new pos
+    entity.row.update(new_pos[0])
+    entity.col.update(new_pos[1])
+    entity.spawn_pos = new_pos
+    realm.map.tiles[new_pos].add_entity(entity)
+
+  def _provide_item(self, realm, ent_id, item, level, quantity):
+    realm.players[ent_id].inventory.receive(
+      item(realm, level=level, quantity=quantity))
+
+  def _make_item_sig(self):
+    item_sig = {}
+    for ent_id, ammo in self.ammo.items():
+      item_sig[ent_id] = []
+      for item in [ammo, Item.Top, Item.Gloves, Item.Ration, Item.Poultice]:
+        for lvl in self.item_level:
+          item_sig[ent_id].append((item, lvl))
+
+    return item_sig
+
+  def _setup_env(self, random_seed, check_assert=True):
+    """ set up a new env and perform initial checks """
+    env = ScriptedAgentTestEnv(self.config, seed=random_seed)
+    env.reset()
+
+    # provide money for all
+    for ent_id in env.realm.players:
+      env.realm.players[ent_id].gold.update(self.init_gold)
+
+    # provide items that are in item_sig
+    self.item_sig = self._make_item_sig()
+    for ent_id, items in self.item_sig.items():
+      for item_sig in items:
+        if item_sig[0] == self.ammo[ent_id]:
+          self._provide_item(env.realm, ent_id, item_sig[0], item_sig[1], self.ammo_quantity)
+        else:
+          self._provide_item(env.realm, ent_id, item_sig[0], item_sig[1], 1)
+
+    # teleport the players, if provided with specific locations
+    for ent_id, pos in self.spawn_locs.items():
+      self._change_spawn_pos(env.realm, ent_id, pos)
+
+    env.obs = env._compute_observations()
+
+    if check_assert:
+      self._check_default_asserts(env)
+
+    return env
+
+  def _check_ent_mask(self, ent_obs, atn, target_id):
+    assert atn in [action.Give, action.GiveGold], "Invalid action"
+    gym_obs = ent_obs.to_gym()
+    mask = gym_obs['ActionTargets'][atn][action.Target][:ent_obs.entities.len] > 0
+
+    return target_id in ent_obs.entities.ids[mask]
+
+  def _check_inv_mask(self, ent_obs, atn, item_sig):
+    assert atn in [action.Destroy, action.Give, action.Sell, action.Use], "Invalid action"
+    gym_obs = ent_obs.to_gym()
+    mask = gym_obs['ActionTargets'][atn][action.InventoryItem][:ent_obs.inventory.len] > 0
+    inv_idx = ent_obs.inventory.sig(*item_sig)
+
+    return ent_obs.inventory.id(inv_idx) in ent_obs.inventory.ids[mask]
+
+  def _check_mkt_mask(self, ent_obs, item_id):
+    gym_obs = ent_obs.to_gym()
+    mask = gym_obs['ActionTargets'][action.Buy][action.MarketItem][:ent_obs.market.len] > 0
+
+    return item_id in ent_obs.market.ids[mask]
+
+  def _check_default_asserts(self, env):
+    """ The below asserts are based on the hardcoded values in setUpClass()
+        This should not run when different values were used
+    """
+    # check if the agents are in specified positions
+    for ent_id, pos in self.spawn_locs.items():
+      self.assertEqual(env.realm.players[ent_id].pos, pos)
+
+    for ent_id, sig_list in self.item_sig.items():
+      # ammo instances are in the datastore and global item registry (realm)
+      inventory = env.obs[ent_id].inventory
+      self.assertTrue(inventory.len == len(sig_list))
+      for inv_idx in range(inventory.len):
+        item_id = inventory.id(inv_idx)
+        self.assertTrue(Item.ItemState.Query.by_id(env.realm.datastore, item_id) is not None)
+        self.assertTrue(item_id in env.realm.items)
+
+      for lvl in self.item_level:
+        inv_idx = inventory.sig(self.ammo[ent_id], lvl)
+        self.assertTrue(inv_idx is not None)
+        self.assertEqual(self.ammo_quantity, # provided 2 ammos
+          Item.ItemState.parse_array(inventory.values[inv_idx]).quantity)
+
+      # check ActionTargets
+      ent_obs = env.obs[ent_id]
+
+      if env.config.ITEM_SYSTEM_ENABLED:
+        # USE InventoryItem mask
+        for item_sig in sig_list:
+          if item_sig[1] == 0:
+            # items that can be used
+            self.assertTrue(self._check_inv_mask(ent_obs, action.Use, item_sig))
+          else:
+            # items that are too high to use
+            self.assertFalse(self._check_inv_mask(ent_obs, action.Use, item_sig))
+
+      if env.config.EXCHANGE_SYSTEM_ENABLED:
+        # SELL InventoryItem mask
+        for item_sig in sig_list:
+          # the agent can sell anything now
+          self.assertTrue(self._check_inv_mask(ent_obs, action.Sell, item_sig))
+
+        # BUY MarketItem mask -- there is nothing on the market, so mask should be all 0
+        self.assertTrue(len(env.obs[ent_id].market.ids) == 0)
+
+  def _check_assert_make_action(self, env, atn, test_cond):
+    assert atn in [action.Give, action.GiveGold, action.Buy], "Invalid action"
+    actions = {}
+    for ent_id, cond in test_cond.items():
+      ent_obs = env.obs[ent_id]
+
+      if atn in [action.Give, action.GiveGold]:
+        # self should be always masked
+        self.assertFalse(self._check_ent_mask(ent_obs, atn, ent_id))
+
+        # check if the target is masked as expected
+        self.assertEqual( cond['ent_mask'],
+          self._check_ent_mask(ent_obs, atn, cond['tgt_id']) )
+
+      if atn in [action.Give]:
+        self.assertEqual( cond['inv_mask'],
+          self._check_inv_mask(ent_obs, atn, cond['item_sig']) )
+
+      if atn in [action.Buy]:
+        self.assertEqual( cond['mkt_mask'],
+          self._check_mkt_mask(ent_obs, cond['item_id']) )
+
+      # append the actions
+      if atn == action.Give:
+        actions[ent_id] = { action.Give: {
+          action.InventoryItem: env.obs[ent_id].inventory.sig(*cond['item_sig']),
+          action.Target: cond['tgt_id'] } }
+
+      elif atn == action.GiveGold:
+        actions[ent_id] = { action.GiveGold:
+          { action.Target: cond['tgt_id'], action.Price: cond['gold'] } }
+
+      elif atn == action.Buy:
+        mkt_idx = ent_obs.market.index(cond['item_id'])
+        actions[ent_id] = { action.Buy: { action.MarketItem: mkt_idx } }
+
     return actions

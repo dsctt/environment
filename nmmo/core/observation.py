@@ -32,11 +32,9 @@ class InventoryObs(BasicObs):
     self.inv_type = self.values[:,ItemState.State.attr_name_to_col["type_id"]]
     self.inv_level = self.values[:,ItemState.State.attr_name_to_col["level"]]
 
-  def sig(self, itm_type, level):
-    if (itm_type in self.inv_type) and (level in self.inv_level):
-      return np.nonzero((self.inv_type == itm_type) & (self.inv_level == level))[0][0]
-
-    return None
+  def sig(self, item: item_system.Item, level: int):
+    idx = np.nonzero((self.inv_type == item.ITEM_TYPE_ID) & (self.inv_level == level))[0]
+    return idx[0] if len(idx) else None
 
 
 class Observation:
@@ -148,14 +146,25 @@ class Observation:
       masks[action.Use] = {
         action.InventoryItem: self._make_use_mask()
       }
+      masks[action.Give] = {
+        action.InventoryItem: self._make_sell_mask(),
+        action.Target: self._make_give_target_mask()
+      }
+      masks[action.Destroy] = {
+        action.InventoryItem: self._make_destroy_item_mask()
+      }
 
     if self.config.EXCHANGE_SYSTEM_ENABLED:
       masks[action.Sell] = {
         action.InventoryItem: self._make_sell_mask(),
-        action.Price: None # allow any integer
+        action.Price: None # should allow any integer > 0
       }
       masks[action.Buy] = {
         action.MarketItem: self._make_buy_mask()
+      }
+      masks[action.GiveGold] = {
+        action.Target: self._make_give_target_mask(),
+        action.Price: None # reusing Price, allow any integer > 0
       }
 
     if self.config.COMMUNICATION_SYSTEM_ENABLED:
@@ -189,20 +198,28 @@ class Observation:
                                             EntityState.State.attr_name_to_col["col"]]]
     within_range = utils.linf(entities_pos, (agent.row, agent.col)) <= attack_range
 
+    immunity = self.config.COMBAT_SPAWN_IMMUNITY
+    if 0 < immunity < agent.time_alive:
+      # ids > 0 equals entity.is_player
+      spawn_immunity = (self.entities.ids > 0) & \
+        (self.entities.values[:,EntityState.State.attr_name_to_col["time_alive"]] < immunity)
+    else:
+      spawn_immunity = np.ones(self.entities.len, dtype=np.int8)
+
     if not self.config.COMBAT_FRIENDLY_FIRE:
       population = self.entities.values[:,EntityState.State.attr_name_to_col["population_id"]]
       no_friendly_fire = population != agent.population_id # this automatically masks self
     else:
-      # allow friendly fire but self
+      # allow friendly fire but no self shooting
       no_friendly_fire = np.ones(self.entities.len, dtype=np.int8)
       no_friendly_fire[self.entities.index(agent.id)] = 0 # mask self
 
-    return np.concatenate([within_range & no_friendly_fire,
+    return np.concatenate([within_range & no_friendly_fire & spawn_immunity,
       np.zeros(self.config.PLAYER_N_OBS - self.entities.len, dtype=np.int8)])
 
   def _make_use_mask(self):
     # empty inventory -- nothing to use
-    if self.inventory.len == 0:
+    if not (self.config.ITEM_SYSTEM_ENABLED and self.inventory.len > 0):
       return np.zeros(self.config.INVENTORY_N_OBS, dtype=np.int8)
 
     item_skill = self._item_skill()
@@ -247,9 +264,35 @@ class Observation:
       item_system.Poultice.ITEM_TYPE_ID: level
     }
 
+  def _make_destroy_item_mask(self):
+    # empty inventory -- nothing to destroy
+    if not (self.config.ITEM_SYSTEM_ENABLED and self.inventory.len > 0):
+      return np.zeros(self.config.INVENTORY_N_OBS, dtype=np.int8)
+
+    not_equipped = self.inventory.values[:,ItemState.State.attr_name_to_col["equipped"]] == 0
+
+    # not equipped items in the inventory can be destroyed
+    return np.concatenate([not_equipped,
+      np.zeros(self.config.INVENTORY_N_OBS - self.inventory.len, dtype=np.int8)])
+
+  def _make_give_target_mask(self):
+    # empty inventory -- nothing to give
+    if not (self.config.ITEM_SYSTEM_ENABLED and self.inventory.len > 0):
+      return np.zeros(self.config.PLAYER_N_OBS, dtype=np.int8)
+
+    agent = self.agent()
+    entities_pos = self.entities.values[:, [EntityState.State.attr_name_to_col["row"],
+                                            EntityState.State.attr_name_to_col["col"]]]
+    same_tile = utils.linf(entities_pos, (agent.row, agent.col)) == 0
+    same_team_not_me = (self.entities.ids != agent.id) & (agent.population_id == \
+                self.entities.values[:, EntityState.State.attr_name_to_col["population_id"]])
+
+    return np.concatenate([same_tile & same_team_not_me,
+      np.zeros(self.config.PLAYER_N_OBS - self.entities.len, dtype=np.int8)])
+
   def _make_sell_mask(self):
     # empty inventory -- nothing to sell
-    if self.inventory.len == 0:
+    if not (self.config.EXCHANGE_SYSTEM_ENABLED and self.inventory.len > 0):
       return np.zeros(self.config.INVENTORY_N_OBS, dtype=np.int8)
 
     not_equipped = self.inventory.values[:,ItemState.State.attr_name_to_col["equipped"]] == 0
@@ -259,10 +302,14 @@ class Observation:
       np.zeros(self.config.INVENTORY_N_OBS - self.inventory.len, dtype=np.int8)])
 
   def _make_buy_mask(self):
+    if not self.config.EXCHANGE_SYSTEM_ENABLED:
+      return np.zeros(self.config.MARKET_N_OBS, dtype=np.int8)
+
     market_flt = np.ones(self.market.len, dtype=np.int8)
     full_inventory = self.inventory.len >= self.config.ITEM_INVENTORY_CAPACITY
 
     # if the inventory is full, one can only buy existing ammo stack
+    #   otherwise, one can buy anything owned by other, having enough money
     if full_inventory:
       exist_ammo_listings = self._existing_ammo_listings()
       if not np.any(exist_ammo_listings):
@@ -273,9 +320,8 @@ class Observation:
     market_items = self.market.values
     enough_gold = market_items[:,ItemState.State.attr_name_to_col["listed_price"]] <= agent.gold
     not_mine = market_items[:,ItemState.State.attr_name_to_col["owner_id"]] != self.agent_id
-    not_equipped = market_items[:,ItemState.State.attr_name_to_col["equipped"]] == 0
 
-    return np.concatenate([market_flt & enough_gold & not_mine & not_equipped,
+    return np.concatenate([market_flt & enough_gold & not_mine,
       np.zeros(self.config.MARKET_N_OBS - self.market.len, dtype=np.int8)])
 
   def _existing_ammo_listings(self):
@@ -295,7 +341,7 @@ class Observation:
     if exist_ammo.shape[0] == 0:
       return np.zeros(self.market.len, dtype=np.int8)
 
-    # search the existing ammo stack from the market
+    # search the existing ammo stack from the market that's not mine
     type_flt = np.tile( np.array(exist_ammo[:,sig_col[0]]), (self.market.len,1))
     level_flt = np.tile( np.array(exist_ammo[:,sig_col[1]]), (self.market.len,1))
     item_type = np.tile( np.transpose(np.atleast_2d(self.market.values[:,sig_col[0]])),

@@ -188,11 +188,9 @@ class Equipment(Item):
     raise NotImplementedError
 
   def use(self, entity):
-    if self.listed_price > 0: # cannot use if listed for sale
-      return
-
-    if self._level(entity) < self.level.val:
-      return
+    assert self in entity.inventory, "Item is not in entity's inventory"
+    assert self.listed_price == 0, "Listed item cannot be used"
+    assert self._level(entity) >= self.level.val, "Entity's level is not sufficient to use the item"
 
     if self.equipped.val:
       self.unequip(self._slot(entity))
@@ -368,11 +366,9 @@ class Shard(Ammunition):
 #   so each item takes 1 inventory space
 class Consumable(Item):
   def use(self, entity) -> bool:
-    if self.listed_price > 0: # cannot use if listed for sale
-      return False
-
-    if self._level(entity) < self.level.val:
-      return False
+    assert self in entity.inventory, "Item is not in entity's inventory"
+    assert self.listed_price == 0, "Listed item cannot be used"
+    assert self._level(entity) >= self.level.val, "Entity's level is not sufficient to use the item"
 
     self.realm.log_milestone(
       f'Consumed_{self.__class__.__name__}', self.level.val,

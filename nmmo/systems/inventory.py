@@ -110,6 +110,9 @@ class Inventory:
   def space(self):
     return self.capacity - len(self.items)
 
+  def has_stack(self, signature: Tuple) -> bool:
+    return signature in self._item_stacks
+
   def packet(self):
     item_packet = []
     if self.config.ITEM_SYSTEM_ENABLED:
@@ -132,7 +135,7 @@ class Inventory:
 
     if isinstance(item, Item.Stack):
       signature = item.signature
-      if signature in self._item_stacks:
+      if self.has_stack(signature):
         stack = self._item_stacks[signature]
         assert item.level.val == stack.level.val, f'{item} stack level mismatch'
         stack.quantity.increment(item.quantity.val)
@@ -170,7 +173,7 @@ class Inventory:
     if isinstance(item, Item.Stack):
       signature = item.signature
 
-      assert item.signature in self._item_stacks, f'{item} stack to remove not in inventory'
+      assert self.has_stack(item.signature), f'{item} stack to remove not in inventory'
       stack = self._item_stacks[signature]
 
       if quantity is None or stack.quantity.val == quantity:

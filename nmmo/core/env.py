@@ -35,12 +35,11 @@ class Env(ParallelEnv):
     self.obs = None
 
     self.possible_agents = list(range(1, config.PLAYER_N + 1))
-    self._dead_agents = set()
+    self._dead_agents = OrderedSet()
     self.scripted_agents = OrderedSet()
 
   # pylint: disable=method-cache-max-size-none
   @functools.lru_cache(maxsize=None)
-  # CHECK ME: Do we need the agent parameter here?
   def observation_space(self, agent: int):
     '''Neural MMO Observation Space
 
@@ -79,7 +78,6 @@ class Env(ParallelEnv):
       random.seed(seed)
 
   @functools.lru_cache(maxsize=None)
-  # CHECK ME: Do we need the agent parameter here?
   def action_space(self, agent):
     '''Neural MMO Action Space
 
@@ -133,7 +131,7 @@ class Env(ParallelEnv):
 
     self._init_random(seed)
     self.realm.reset(map_id)
-    self._dead_agents = set()
+    self._dead_agents = OrderedSet()
 
     # check if there are scripted agents
     for eid, ent in self.realm.players.items():

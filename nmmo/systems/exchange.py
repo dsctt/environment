@@ -4,7 +4,7 @@ import math
 
 from typing import Dict
 
-from nmmo.systems.item import Item
+from nmmo.systems.item import Item, Stack
 
 """
 The Exchange class is a simulation of an in-game item exchange.
@@ -93,34 +93,42 @@ class Exchange:
         item, object), f'{item} for sale is not an Item instance'
     assert item in seller.inventory, f'{item} for sale is not in {seller} inventory'
     assert item.quantity.val > 0, f'{item} for sale has quantity {item.quantity.val}'
+    assert item.listed_price.val == 0, 'Item is already listed'
+    assert item.equipped.val == 0, 'Item has been equiped so cannot be listed'
+    assert price > 0, 'Price must be larger than 0'
 
     self._list_item(item, seller, price, tick)
+
     self._realm.log_milestone(f'Sell_{item.__class__.__name__}', item.level.val,
       f'EXCHANGE: Offered level {item.level.val} {item.__class__.__name__} for {price} gold',
       tags={"player_id": seller.ent_id})
 
   def buy(self, buyer, item: Item):
     assert item.quantity.val > 0, f'{item} purchase has quantity {item.quantity.val}'
+    assert item.equipped.val == 0, 'Listed item must not be equipped'
+    assert buyer.gold.val >= item.listed_price.val, 'Buyer does not have enough gold'
+    assert buyer.ent_id != item.owner_id.val, 'One cannot buy their own items'
 
-    # TODO: Handle ammo stacks
-    #   i.e., if the item signature matches, the bought item should not occupy space
     if not buyer.inventory.space:
-      return
+      if isinstance(item, Stack):
+        if not buyer.inventory.has_stack(item.signature):
+          # no ammo stack with the same signature, so cannot buy
+          return
+      else: # no space, and item is not ammo stack, so cannot buy
+        return
 
     # item is not in the listing (perhaps bought by other)
     if item.id.val not in self._item_listings:
       return
 
     listing = self._item_listings[item.id.val]
-
-    if not buyer.gold.val >= item.listed_price.val:
-      return
+    price = item.listed_price.val
 
     self.unlist_item(item)
     listing.seller.inventory.remove(item)
     buyer.inventory.receive(item)
-    buyer.gold.decrement(item.listed_price.val)
-    listing.seller.gold.increment(item.listed_price.val)
+    buyer.gold.decrement(price)
+    listing.seller.gold.increment(price)
 
     # TODO(kywch): fix logs
     #self._realm.log_milestone(f'Buy_{item.__name__}', item.level.val)
