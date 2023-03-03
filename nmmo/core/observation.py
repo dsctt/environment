@@ -124,7 +124,8 @@ class Observation:
           self.market.values.shape[1]))
       ])
 
-    gym_obs["ActionTargets"] = self._make_action_targets()
+    if self.config.PROVIDE_ACTION_TARGETS:
+      gym_obs["ActionTargets"] = self._make_action_targets()
 
     return gym_obs
 

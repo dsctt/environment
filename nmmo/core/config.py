@@ -148,17 +148,20 @@ class Config(Template):
   RENDER                       = False
   '''Flag used by render mode'''
 
-  SAVE_REPLAY            = False
+  SAVE_REPLAY                  = False
   '''Flag used to save replays'''
 
-  PLAYERS                      = []
+  PROVIDE_ACTION_TARGETS       = False
+  '''Flag used to provide action targets mask'''
+
+  PLAYERS                      = [Agent]
   '''Player classes from which to spawn'''
 
   TASKS                        = []
   '''Tasks for which to compute rewards'''
 
-   ############################################################################
-   ### Emulation Parameters
+  ############################################################################
+  ### Emulation Parameters
 
   EMULATE_FLAT_OBS       = False
   '''Emulate a flat observation space'''
@@ -189,12 +192,6 @@ class Config(Template):
 
   LOG_FILE                     = None
   '''Where to write logs (defaults to console)'''
-
-  PLAYERS                      = []
-  '''Player classes from which to spawn'''
-
-  TASKS                        = []
-  '''Tasks for which to compute rewards'''
 
 
   ############################################################################
@@ -681,8 +678,6 @@ class Medium(Config):
   PROGRESSION_SPAWN_UNIFORMS   = 256
 
   HORIZON                      = 1024
-
-  PLAYERS = [Agent]
 
 
 class Large(Config):

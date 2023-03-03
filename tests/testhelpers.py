@@ -181,6 +181,8 @@ class ScriptedTestTemplate(unittest.TestCase):
   def setUpClass(cls):
     # only use Combat agents
     cls.config = ScriptedAgentTestConfig()
+    cls.config.PROVIDE_ACTION_TARGETS = True
+
     cls.config.PLAYERS = [baselines.Melee, baselines.Range, baselines.Mage]
     cls.config.PLAYER_N = 3
     #cls.config.IMMORTAL = True
