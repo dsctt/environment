@@ -1,4 +1,4 @@
-name: Pylint
+name: pylint-test
 
 on: [push, pull_request]
 
@@ -19,5 +19,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install .
     - name: Analysing the code with pylint
-      run: |
-        pylint --rcfile=pylint.cfg --recursive=y nmmo tests
+      run: pylint --rcfile=pylint.cfg --recursive=y nmmo tests
+    - name: Looking for xcxc
+      run: find . -name '*.py' | xargs grep 'xcxc'
+    - name: Running unit tests
+      run: pytest
