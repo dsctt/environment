@@ -160,6 +160,10 @@ class Scripted(nmmo.Agent):
       if itm.type_id in self.item_levels and itm.level > self.item_levels[itm.type_id]:
         continue
 
+      # cannot use listed item
+      if itm.listed_price:
+        continue
+
       self.item_counts[itm.type_id] += itm.quantity
       self.inventory[itm.id] = itm
 
@@ -216,7 +220,7 @@ class Scripted(nmmo.Agent):
       if type_id not in items:
         continue
 
-      if itm.equipped:
+      if itm.equipped or itm.listed_price:
         continue
 
       # InventoryItem needs where the item is (index) in the inventory
@@ -226,11 +230,14 @@ class Scripted(nmmo.Agent):
     return True
 
   def consume(self):
-    if self.me.health <= self.health_max // 2 and item_system.Poultice in self.best_items:
+    if self.me.health <= self.health_max // 2 and item_system.Poultice.ITEM_TYPE_ID in self.best_items:
       itm = self.best_items[item_system.Poultice.ITEM_TYPE_ID]
-    elif (self.me.food == 0 or self.me.water == 0) and item_system.Ration in self.best_items:
+    elif (self.me.food == 0 or self.me.water == 0) and item_system.Ration.ITEM_TYPE_ID in self.best_items:
       itm = self.best_items[item_system.Ration.ITEM_TYPE_ID]
     else:
+      return
+
+    if itm.listed_price:
       return
 
     # InventoryItem needs where the item is (index) in the inventory
@@ -242,7 +249,7 @@ class Scripted(nmmo.Agent):
       price = itm.level
       assert itm.quantity > 0
 
-      if itm.equipped:
+      if itm.equipped or itm.listed_price:
         continue
 
       if itm.type_id in keep_k:
@@ -259,7 +266,7 @@ class Scripted(nmmo.Agent):
 
       self.actions[action.Sell] = {
         action.InventoryItem: self.ob.inventory.index(itm.id), # list(self.ob.inventory.ids).index(itm.id)
-        action.Price: action.Price.edges[int(price)]}
+        action.Price: int(price) }
 
       return itm
 
@@ -322,8 +329,9 @@ class Scripted(nmmo.Agent):
       skill.Alchemy: self.me.alchemy_level
     }
 
+    # TODO(kywch): need a consistent level variables
     # level for using armor, rations, and poultice
-    self.level = max(self.skills.values())
+    self.level = min(1, max(self.skills.values()))
 
     if self.spawnR is None:
       self.spawnR = self.me.row
