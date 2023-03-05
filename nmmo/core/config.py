@@ -619,7 +619,7 @@ class Exchange:
     '''Number of distinct item observations'''
     return self.PLAYER_N * self.EXCHANGE_LISTING_DURATION
 
-  PRICE_N_OBS = 100
+  PRICE_N_OBS = 99 # make it different from PLAYER_N_OBS
   '''Number of distinct price observations
      This also determines the maximum price one can set for an item
   '''
