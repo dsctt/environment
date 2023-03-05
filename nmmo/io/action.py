@@ -553,7 +553,8 @@ class Price(Node):
 
   @classmethod
   def init(cls, config):
-    Price.classes = init_discrete(range(1, 101)) # gold should be > 0
+    # gold should be > 0
+    Price.classes = init_discrete(range(1, config.PRICE_N_OBS+1))
 
   @staticproperty
   def edges():

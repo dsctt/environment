@@ -139,7 +139,7 @@ class Observation:
 
     if self.config.COMBAT_SYSTEM_ENABLED:
       masks[action.Attack] = {
-        action.Style: self._make_allow_all_mask(action.Style.edges),
+        action.Style: np.ones(len(action.Style.edges), dtype=np.int8),
         action.Target: self._make_attack_mask()
       }
 
@@ -158,25 +158,22 @@ class Observation:
     if self.config.EXCHANGE_SYSTEM_ENABLED:
       masks[action.Sell] = {
         action.InventoryItem: self._make_sell_mask(),
-        action.Price: None # should allow any integer > 0
+        action.Price: np.ones(len(action.Price.edges), dtype=np.int8)
       }
       masks[action.Buy] = {
         action.MarketItem: self._make_buy_mask()
       }
       masks[action.GiveGold] = {
         action.Target: self._make_give_target_mask(),
-        action.Price: None # reusing Price, allow any integer > 0
+        action.Price: self._make_give_gold_mask() # reusing Price
       }
 
     if self.config.COMMUNICATION_SYSTEM_ENABLED:
       masks[action.Comm] = {
-        action.Token: self._make_allow_all_mask(action.Token.edges),
+        action.Token: np.ones(len(action.Token.edges), dtype=np.int8)
       }
 
     return masks
-
-  def _make_allow_all_mask(self, actions):
-    return np.ones(len(actions), dtype=np.int8)
 
   def _make_move_mask(self):
     # pylint: disable=not-an-iterable
@@ -290,6 +287,15 @@ class Observation:
 
     return np.concatenate([same_tile & same_team_not_me,
       np.zeros(self.config.PLAYER_N_OBS - self.entities.len, dtype=np.int8)])
+
+  def _make_give_gold_mask(self):
+    gold = int(self.agent().gold)
+    mask = np.zeros(self.config.PRICE_N_OBS, dtype=np.int8)
+
+    if gold:
+      mask[:gold] = 1 # NOTE that action.Price starts from Discrete_1
+
+    return mask
 
   def _make_sell_mask(self):
     # empty inventory -- nothing to sell

@@ -610,6 +610,7 @@ class Exchange:
   '''Game system flag'''
 
   EXCHANGE_LISTING_DURATION           = 5
+  '''The number of ticks, during which the item is listed for sale'''
 
   @property
   def MARKET_N_OBS(self):
@@ -617,6 +618,11 @@ class Exchange:
     # pylint: disable=no-member
     '''Number of distinct item observations'''
     return self.PLAYER_N * self.EXCHANGE_LISTING_DURATION
+
+  PRICE_N_OBS = 100
+  '''Number of distinct price observations
+     This also determines the maximum price one can set for an item
+  '''
 
 
 class Communication:
