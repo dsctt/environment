@@ -49,7 +49,7 @@ setup(
         'pylint==2.16.0',
         'py==1.11.0',
         'scipy==1.10.0',
-        'numpy==1.24.1'
+        'numpy==1.23.3'
     ],
     extras_require=extra,
     python_requires=">=3.7",
