@@ -1,3 +1,7 @@
+# pylint: disable=all
+# This is a prototype. If this direction is correct,
+# it will be moved to proper places.
+
 import numpy as np
 import numpy_indexed as npi
 
@@ -140,7 +144,6 @@ class EventLog(EventCode):
         result[k] = len(v)
     return result
 
-  # count eat_food, drink_water, 
   def count_group_by(self, event_code, grpby_attr, **kwargs):
     assert grpby_attr in ['ent_id', 'population_id'], "Invalid group by column"
     data = self._get_data(event_code)
