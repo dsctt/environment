@@ -252,7 +252,8 @@ class Env(ParallelEnv):
     assert self.obs is not None, 'step() called before reset'
 
     # Add in scripted agents' actions, if any
-    actions = self._compute_scripted_agent_actions(actions)
+    if self.scripted_agents:
+      actions = self._compute_scripted_agent_actions(actions)
 
     # Drop invalid actions of BOTH neural and scripted agents
     #   we don't need _deserialize_scripted_actions() anymore
@@ -313,28 +314,14 @@ class Env(ParallelEnv):
 
   def _compute_scripted_agent_actions(self, actions: Dict[int, Dict[str, Dict[str, Any]]]):
     '''Compute actions for scripted agents and add them into the action dict'''
-
-    # If there are no scripted agents, this function doesn't need to run at all
-    if not self.scripted_agents:
-      return actions
-
     for eid in self.scripted_agents:
       # remove the dead scripted agent from the list
       if eid not in self.realm.players:
         self.scripted_agents.discard(eid)
         continue
 
-      if eid not in actions:
-        actions[eid] = self.realm.players[eid].agent(self.obs[eid])
-      else:
-        # if actions are provided, just run ent.agent() to set the RNG to the same state
-        # TODO(kywch): remove ScriptedAgentTestEnv._compute_scripted_agent_actions()
-        #   if this works
-        self.realm.players[eid].agent(self.obs[eid])
-
-        # NOTE: This is a hack to set the random number generator to the same state
-        # since scripted agents also use RNG. Without this, the RNG is in different state,
-        # and the env.step() does not give the same results in the deterministic replay.
+      # override the provided scripted agents' actions
+      actions[eid] = self.realm.players[eid].agent(self.obs[eid])
 
     return actions
 
