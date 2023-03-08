@@ -145,6 +145,7 @@ class ScriptedAgentTestEnv(nmmo.Env):
     return super().reset(map_id=map_id, seed=seed, options=options)
 
   def _compute_scripted_agent_actions(self, actions):
+    assert actions is not None, "actions must be provided, even it's {}"
     # if actions are not provided, generate actions using the scripted policy
     if actions == {}:
       for eid, ent in self.realm.players.items():
@@ -161,16 +162,6 @@ class ScriptedAgentTestEnv(nmmo.Env):
       for eid, ent in self.realm.players.items():
         ent.agent(self.obs[eid])
 
-    return self._deserialize_scripted_actions(actions)
-
-  def _process_actions(self, actions, obs):
-    # TODO(kywch): Try to remove this override
-    #   after rewriting _process_actions() using ActionTargets
-    #   The output of scripted agents are somewhat different from
-    #   what the current _process_actions() expects, so these need
-    #   to be reconciled.
-
-    # bypass the current _process_actions()
     return actions
 
 

@@ -251,15 +251,12 @@ class Env(ParallelEnv):
     '''
     assert self.obs is not None, 'step() called before reset'
 
-    # Check the validity of provided actions
-    # Currently, it doesn't go well with scripted agents' actions
-    actions = self._process_actions(actions, self.obs)
-
     # Add in scripted agents' actions, if any
     actions = self._compute_scripted_agent_actions(actions)
 
-    # TODO(kywch): _process_actions should be here and validate all actions
-    # Rename _process_actions to _validate_actions?
+    # Drop invalid actions of BOTH neural and scripted agents
+    #   we don't need _deserialize_scripted_actions() anymore
+    actions = self._validate_actions(actions)
 
     # Execute actions
     self.realm.step(actions)
@@ -278,69 +275,41 @@ class Env(ParallelEnv):
 
     return gym_obs, rewards, dones, infos
 
-  # TODO(kywch): rewrite _process_actions using obs.ActionTargets
-  def _process_actions(self,
-      actions: Dict[int, Dict[str, Dict[str, Any]]],
-      obs: Dict[int, Observation]):
+  def _validate_actions(self, actions: Dict[int, Dict[str, Dict[str, Any]]]):
+    '''Deserialize action arg values and validate actions
+       For now, it does a basic validation (e.g., value is not none).
 
-    processed_actions = {}
+       TODO(kywch): add more validation
+    '''
+    validated_actions = {}
 
-    for entity_id in actions.keys():
-      assert entity_id in self.realm.players, f'Entity {entity_id} not in realm'
-      entity = self.realm.players[entity_id]
-      entity_obs = obs[entity_id]
+    for ent_id, atns in actions.items():
+      if ent_id not in self.realm.players:
+        #assert ent_id in self.realm.players, f'Entity {ent_id} not in realm'
+        continue # Entity not in the realm -- invalid actions
 
-      assert entity.alive, f'Entity {entity_id} is dead'
+      entity = self.realm.players[ent_id]
+      if not entity.alive:
+        #assert entity.alive, f'Entity {ent_id} is dead'
+        continue # Entity is dead -- invalid actions
 
-      processed_actions[entity_id] = {}
-      for atn, args in actions[entity_id].items():
+      validated_actions[ent_id] = {}
+
+      for atn, args in sorted(atns.items()):
         action_valid = True
-        processed_action = {}
+        deserialized_action = {}
 
-        for arg, val in args.items():
-
-          if arg.argType == nmmo.action.Fixed:
-            val = min(val, len(arg.edges) - 1)
-            processed_action[arg] = arg.edges[val]
-
-          elif arg == nmmo.action.Target:
-            target_id = entity_obs.entities.id(val)
-            target = self.realm.entity_or_none(target_id)
-            if target is not None:
-              processed_action[arg] = target
-            else:
-              action_valid = False
-              break
-
-          elif atn in (nmmo.action.Sell, nmmo.action.Use, nmmo.action.Give) \
-            and arg == nmmo.action.InventoryItem:
-
-            item_id = entity_obs.inventory.id(val)
-            item = self.realm.items.get(item_id)
-            if item is not None:
-              assert item.owner_id == entity_id, f'Item {item_id} is not owned by {entity_id}'
-              processed_action[arg] = item
-            else:
-              action_valid = False
-              break
-
-          elif atn == nmmo.action.Buy and arg == nmmo.action.MarketItem:
-            item_id = entity_obs.market.id(val)
-            item = self.realm.items.get(item_id)
-            if item is not None:
-              assert item.listed_price > 0, f'Item {item_id} is not for sale'
-              processed_action[arg] = item
-            else:
-              action_valid = False
-              break
-
-          else:
-            raise RuntimeError(f'Argument {arg} invalid for action {atn}')
+        for arg, val in sorted(args.items()):
+          obj = arg.deserialize(self.realm, entity, val)
+          if obj is None:
+            action_valid = False
+            break
+          deserialized_action[arg] = obj
 
         if action_valid:
-          processed_actions[entity_id][atn] = processed_action
+          validated_actions[ent_id][atn] = deserialized_action
 
-    return processed_actions
+    return validated_actions
 
   def _compute_scripted_agent_actions(self, actions: Dict[int, Dict[str, Dict[str, Any]]]):
     '''Compute actions for scripted agents and add them into the action dict'''
@@ -350,21 +319,22 @@ class Env(ParallelEnv):
       return actions
 
     for eid in self.scripted_agents:
-      assert eid not in actions, f'Received an action for a scripted agent {eid}'
-      if eid in self.realm.players:
+      # remove the dead scripted agent from the list
+      if eid not in self.realm.players:
+        self.scripted_agents.discard(eid)
+        continue
+
+      if eid not in actions:
         actions[eid] = self.realm.players[eid].agent(self.obs[eid])
       else:
-        # remove the dead scripted agent from the list
-        self.scripted_agents.discard(eid)
+        # if actions are provided, just run ent.agent() to set the RNG to the same state
+        # TODO(kywch): remove ScriptedAgentTestEnv._compute_scripted_agent_actions()
+        #   if this works
+        self.realm.players[eid].agent(self.obs[eid])
 
-    return self._deserialize_scripted_actions(actions)
-
-  def _deserialize_scripted_actions(self, actions: Dict[int, Dict[str, Dict[str, Any]]]):
-    for eid, atns in actions.items():
-      if eid in self.scripted_agents:
-        for atn, args in atns.items():
-          for arg, val in args.items():
-            atns[atn][arg] = arg.deserialize(self.realm, self.realm.players[eid], val)
+        # NOTE: This is a hack to set the random number generator to the same state
+        # since scripted agents also use RNG. Without this, the RNG is in different state,
+        # and the env.step() does not give the same results in the deterministic replay.
 
     return actions
 

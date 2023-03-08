@@ -32,7 +32,7 @@ class TestSellBuy(ScriptedTestTemplate):
 
 
   def test_sell_buy(self):
-    # cannot list an item with 0 price
+    # cannot list an item with 0 price --> impossible to do this
     # cannot list an equipped item for sale (should be masked)
     # cannot buy an item with the full inventory,
     #   but it's possible if the agent has the same ammo stack
@@ -67,11 +67,12 @@ class TestSellBuy(ScriptedTestTemplate):
       actions[ent_id] = { action.Use: { action.InventoryItem: 
           env.obs[ent_id].inventory.sig(*item_sig) } }
 
-    # agent 4: list the ammo for sale with price 0 (invalid)
+    # agent 4: list the ammo for sale with price 0
+    #   the zero in action.Price is deserialized into Discrete_1, so it's valid
     ent_id = 4; price = 0; item_sig = self.item_sig[ent_id][0]
     actions[ent_id] = { action.Sell: { 
         action.InventoryItem: env.obs[ent_id].inventory.sig(*item_sig),
-        action.Price: price } }
+        action.Price: action.Price.edges[price] } } 
 
     env.step(actions)
 
@@ -84,20 +85,17 @@ class TestSellBuy(ScriptedTestTemplate):
         ItemState.parse_array(env.obs[ent_id].inventory.values[inv_idx]).equipped)
       self.assertFalse( # not allowed to list
         self._check_inv_mask(env.obs[ent_id], action.Sell, item_sig)) 
-      
-      # and nothing is listed because agent 4's SELL is invalid
-      self.assertTrue(len(env.obs[ent_id].market.ids) == 0)
 
     """ Second tick actions """
     # listing the level-0 ammo with different prices
     # cannot list an equipped item for sale (should be masked)
 
-    listing_price = { 1:1, 2:5, 3:15, 4:3, 5:1 } # gold
+    listing_price = { 1:1, 2:5, 3:15, 5:2 } # gold
     for ent_id in listing_price:
       item_sig = self.item_sig[ent_id][0]
       actions[ent_id] = { action.Sell: { 
           action.InventoryItem: env.obs[ent_id].inventory.sig(*item_sig),
-          action.Price: listing_price[ent_id] } }
+          action.Price: action.Price.edges[listing_price[ent_id]-1] } }
 
     env.step(actions)
 
@@ -153,21 +151,21 @@ class TestSellBuy(ScriptedTestTemplate):
     ent_id = 3; item_sig = self.item_sig[ent_id][0]
     actions[ent_id] = { action.Sell: { 
         action.InventoryItem: env.obs[ent_id].inventory.sig(*item_sig),
-        action.Price: 7 } } # try to set different price
+        action.Price: action.Price.edges[7] } } # try to set different price
 
     env.step(actions)
 
     # Check the third tick actions
     # agent 1: buy agent 5's ammo (valid: 1 has the same ammo stack)
     #   agent 5's ammo should be gone
-    ent_id = 5; self.assertFalse( agent5_ammo in env.obs[ent_id].inventory.ids)
-    self.assertEqual( env.realm.players[ent_id].gold.val, # gold transfer
-                      self.init_gold + listing_price[ent_id])
-    
-    ent_id = 1; self.assertEqual(2 * self.ammo_quantity, # ammo transfer
-          ItemState.parse_array(env.obs[ent_id].inventory.values[0]).quantity)
-    self.assertEqual( env.realm.players[ent_id].gold.val, # gold transfer 
-                      self.init_gold - listing_price[ent_id])
+    seller_id = 5; buyer_id = 1
+    self.assertFalse( agent5_ammo in env.obs[seller_id].inventory.ids)
+    self.assertEqual( env.realm.players[seller_id].gold.val, # gold transfer
+                      self.init_gold + listing_price[seller_id])
+    self.assertEqual(2 * self.ammo_quantity, # ammo transfer
+          ItemState.parse_array(env.obs[buyer_id].inventory.values[0]).quantity)
+    self.assertEqual( env.realm.players[buyer_id].gold.val, # gold transfer 
+                      self.init_gold - listing_price[seller_id])
 
     # agent 2-4: invalid buy, no exchange, thus the same money
     for ent_id in [2, 3, 4]:

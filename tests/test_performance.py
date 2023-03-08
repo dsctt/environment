@@ -43,9 +43,8 @@ def test_small_env_reset(benchmark):
   env = nmmo.Env(config)
   benchmark(lambda: env.reset(map_id=1))
 
-# TODO(daveey) fails, fix and re-enable
-# def test_fps_base_small_1_pop(benchmark):
-#   benchmark_config(benchmark, Small, 1)
+def test_fps_base_small_1_pop(benchmark):
+  benchmark_config(benchmark, Small, 1)
 
 def test_fps_minimal_small_1_pop(benchmark):
   benchmark_config(benchmark, Small, 1, Terrain, Resource, Combat, Progression)
@@ -63,9 +62,8 @@ def test_fps_no_npc_small_1_pop(benchmark):
 def test_fps_all_small_1_pop(benchmark):
   benchmark_config(benchmark, Small, 1, AllGameSystems)
 
-# TODO(daveey) fails, fix and re-enable
-# def test_fps_base_med_1_pop(benchmark):
-#   benchmark_config(benchmark, Medium, 1)
+def test_fps_base_med_1_pop(benchmark):
+  benchmark_config(benchmark, Medium, 1)
 
 def test_fps_minimal_med_1_pop(benchmark):
   benchmark_config(benchmark, Medium, 1, Terrain, Resource, Combat)
