@@ -148,17 +148,20 @@ class Config(Template):
   RENDER                       = False
   '''Flag used by render mode'''
 
-  SAVE_REPLAY            = False
+  SAVE_REPLAY                  = False
   '''Flag used to save replays'''
 
-  PLAYERS                      = []
+  PROVIDE_ACTION_TARGETS       = False
+  '''Flag used to provide action targets mask'''
+
+  PLAYERS                      = [Agent]
   '''Player classes from which to spawn'''
 
   TASKS                        = []
   '''Tasks for which to compute rewards'''
 
-   ############################################################################
-   ### Emulation Parameters
+  ############################################################################
+  ### Emulation Parameters
 
   EMULATE_FLAT_OBS       = False
   '''Emulate a flat observation space'''
@@ -189,12 +192,6 @@ class Config(Template):
 
   LOG_FILE                     = None
   '''Where to write logs (defaults to console)'''
-
-  PLAYERS                      = []
-  '''Player classes from which to spawn'''
-
-  TASKS                        = []
-  '''Tasks for which to compute rewards'''
 
 
   ############################################################################
@@ -613,6 +610,7 @@ class Exchange:
   '''Game system flag'''
 
   EXCHANGE_LISTING_DURATION           = 5
+  '''The number of ticks, during which the item is listed for sale'''
 
   @property
   def MARKET_N_OBS(self):
@@ -620,6 +618,11 @@ class Exchange:
     # pylint: disable=no-member
     '''Number of distinct item observations'''
     return self.PLAYER_N * self.EXCHANGE_LISTING_DURATION
+
+  PRICE_N_OBS = 99 # make it different from PLAYER_N_OBS
+  '''Number of distinct price observations
+     This also determines the maximum price one can set for an item
+  '''
 
 
 class Communication:
@@ -681,8 +684,6 @@ class Medium(Config):
   PROGRESSION_SPAWN_UNIFORMS   = 256
 
   HORIZON                      = 1024
-
-  PLAYERS = [Agent]
 
 
 class Large(Config):
