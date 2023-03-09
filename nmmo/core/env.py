@@ -14,7 +14,6 @@ from nmmo.core.tile import Tile
 from nmmo.entity.entity import Entity
 from nmmo.systems.item import Item
 from nmmo.core import realm
-from nmmo.io import action
 from scripted.baselines import Scripted
 
 
@@ -97,23 +96,14 @@ class Env(ParallelEnv):
 
     actions = {}
     for atn in sorted(nmmo.Action.edges(self.config)):
+      if atn.enabled(self.config):
 
-      # check if each system is enabled in config
-      # pylint: disable=too-many-boolean-expressions
-      if (atn == action.Attack and not self.config.COMBAT_SYSTEM_ENABLED) or \
-         (atn in [action.Use, action.Give, action.Destroy] and
-            not self.config.ITEM_SYSTEM_ENABLED) or \
-         (atn in [action.Sell, action.Buy, action.GiveGold] and
-            not self.config.EXCHANGE_SYSTEM_ENABLED) or \
-         (atn == action.Comm and not self.config.COMMUNICATION_SYSTEM_ENABLED):
-        continue
+        actions[atn] = {}
+        for arg in sorted(atn.edges):
+          n = arg.N(self.config)
+          actions[atn][arg] = gym.spaces.Discrete(n)
 
-      actions[atn] = {}
-      for arg in sorted(atn.edges):
-        n = arg.N(self.config)
-        actions[atn][arg] = gym.spaces.Discrete(n)
-
-      actions[atn] = gym.spaces.Dict(actions[atn])
+        actions[atn] = gym.spaces.Dict(actions[atn])
 
     return gym.spaces.Dict(actions)
 
@@ -280,7 +270,7 @@ class Env(ParallelEnv):
     '''Deserialize action arg values and validate actions
        For now, it does a basic validation (e.g., value is not none).
 
-       TODO(kywch): add more validation
+       TODO(kywch): add sophisticated validation like use/sell/give on the same item
     '''
     validated_actions = {}
 
@@ -299,6 +289,10 @@ class Env(ParallelEnv):
       for atn, args in sorted(atns.items()):
         action_valid = True
         deserialized_action = {}
+
+        if not atn.enabled(self.config):
+          action_valid = False
+          break
 
         for arg, val in sorted(args.items()):
           obj = arg.deserialize(self.realm, entity, val)

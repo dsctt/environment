@@ -106,6 +106,7 @@ class Action(Node):
   def args(stim, entity, config):
     raise NotImplementedError
 
+
 class Move(Node):
   priority = 60
   nodeType = NodeType.SELECTION
@@ -148,6 +149,9 @@ class Move(Node):
 
   @staticproperty
   def leaf():
+    return True
+
+  def enabled(config):
     return True
 
 class Direction(Node):
@@ -204,6 +208,8 @@ class Attack(Node):
   def leaf():
     return True
 
+  def enabled(config):
+    return config.COMBAT_SYSTEM_ENABLED
 
   def in_range(entity, stim, config, N):
     R, C = stim.shape
@@ -358,6 +364,9 @@ class Use(Node):
   def edges():
     return [InventoryItem]
 
+  def enabled(config):
+    return config.ITEM_SYSTEM_ENABLED
+
   def call(realm, entity, item):
     if item is None:
       return
@@ -384,6 +393,9 @@ class Destroy(Node):
   @staticproperty
   def edges():
     return [InventoryItem]
+
+  def enabled(config):
+    return config.ITEM_SYSTEM_ENABLED
 
   def call(realm, entity, item):
     if item is None:
@@ -412,6 +424,9 @@ class Give(Node):
   @staticproperty
   def edges():
     return [InventoryItem, Target]
+
+  def enabled(config):
+    return config.ITEM_SYSTEM_ENABLED
 
   def call(realm, entity, item, target):
     if item is None or target is None:
@@ -461,6 +476,9 @@ class GiveGold(Node):
   def edges():
     # CHECK ME: for now using Price to indicate the gold amount to give
     return [Price, Target]
+
+  def enabled(config):
+    return config.EXCHANGE_SYSTEM_ENABLED
 
   def call(realm, entity, amount, target):
     if amount is None or target is None:
@@ -523,6 +541,9 @@ class Buy(Node):
   def edges():
     return [MarketItem]
 
+  def enabled(config):
+    return config.EXCHANGE_SYSTEM_ENABLED
+
   def call(realm, entity, item):
     if item is None:
       return
@@ -560,6 +581,9 @@ class Sell(Node):
   @staticproperty
   def edges():
     return [InventoryItem, Price]
+
+  def enabled(config):
+    return config.EXCHANGE_SYSTEM_ENABLED
 
   def call(realm, entity, item, price):
     if item is None or price is None:
@@ -644,6 +668,9 @@ class Comm(Node):
   @staticproperty
   def edges():
     return [Token]
+
+  def enabled(config):
+    return config.COMMUNICATION_SYSTEM_ENABLED
 
   def call(realm, entity, token):
     if token is None:
