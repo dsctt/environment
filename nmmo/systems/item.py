@@ -52,6 +52,9 @@ ItemState.Limits = lambda config: {
 }
 
 ItemState.Query = SimpleNamespace(
+  table=lambda ds: ds.table("Item").where_neq(
+    ItemState.State.attr_name_to_col["id"], 0),
+
   by_id=lambda ds, id: ds.table("Item").where_eq(
     ItemState.State.attr_name_to_col["id"], id),
 

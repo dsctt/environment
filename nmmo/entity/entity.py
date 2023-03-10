@@ -78,6 +78,10 @@ EntityState.Limits = lambda config: {
 }
 
 EntityState.Query = SimpleNamespace(
+  # Whole table
+  table=lambda ds: ds.table("Entity").where_neq(
+    EntityState.State.attr_name_to_col["id"], 0),
+
   # Single entity
   by_id=lambda ds, id: ds.table("Entity").where_eq(
     EntityState.State.attr_name_to_col["id"], id)[0],
