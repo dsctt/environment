@@ -39,9 +39,6 @@ class GameState:
   env_obs: Dict[int, Observation]
   ent2pop: Dict[int, int] # key: ent_id, val: pop_id
 
-  # CHECK ME: team info is in the Entity table
-  #    do we need to make it explicit?
-
   # - add extra info that is not in the datastore (e.g., spawn pos)
   # - would IS_WITHIN, TICK, COUNT_DOWN be good here?
 
@@ -61,9 +58,6 @@ class GameState:
 
     return None
 
-
-
-
   def flt_group_by(self, flt_data, grpby_col, sum_col=0):
     # if sum_col = 0, this fn acts as COUNT, otherwise SUM
     g = npi.group_by(flt_data[:,grpby_col])
@@ -76,8 +70,6 @@ class GameState:
     return result
 
 
-
-# https://github.com/CarperAI/nmmo-environment/blob/task-system/nmmo/lib/task/gamestate.py
 class GameStateGenerator:
   def __init__(self, realm: Realm, config: Config):
     self.config = deepcopy(config)
@@ -97,9 +89,8 @@ class GameStateGenerator:
       env_obs = env_obs,
       ent2pop = self.ent2pop)
 
-  # consider getting entity, item info parsed from the datastore
-  # e.g., entity(ent_id) returns ... id, pop_id, pos, levels, etc
-  # most info can be retrieved from the datastore, but some won't
+  # TODO(kywch)
+  # most entity/item info can be retrieved from the datastore, but some won't.
   # in that case, we need a simple dataclass to pass remaining info
   
 
@@ -112,9 +103,7 @@ class Task:
     self._reward = reward
     self._max_fulfill = max_fulfill
     self._fulfill_cnt: Dict[int, int] = {} # key: ent_id
-    #self._discount_factor = discount_factor # CHECK ME
 
-    # CHECK ME: cache game state each step. Is this ok?
     self._gs: GameState = None
 
     # key: ent_id or pop_id, value: intermediate result
@@ -131,7 +120,6 @@ class Task:
        the agent's data in _step_result (and agent's own)'''
     raise NotImplementedError
 
-  # NOTE(kywch): cannot follow the discount idea, so ignoring it for now
   def reward(self, ent_id: int, update_cnt=True) -> float:
     if self.evaluate(ent_id):
       if update_cnt:
