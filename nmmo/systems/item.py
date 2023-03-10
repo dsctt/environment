@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from typing import Dict
 
 from nmmo.lib.colors import Tier
-from nmmo.lib.serialized import SerializedState
+from nmmo.datastore.serialized import SerializedState
 
 # pylint: disable=no-member
 ItemState = SerializedState.subclass("Item", [
@@ -52,6 +52,9 @@ ItemState.Limits = lambda config: {
 }
 
 ItemState.Query = SimpleNamespace(
+  table=lambda ds: ds.table("Item").where_neq(
+    ItemState.State.attr_name_to_col["id"], 0),
+
   by_id=lambda ds, id: ds.table("Item").where_eq(
     ItemState.State.attr_name_to_col["id"], id),
 

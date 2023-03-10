@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 import numpy as np
 
-from nmmo.lib.serialized import SerializedState
+from nmmo.datastore.serialized import SerializedState
 from nmmo.lib import material
 
 # pylint: disable=no-member

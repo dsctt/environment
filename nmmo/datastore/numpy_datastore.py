@@ -2,7 +2,7 @@ from typing import List
 
 import numpy as np
 
-from nmmo.lib.datastore.datastore import Datastore, DataTable
+from nmmo.datastore.datastore import Datastore, DataTable
 
 
 class NumpyTable(DataTable):

@@ -6,7 +6,7 @@ import numpy as np
 
 from nmmo.core.config import Config
 from nmmo.lib import utils
-from nmmo.lib.serialized import SerializedState
+from nmmo.datastore.serialized import SerializedState
 from nmmo.systems import inventory
 
 # pylint: disable=no-member
@@ -78,6 +78,10 @@ EntityState.Limits = lambda config: {
 }
 
 EntityState.Query = SimpleNamespace(
+  # Whole table
+  table=lambda ds: ds.table("Entity").where_neq(
+    EntityState.State.attr_name_to_col["id"], 0),
+
   # Single entity
   by_id=lambda ds, id: ds.table("Entity").where_eq(
     EntityState.State.attr_name_to_col["id"], id)[0],

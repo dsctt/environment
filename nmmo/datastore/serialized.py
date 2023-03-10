@@ -4,7 +4,7 @@ from ast import Tuple
 import math
 from types import SimpleNamespace
 from typing import Dict, List
-from nmmo.lib.datastore.datastore import Datastore, DatastoreRecord
+from nmmo.datastore.datastore import Datastore, DatastoreRecord
 
 """
 This code defines classes for serializing and deserializing data

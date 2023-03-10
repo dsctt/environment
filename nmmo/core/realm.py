@@ -15,7 +15,7 @@ from nmmo.core.tile import TileState
 from nmmo.entity.entity import EntityState
 from nmmo.entity.entity_manager import NPCManager, PlayerManager
 from nmmo.io.action import Action, Buy
-from nmmo.lib.datastore.numpy_datastore import NumpyDatastore
+from nmmo.datastore.numpy_datastore import NumpyDatastore
 from nmmo.systems.exchange import Exchange
 from nmmo.systems.item import Item, ItemState
 

@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from nmmo.lib.datastore.numpy_datastore import NumpyTable
+from nmmo.datastore.numpy_datastore import NumpyTable
 
 # pylint: disable=protected-access
 class TestNumpyTable(unittest.TestCase):
