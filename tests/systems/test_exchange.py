@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 import unittest
 import nmmo
-from nmmo.lib.datastore.numpy_datastore import NumpyDatastore
+from nmmo.datastore.numpy_datastore import NumpyDatastore
 from nmmo.systems.exchange import Exchange
 from nmmo.systems.item import ItemState
 import nmmo.systems.item as item

@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from nmmo.lib.datastore.numpy_datastore import NumpyDatastore
+from nmmo.datastore.numpy_datastore import NumpyDatastore
 
 
 class TestDatastore(unittest.TestCase):

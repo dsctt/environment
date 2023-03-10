@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from typing import Dict
 
 from nmmo.lib.colors import Tier
-from nmmo.lib.serialized import SerializedState
+from nmmo.datastore.serialized import SerializedState
 
 # pylint: disable=no-member
 ItemState = SerializedState.subclass("Item", [

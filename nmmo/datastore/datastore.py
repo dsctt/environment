@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Dict, List
-from nmmo.lib.datastore.id_allocator import IdAllocator
+from nmmo.datastore.id_allocator import IdAllocator
 
 """
 This code defines a data storage system that allows for the

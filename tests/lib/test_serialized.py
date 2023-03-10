@@ -1,7 +1,7 @@
 from collections import defaultdict
 import unittest
 
-from nmmo.lib.serialized import SerializedState
+from nmmo.datastore.serialized import SerializedState
 
 # pylint: disable=no-member,unused-argument,unsubscriptable-object
 

@@ -1,7 +1,7 @@
 import unittest
 import nmmo
 from nmmo.core.tile import Tile, TileState
-from nmmo.lib.datastore.numpy_datastore import NumpyDatastore
+from nmmo.datastore.numpy_datastore import NumpyDatastore
 from nmmo.lib import material
 
 class MockRealm:

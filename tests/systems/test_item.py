@@ -1,6 +1,6 @@
 import unittest
 import nmmo
-from nmmo.lib.datastore.numpy_datastore import NumpyDatastore
+from nmmo.datastore.numpy_datastore import NumpyDatastore
 from nmmo.systems.item import Hat, ItemState
 import numpy as np
 

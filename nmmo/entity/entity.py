@@ -6,7 +6,7 @@ import numpy as np
 
 from nmmo.core.config import Config
 from nmmo.lib import utils
-from nmmo.lib.serialized import SerializedState
+from nmmo.datastore.serialized import SerializedState
 from nmmo.systems import inventory
 
 # pylint: disable=no-member

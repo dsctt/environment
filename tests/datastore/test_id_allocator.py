@@ -1,6 +1,6 @@
 import unittest
 
-from nmmo.lib.datastore.id_allocator import IdAllocator
+from nmmo.datastore.id_allocator import IdAllocator
 
 class TestIdAllocator(unittest.TestCase):
   def test_id_allocator(self):
