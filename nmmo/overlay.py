@@ -1,4 +1,5 @@
-from pdb import set_trace as T
+# pylint: disable=all
+
 import numpy as np
 
 from nmmo.lib import overlay
@@ -7,7 +8,7 @@ from nmmo.systems import combat
 
 
 class OverlayRegistry:
-   def __init__(self, config, realm):
+   def __init__(self, realm):
       '''Manager class for overlays
 
       Args:
@@ -16,8 +17,8 @@ class OverlayRegistry:
       '''
       self.initialized = False
 
-      self.config = config
       self.realm  = realm
+      self.config = realm.config
 
       self.overlays = {
               'counts':     Counts,
@@ -73,11 +74,9 @@ class Overlay:
        Args:
            obs: Observation returned by the environment
        '''
-       pass
 
    def register(self):
        '''Compute the overlay and register it within realm. Override per overlay.'''
-       pass
 
 class Skills(Overlay):
    def __init__(self, config, realm, *args):
@@ -90,8 +89,8 @@ class Skills(Overlay):
    def update(self, obs):
       '''Computes a count-based exploration map by painting
       tiles as agents walk over them'''
-      for entID, agent in self.realm.realm.players.items():
-         r, c = agent.base.pos
+      for ent_id, agent in self.realm.realm.players.items():
+         r, c = agent.pos
 
          skillLvl  = (agent.skills.food.level.val + agent.skills.water.level.val)/2.0
          combatLvl = combat.level(agent.skills)
@@ -133,9 +132,9 @@ class Counts(Overlay):
    def update(self, obs):
       '''Computes a count-based exploration map by painting
       tiles as agents walk over them'''
-      for entID, agent in self.realm.realm.players.items():
-         pop  = agent.base.population.val
-         r, c = agent.base.pos
+      for ent_id, agent in self.realm.realm.players.items():
+         pop  = agent.population_id.val
+         r, c = agent.pos
          self.values[r, c][pop] += 1
 
    def register(self, obs):

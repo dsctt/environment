@@ -1,8 +1,6 @@
-from pdb import set_trace as T
 from itertools import chain
 
 from setuptools import find_packages, setup
-
 
 REPO_URL = "https://github.com/neuralmmo/environment"
 
@@ -14,8 +12,6 @@ extra = {
     'cleanrl': [
         'wandb==0.12.9',
         'supersuit==3.3.5',
-        'pettingzoo==1.15.0',
-        'gym==0.23.0',
         'tensorboard',
         'torch',
         'openskill',
@@ -33,19 +29,28 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
+        'pytest<7',
+        'pytest-pythonpath==0.7.4',
         'pytest-benchmark==3.4.1',
+        'openskill==4.0.0',
         'fire==0.4.0',
         'setproctitle==1.1.10',
         'service-identity==21.1.0',
         'autobahn==19.3.3',
         'Twisted==19.2.0',
         'vec-noise==1.1.4',
-        'imageio==2.8.0',
+        'imageio==2.23.0',
         'tqdm==4.61.1',
         'lz4==4.0.0',
         'h5py==3.7.0',
-        'pettingzoo',
-        'ordered-set',
+        'ordered-set==4.1.0',
+        'pettingzoo==1.19.0',
+        'gym==0.23.0',
+        'pylint==2.16.0',
+        'py==1.11.0',
+        'scipy==1.10.0',
+        'numpy==1.23.3',
+        'numpy-indexed==0.3.7'
     ],
     extras_require=extra,
     python_requires=">=3.7",
